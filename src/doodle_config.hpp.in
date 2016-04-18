@@ -1,0 +1,9 @@
+// the configured options and settings for the doodle
+#define DOODLE_VERSION_MAJOR @DOODLE_VERSION_MAJOR@
+#define DOODLE_VERSION_MINOR @DOODLE_VERSION_MINOR@
+
+#define GIT_BRANCH "@GIT_BRANCH@"
+#define GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
+
+
+#cmakedefine USE_MYMATH

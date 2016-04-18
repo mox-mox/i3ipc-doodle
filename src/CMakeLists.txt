@@ -1,110 +1,85 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required(VERSION 3.0)
+project(i3ipc-doodle)
 
-project (Tutorial)
+# Some general settings:
+
+
+# Where to install the compiled package to. TODO: Remove this to install to the standard locations
 SET(CMAKE_INSTALL_PREFIX /home/mox/projects/software/install)
 
+#{{{ Version numbering
 
-
-
-
-
+# Version number and git information will are #define'ed in doodle_config.h.in
 # The version number.
-set (Tutorial_VERSION_MAJOR 1)
-set (Tutorial_VERSION_MINOR 0)
+set (DOODLE_VERSION_MAJOR 0)
+set (DOODLE_VERSION_MINOR 1)
 
-# should we use our own math functions?
-option (USE_MYMATH "Use tutorial provided math implementation" ON) 
+#{{{ Get the current working branch
 
-# Get the current working branch
 execute_process(
   COMMAND git rev-parse --abbrev-ref HEAD
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   OUTPUT_VARIABLE GIT_BRANCH
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+#}}}
 
-# Get the latest abbreviated commit hash of the working branch
+#{{{ Get the latest abbreviated commit hash of the working branch
+
 execute_process(
   COMMAND git log -1 --format=%h
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   OUTPUT_VARIABLE GIT_COMMIT_HASH
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+#}}}
+#}}}
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
-  "${PROJECT_SOURCE_DIR}/TutorialConfig.h.in"
-  "${PROJECT_BINARY_DIR}/TutorialConfig.h"
+  "${PROJECT_SOURCE_DIR}/doodle_config.hpp.in"
+  "${PROJECT_BINARY_DIR}/doodle_config.hpp"
   )
- 
+
 # add the binary tree to the search path for include files
 # so that we will find TutorialConfig.h
 include_directories("${PROJECT_BINARY_DIR}")
- 
-# add the MathFunctions library?
-#
-if (USE_MYMATH)
-  include_directories ("${PROJECT_SOURCE_DIR}/MathFunctions")
-  add_subdirectory (MathFunctions)
-  set (EXTRA_LIBS ${EXTRA_LIBS} MathFunctions)
-endif (USE_MYMATH)
- 
-# add the executable
-add_executable (Tutorial tutorial.cxx)
-target_link_libraries (Tutorial  ${EXTRA_LIBS})
-
-
-# add the install targets
-install (TARGETS Tutorial DESTINATION bin)
-install (FILES "${PROJECT_BINARY_DIR}/TutorialConfig.h"        
-         DESTINATION include)
 
 
 
 
-include(CTest)
 
-# does the application run
-add_test (TutorialRuns Tutorial 25)
- 
-# does it sqrt of 25
-add_test (TutorialComp25 Tutorial 25)
- 
-set_tests_properties (TutorialComp25 
-  PROPERTIES PASS_REGULAR_EXPRESSION "25 is 5")
- 
-# does it handle negative numbers
-add_test (TutorialNegative Tutorial -25)
-set_tests_properties (TutorialNegative
-  PROPERTIES PASS_REGULAR_EXPRESSION "-25 is 0")
- 
-# does it handle small numbers
-add_test (TutorialSmall Tutorial 0.0001)
-set_tests_properties (TutorialSmall
-  PROPERTIES PASS_REGULAR_EXPRESSION "0.0001 is 0.01")
- 
-# does the usage message work?
-add_test (TutorialUsage Tutorial)
-set_tests_properties (TutorialUsage
-  PROPERTIES 
-  PASS_REGULAR_EXPRESSION "Usage:.*number")
+
+
+
+
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -DDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+
+
+
+
+
+find_package(PkgConfig)
+pkg_check_modules(SIGCPP REQUIRED sigc++-2.0)
+
+add_subdirectory(i3ipc++)
+
+include_directories(
+	${SIGCPP_INCLUDE_DIRS}
+	${I3IPCpp_INCLUDE_DIRS}
+)
+
+link_directories(
+	${SIGCPP_LIBRARY_DIRS}
+	${I3IPCpp_LIBRARY_DIRS}
+)
+
+
+add_executable(doodle doodle.cpp)
+target_link_libraries(doodle ${I3IPCpp_LIBRARIES})
