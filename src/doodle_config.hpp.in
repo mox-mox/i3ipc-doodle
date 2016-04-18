@@ -1,6 +1,7 @@
 // the configured options and settings for the doodle
 #define DOODLE_VERSION_MAJOR @DOODLE_VERSION_MAJOR@
 #define DOODLE_VERSION_MINOR @DOODLE_VERSION_MINOR@
+#define DOODLE_PROGRAM_NAME "@DOODLE_PROGRAM_NAME@"
 
 #define GIT_BRANCH "@GIT_BRANCH@"
 #define GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
