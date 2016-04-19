@@ -34,6 +34,7 @@ void version_message()
 
 
 
+
 int main(int argc, char* argv[])
 {
 	//{{{ Argument handling
@@ -72,12 +73,19 @@ int main(int argc, char* argv[])
 
 	//}}}
 
-	Doodle mydoodle;
+	i3ipc::I3Connection conn;
+	Doodle mydoodle(conn);
+	conn.prepare_to_event_handling();
 
-	mydoodle.print_workspaces();
+	//mydoodle.subscribe_to_window_change();
+	for(;;)
+	{
+		conn.handle_event();
+	}
+
+	//mydoodle.print_workspaces();
 
 
-	//i3ipc::I3Connection conn;
 
 	////conn.signal_window_event.connect(/*TODO*/);
 	////conn.subscribe(i3ipc::ET_WINDOW);
@@ -99,3 +107,84 @@ int main(int argc, char* argv[])
 	//}
 	return 0;
 }
+
+
+
+
+#include <i3ipc++/ipc.hpp>
+
+
+
+
+//class Emitter
+//{
+//	public:
+//		Emitter(std::string const&n) : _number(0), _name(n) {}
+//		void increaseNumber(int by)
+//		{
+//			_number += by;
+//			signal_number_changed.emit(by);
+//			//signal_number_changed.emit();
+//		}
+//		int getNumber()
+//		{
+//			return _number;
+//		}
+//		std::string const& getName()
+//		{
+//			return _name;
+//		}
+//		sigc::signal < void, int > signal_number_changed;
+//		sigc::signal <void, i3ipc::WindowEventType>  signal_window_event; /**< Window event signal */
+//		//sigc::signal <void >  signal_window_event; /**< Window event signal */
+//	private:
+//		int _number;
+//		std::string _name;
+//};
+//
+//std::ostream& operator<<(std::ostream&o, Emitter&e)
+//{
+//    o<<e.getNumber();
+//    return o;
+//}
+//
+//
+//
+//
+//
+//class Receiver : public sigc::trackable
+//{
+//	public:
+//		Receiver(Emitter&emitter)
+//		{
+//			emitter.signal_number_changed.connect(sigc::mem_fun(*this, &Receiver::_handleNumberChange));
+//			emitter.signal_window_event.connect(sigc::mem_fun(*this, &Receiver::_handleWindowChange));
+//		}
+//	private:
+//		void _handleNumberChange(int increment)
+//		//void _handleNumberChange()
+//		{
+//			//int increment = 10;
+//			std::cout<<"The number increased by "<<increment<<std::endl;
+//		}
+//		void _handleWindowChange(i3ipc::WindowEventType increment)
+//		{
+//			std::cout<<"Window changed"<<std::endl;
+//		}
+//};
+//
+//
+//
+//int main()
+//{
+//	Emitter emil("emil");
+//	Receiver richard(emil);
+//
+//	emil.increaseNumber(20);
+//
+//
+//	return 0;
+//}
+
+
+
