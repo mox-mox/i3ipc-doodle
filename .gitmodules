@@ -1,6 +1,6 @@
 [submodule "i3ipc++"]
 	path = src/i3ipc++
-	url = https://github.com/drmgc/i3ipcpp.git
+	url = git@github.com:mox-mox/i3ipcpp.git
 [submodule "src/getoptpp"]
 	path = src/getoptpp
 	url = git@github.com:mox-mox/getoptpp.git

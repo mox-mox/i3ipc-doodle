@@ -6,7 +6,6 @@
 
 Doodle::Doodle(i3ipc::I3Connection& conn) : conn(conn), count(0)
 {
-	//conn = new i3ipc::I3Connection();
 	conn.signal_window_event.connect(sigc::mem_fun(*this, &Doodle::on_window_change));
 	if(!conn.subscribe(i3ipc::ET_WINDOW))
 	{
@@ -18,17 +17,20 @@ Doodle::Doodle(i3ipc::I3Connection& conn) : conn(conn), count(0)
 	}
 }
 
-//Doodle::~Doodle()
-//{
-//	delete conn;
-//}
 
-
-
-void Doodle::on_window_change(i3ipc::WindowEventType increment)
+void Doodle::on_window_change(const Json::Value& root)
+//void Doodle::on_window_change(i3ipc::WindowEventType win_evt)
 {
-	std::cout<<"on_window_change() called "<<++count<<"th time."<<std::endl;
+	std::cout<<"(LL): on_window_change() called "<<++count<<"th time."<<std::endl;
+			std::string  change = root["change"].asString();
+			std::cout<<"Change: "<<change<<std::endl;
+			unsigned int current = root["container"]["id"].asUInt();
+			std::cout<<"Current: "<<current<<std::endl;
+			std::cout<<"ASDF"<<std::endl;
+			std::cout<<root<<std::endl;
 }
+
+
 
 
 

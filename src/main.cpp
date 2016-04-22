@@ -8,6 +8,7 @@
 //#include <i3ipc++/ipc.hpp>
 #include "getopt_pp.h"
 #include "doodle.hpp"
+#include "jason.hpp"
 
 
 
@@ -41,6 +42,7 @@ int main(int argc, char* argv[])
 
 	bool show_help;
 	bool show_version;
+	bool jason;
 
 	GetOpt::GetOpt_pp ops(argc, argv);
 
@@ -50,6 +52,7 @@ int main(int argc, char* argv[])
 		//ops >> GetOpt::Option('s', "steps", steps, 100);
 		//ops >> GetOpt::Option('r', "radius", radius, 3);
 		//ops >> GetOpt::Option('h', "heat", heat, 127.0);
+		ops>>GetOpt::OptionPresent('j', "jason", jason);
 		ops>>GetOpt::OptionPresent('h', "help", show_help);
 		ops>>GetOpt::OptionPresent('v', "version", show_version);
 	}
@@ -71,17 +74,27 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
+	if(jason)
+	{
+		write_json();
+		return 0;
+	}
+
 	//}}}
 
 	i3ipc::I3Connection conn;
 	Doodle mydoodle(conn);
 	conn.prepare_to_event_handling();
 
+
+	//auto w = conn.get_workspaces();
+
 	//mydoodle.subscribe_to_window_change();
 	for(;;)
 	{
 		conn.handle_event();
 	}
+
 
 	//mydoodle.print_workspaces();
 
