@@ -1,18 +1,18 @@
 #pragma once
 #include <i3ipc++/ipc.hpp>
-#include <json/json.h>
+//#include <json/json.h>
 
 class Doodle : public sigc::trackable
 {
 	private:
-		i3ipc::I3Connection& conn;
+		i3ipc::connection& conn;
 		int count;
 
 	public:
-		Doodle(i3ipc::I3Connection& conn);
+		Doodle(i3ipc::connection& conn);
 
-		//void on_window_change(i3ipc::WindowEventType win_evt);
-		void on_window_change(const Json::Value&);
+		void on_window_change(const i3ipc::window_event_t& evt);
+		void on_workspace_change(const i3ipc::workspace_event_t&  evt);
 
 
 		void print_workspaces();

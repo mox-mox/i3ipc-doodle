@@ -6,6 +6,8 @@
 #include "doodle_config.hpp"
 
 //#include <i3ipc++/ipc.hpp>
+#include <i3ipc++/ipc.hpp>
+#include "auss.hpp"
 #include "getopt_pp.h"
 #include "doodle.hpp"
 #include "jason.hpp"
@@ -14,13 +16,14 @@
 
 //{{{ Help and version messages
 
-void help_message(std::string progname)
+std::string help_message(std::string progname)
 {
-	std::cerr<<"Usage: "<<progname<<" [options]"<<std::endl;
-	std::cerr<<"Options:"<<std::endl;
+	std::string message;
+	message+="Usage: "+progname+" [options]\nOptions:";
 	//std::cerr << "-s|--steps   <NUM>: Set the number of simulation steps."<<std::endl;
 	//std::cerr << "-r|--radius  <NUM>: Set the radius of the stimuli."<<std::endl;
 	//std::cerr << "-h|--heat    <NUM>: Set the heat of the stimuli."<<std::endl;
+	return message;
 }
 
 void version_message()
@@ -60,12 +63,12 @@ int main(int argc, char* argv[])
 	{
 		std::cerr<<"Error in arguments"<<std::endl;
 
-		help_message(argv[0]);
+		std::cerr<<help_message(argv[0])<<std::endl;
 		return -1;
 	}
 	if( show_help )
 	{
-		help_message(argv[0]);
+		std::cout<<help_message(argv[0])<<std::endl;
 		return 0;
 	}
 	if( show_version )
@@ -82,49 +85,22 @@ int main(int argc, char* argv[])
 
 	//}}}
 
-	i3ipc::I3Connection conn;
+	i3ipc::connection conn;
 	Doodle mydoodle(conn);
 	conn.prepare_to_event_handling();
 
 
-	//auto w = conn.get_workspaces();
-
-	//mydoodle.subscribe_to_window_change();
 	for(;;)
 	{
 		conn.handle_event();
 	}
 
-
-	//mydoodle.print_workspaces();
-
-
-
-	////conn.signal_window_event.connect(/*TODO*/);
-	////conn.subscribe(i3ipc::ET_WINDOW);
-
-	//for( auto&  w : conn.get_workspaces())
-	//{
-	//	std::cout<<'#'<<std::hex<<w.num<<std::dec
-	//	         <<"\n\tName: "<<w.name
-	//	         <<"\n\tVisible: "<<w.visible
-	//	         <<"\n\tFocused: "<<w.focused
-	//	         <<"\n\tUrgent: "<<w.urgent
-	//	         <<"\n\tRect: "
-	//	         <<"\n\t\tX: "<<w.rect.x
-	//	         <<"\n\t\tY: "<<w.rect.y
-	//	         <<"\n\t\tWidth: "<<w.rect.width
-	//	         <<"\n\t\tHeight: "<<w.rect.height
-	//	         <<"\n\tOutput: "<<w.output
-	//	         <<std::endl;
-	//}
 	return 0;
 }
 
 
 
 
-#include <i3ipc++/ipc.hpp>
 
 
 

@@ -7,10 +7,6 @@ project(i3ipc-doodle)
 # Where to install the compiled package to. TODO: Remove this to install to the standard locations
 SET(CMAKE_INSTALL_PREFIX /home/mox/projects/software/install)
 
-
-
-option(I3IPCpp_USE_FULL_SIGNALS "Provide full JSON event object with the signals for workspace_event and window_event. !!CHANGES API!!" ON)
-
 # Version number and git information will are #define'ed in doodle_config.h.in
 # The version number.
 set (DOODLE_VERSION_MAJOR 0)
@@ -51,28 +47,13 @@ configure_file (
 include_directories("${PROJECT_BINARY_DIR}")
 
 
-
-
-
-
-
-
-
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wfatal-errors")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra -Wpedantic -Wfatal-errors")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 
-
-
-
-
-
 # Some used libraries
 set(GETOPTPP "getoptpp")
-
-
 
 find_package(PkgConfig)
 pkg_check_modules(SIGCPP REQUIRED sigc++-2.0)
@@ -91,12 +72,7 @@ link_directories(
 	${I3IPCpp_LIBRARY_DIRS}
 )
 
-
 file(GLOB SRCS ../src/*.cpp ${GETOPTPP}/src/getopt_pp.cpp)
 
-
-
-
-#add_executable(doodle doodle.cpp)
 add_executable(doodle ${SRCS} ${GETOPTPP}/src/getopt_pp.cpp)
 target_link_libraries(doodle ${I3IPCpp_LIBRARIES})
