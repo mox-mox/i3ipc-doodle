@@ -29,4 +29,8 @@
 
 # Build folder
 build/
+build*/
+
+# Vim session file
+Session.vim
 
