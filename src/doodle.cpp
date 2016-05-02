@@ -40,8 +40,36 @@ Doodle::Doodle(i3ipc::connection& conn) : conn(conn), evt_count(0)
 	{
 		std::cout<<"successfully subscribed"<<std::endl;
 	}
+
+	simulate_window_change_event(conn.get_tree()->nodes);
 }
 //}}}
+
+bool Doodle::simulate_window_change_event(std::list< std::shared_ptr<i3ipc::container_t > > nodes )
+{
+	for(std::shared_ptr<i3ipc::container_t>& container : nodes)
+	{
+		std::cout<<"Looking at container "<<container->id<<std::endl;
+		if(container->focused)
+		{
+			std::cout<<"... it is the focussed one."<<std::endl;
+			on_window_change( { i3ipc::WindowEventType::FOCUS,  container } );
+			return true;
+		}
+		else
+		{
+			if(simulate_window_change_event(container->nodes))
+				return true;
+		}
+
+
+
+
+
+	}
+
+	return false; // Should never be reached
+}
 
 
 //{{{
@@ -74,7 +102,7 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
 					#else				// When debugging, continue searching to see if there are other matches
 					if(retval.job)		// e.g. if there is ambiguity in the window_name_segments.
 					{
-						std::cerr<<"(EE): Window name matched "<<retval->jobname<<" and "<<j.jobname<<"."<<std::endl;
+						std::cerr<<"(EE): Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
 					}
 					else
 					{
@@ -90,10 +118,6 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
 	return retval;
 }
 //}}}
-
-
-
-
 
 //{{{
 void Doodle::on_window_change(const i3ipc::window_event_t& evt)
@@ -165,8 +189,6 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 }
 //}}}
 
-
-
 //{{{
 void Doodle::on_workspace_change(const i3ipc::workspace_event_t&  evt)
 {
@@ -175,9 +197,7 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t&  evt)
 }
 //}}}
 
-
-
-
+//{{{
 std::ostream& operator<< (std::ostream& stream, Doodle::Job const& job)
 {
 	stream<<"Job \""<<job.jobname<<"\": ";
@@ -189,8 +209,9 @@ std::ostream& operator<< (std::ostream& stream, Doodle::Job const& job)
 	stream << std::chrono::duration_cast<std::chrono::seconds>(total_time).count() << " seconds.";
 	return stream;
 }
+//}}}
 
-
+//{{{
 std::ostream& operator<< (std::ostream& stream, Doodle const& doodle)
 {
 	stream<<"Doodle class:\n";
@@ -208,68 +229,8 @@ std::ostream& operator<< (std::ostream& stream, Doodle const& doodle)
 	}
 	return stream;
 }
-
-
-
-
-//{{{
-//void  dump_tree_container(const i3ipc::container_t&  c, std::string&  prefix) {
-//	std::cout << prefix << "ID: " << c.id << " (i3's; X11's - " << c.xwindow_id << ")" << std::endl;
-//	prefix.push_back('\t');
-//	std::cout << prefix << "name = \"" << c.name << "\"" << std::endl;
-//	std::cout << prefix << "type = \"" << c.type << "\"" << std::endl;
-//	std::cout << prefix << "border = \"" << c.border_raw << "\"" << std::endl;
-//	std::cout << prefix << "current_border_width = " << c.current_border_width << std::endl;
-//	std::cout << prefix << "layout = \"" << c.layout_raw << "\"" << std::endl;
-//	std::cout << prefix << "percent = " << c.percent << std::endl;
-//	if (c.urgent) {
-//		std::cout << prefix << "urgent" << std::endl;
-//	}
-//	if (c.focused) {
-//		std::cout << prefix << "focused" << std::endl;
-//	}
-//	prefix.push_back('\t');
-//	for (auto&  n : c.nodes) {
-//		dump_tree_container(*n, prefix);
-//	}
-//	prefix.pop_back();
-//	prefix.pop_back();
-//}
-
-
-//void Doodle::print_workspaces()
-//{
-//	for (auto&  w : conn.get_workspaces()) {
-//		std::cout << '#' << std::hex << w->num << std::dec
-//			<< "\n\tName: " << w->name
-//			<< "\n\tVisible: " << w->visible
-//			<< "\n\tFocused: " << w->focused
-//			<< "\n\tUrgent: " << w->urgent
-//			<< "\n\tRect: "
-//			<< "\n\t\tX: " << w->rect.x
-//			<< "\n\t\tY: " << w->rect.y
-//			<< "\n\t\tWidth: " << w->rect.width
-//			<< "\n\t\tHeight: " << w->rect.height
-//			<< "\n\tOutput: " << w->output
-//			<< std::endl;
-//	}
-//	std::string  prefix_buf;
-//	//dump_tree_container(*conn.get_tree(), prefix_buf);
-//
-//	//for( auto&  w : conn.get_workspaces())
-//	//{
-//	//	std::cout<<'#'<<std::hex<<w.num<<std::dec
-//	//	         <<"\n\tName: "<<w.name
-//	//	         <<"\n\tVisible: "<<w.visible
-//	//	         <<"\n\tFocused: "<<w.focused
-//	//	         <<"\n\tUrgent: "<<w.urgent
-//	//	         <<"\n\tRect: "
-//	//	         <<"\n\t\tX: "<<w.rect.x
-//	//	         <<"\n\t\tY: "<<w.rect.y
-//	//	         <<"\n\t\tWidth: "<<w.rect.width
-//	//	         <<"\n\t\tHeight: "<<w.rect.height
-//	//	         <<"\n\tOutput: "<<w.output
-//	//	         <<std::endl;
-//	//}
-//}
 //}}}
+
+
+
+

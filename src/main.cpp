@@ -14,8 +14,6 @@
 //#include "jason.hpp"
 
 
-i3ipc::connection conn;
-Doodle mydoodle(conn);
 
 //{{{ Help and version messages
 
@@ -36,6 +34,7 @@ void version_message()
 }
 //}}}
 
+Doodle* doodle;
 
 
 void signal_handler(int signum)
@@ -43,7 +42,7 @@ void signal_handler(int signum)
 	if (signum == SIGUSR1)
 	{
 		std::cout<<"Received SIGUSR1!"<<std::endl;
-		std::cout<<mydoodle<<std::endl;
+		std::cout<<*doodle<<std::endl;
 	}
 }
 
@@ -95,6 +94,12 @@ int main(int argc, char* argv[])
 	//}
 
 	//}}}
+
+
+
+	i3ipc::connection conn;
+
+	doodle = new Doodle(conn);
 
 	signal(SIGUSR1, signal_handler);
 	conn.prepare_to_event_handling();
