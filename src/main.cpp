@@ -4,15 +4,18 @@
 
 #include <iostream>
 #include "doodle_config.hpp"
+#include <signal.h>
 
 //#include <i3ipc++/ipc.hpp>
 #include <i3ipc++/ipc.hpp>
 #include "auss.hpp"
 #include "getopt_pp.h"
 #include "doodle.hpp"
-#include "jason.hpp"
+//#include "jason.hpp"
 
 
+i3ipc::connection conn;
+Doodle mydoodle(conn);
 
 //{{{ Help and version messages
 
@@ -35,6 +38,14 @@ void version_message()
 
 
 
+void signal_handler(int signum)
+{
+	if (signum == SIGUSR1)
+	{
+		std::cout<<"Received SIGUSR1!"<<std::endl;
+		std::cout<<mydoodle<<std::endl;
+	}
+}
 
 
 
@@ -45,7 +56,7 @@ int main(int argc, char* argv[])
 
 	bool show_help;
 	bool show_version;
-	bool jason;
+	//bool jason;
 
 	GetOpt::GetOpt_pp ops(argc, argv);
 
@@ -55,7 +66,7 @@ int main(int argc, char* argv[])
 		//ops >> GetOpt::Option('s', "steps", steps, 100);
 		//ops >> GetOpt::Option('r', "radius", radius, 3);
 		//ops >> GetOpt::Option('h', "heat", heat, 127.0);
-		ops>>GetOpt::OptionPresent('j', "jason", jason);
+		//ops>>GetOpt::OptionPresent('j', "jason", jason);
 		ops>>GetOpt::OptionPresent('h', "help", show_help);
 		ops>>GetOpt::OptionPresent('v', "version", show_version);
 	}
@@ -77,16 +88,15 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	if(jason)
-	{
-		write_json();
-		return 0;
-	}
+	//if(jason)
+	//{
+	//	write_json();
+	//	return 0;
+	//}
 
 	//}}}
 
-	i3ipc::connection conn;
-	Doodle mydoodle(conn);
+	signal(SIGUSR1, signal_handler);
 	conn.prepare_to_event_handling();
 
 

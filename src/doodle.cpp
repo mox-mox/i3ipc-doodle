@@ -4,6 +4,7 @@
 
 
 
+//{{{
 Doodle::Doodle(i3ipc::connection& conn) : conn(conn), evt_count(0)
 {
 	#pragma GCC diagnostic push
@@ -12,12 +13,14 @@ Doodle::Doodle(i3ipc::connection& conn) : conn(conn), evt_count(0)
 		{
 			.jobname = "project",
 			.times = {},
-			.window_name_segments = { "/home/mox/projects", "zathura" }
+			.window_name_segments = { "home/mox/projects", "~/projects", "zathura" },
+			.workspaces = { "" }
 		},
 		{
 			.jobname = "scratch",
 			.times = {},
-			.window_name_segments = { "/home/mox/scratch", "okular" }
+			.window_name_segments = { "home/mox/scratch", "~/scratch", "okular" },
+			.workspaces = { "" }
 		}
 	};
 
@@ -38,11 +41,13 @@ Doodle::Doodle(i3ipc::connection& conn) : conn(conn), evt_count(0)
 		std::cout<<"successfully subscribed"<<std::endl;
 	}
 }
+//}}}
 
 
-inline Doodle::Job* Doodle::find_job(std::string window_name)
+//{{{
+inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
 {
-	Job* retval = nullptr;
+	win_id_lookup_entry retval;
 	for( Job& j : jobs)											// Search all the jobs to see, ...
 	{
 		for( std::string name_segment : j.window_name_segments)	// ... if one has a matching name segment.
@@ -56,24 +61,24 @@ inline Doodle::Job* Doodle::find_job(std::string window_name)
 
 			if(std::string::npos != window_name.find(name_segment))
 			{
-				if(exclude)	// The window does not belong to the job.
+				if(exclude)				// The window does not belong to the job.
 				{
-					break;	// out of the name_segment loop -> go to the next job.
+					break;				// out of the name_segment loop -> go to the next job.
 				}
-				else		// The window belongs to the job.
+				else					// The window belongs to the job.
 				{
 					std::cout<<"Window matched job "<<j.jobname<<", matching name segment: "<<name_segment<<". Address:"<<&j<<std::endl;
-					#ifndef DEBUG	// For normal operation, just report the first match.
-					retval = &j;
+					#ifndef DEBUG		// For normal operation, just report the first match.
+					retval = { &j, name_segment};
 					return retval;
-					#else			// When debugging, continue searching to see if there are other matches
-					if(retval)		// e.g. if there is ambiguity in the window_name_segments.
+					#else				// When debugging, continue searching to see if there are other matches
+					if(retval.job)		// e.g. if there is ambiguity in the window_name_segments.
 					{
 						std::cerr<<"(EE): Window name matched "<<retval->jobname<<" and "<<j.jobname<<"."<<std::endl;
 					}
 					else
 					{
-						retval = &j;
+						retval = { &j, name_segment};
 					}
 					#endif
 				}
@@ -84,11 +89,13 @@ inline Doodle::Job* Doodle::find_job(std::string window_name)
 	}
 	return retval;
 }
+//}}}
 
 
 
 
 
+//{{{
 void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 {
 	std::cout<<"(LL): on_window_change() called "<<++evt_count<<"th time."<<std::endl;
@@ -126,14 +133,28 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	}
 	if((evt.type == i3ipc::WindowEventType::FOCUS || evt.type == i3ipc::WindowEventType::TITLE) && evt.container!=nullptr)
 	{
-		Job*& job = win_id_lookup[evt.container->id];
-		if(!job) // Window not yet associated with a job
-		{
-			job = find_job(evt.container->name);
+		Job* old_job = current_job;
+		win_id_lookup_entry& entry = win_id_lookup[evt.container->id];
+
+		if(!entry.job || std::string::npos == evt.container->name.find(entry.matching_string)) // Window not yet associated with a job
+		{																						// or needs re-association
+			entry = find_job(evt.container->name);
 		}
 		else
 		{
 			std::cout<<"Job found in map."<<std::endl;
+		}
+		current_job = entry.job;
+		if(old_job != current_job)
+		{
+			if(old_job)
+			{
+				old_job->stop();
+			}
+			if(current_job)
+			{
+				current_job->start();
+			}
 		}
 
 	}
@@ -141,78 +162,114 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	{
 		win_id_lookup.erase(evt.container->id);
 	}
-
-
-	for (auto it : win_id_lookup)
-	{
-		std::cout << "first: "<<it.first << ", second: " << it.second << '\n';
-	}
 }
+//}}}
 
 
 
+//{{{
 void Doodle::on_workspace_change(const i3ipc::workspace_event_t&  evt)
 {
 	std::cout<<"(LL): on_workspace_change() called "<<++evt_count<<"th time."<<std::endl;
+	(void)evt;
 }
+//}}}
 
 
 
-void  dump_tree_container(const i3ipc::container_t&  c, std::string&  prefix) {
-	std::cout << prefix << "ID: " << c.id << " (i3's; X11's - " << c.xwindow_id << ")" << std::endl;
-	prefix.push_back('\t');
-	std::cout << prefix << "name = \"" << c.name << "\"" << std::endl;
-	std::cout << prefix << "type = \"" << c.type << "\"" << std::endl;
-	std::cout << prefix << "border = \"" << c.border_raw << "\"" << std::endl;
-	std::cout << prefix << "current_border_width = " << c.current_border_width << std::endl;
-	std::cout << prefix << "layout = \"" << c.layout_raw << "\"" << std::endl;
-	std::cout << prefix << "percent = " << c.percent << std::endl;
-	if (c.urgent) {
-		std::cout << prefix << "urgent" << std::endl;
-	}
-	if (c.focused) {
-		std::cout << prefix << "focused" << std::endl;
-	}
-	prefix.push_back('\t');
-	for (auto&  n : c.nodes) {
-		dump_tree_container(*n, prefix);
-	}
-	prefix.pop_back();
-	prefix.pop_back();
-}
 
-
-void Doodle::print_workspaces()
+std::ostream& operator<< (std::ostream& stream, Doodle::Job const& job)
 {
-	for (auto&  w : conn.get_workspaces()) {
-		std::cout << '#' << std::hex << w->num << std::dec
-			<< "\n\tName: " << w->name
-			<< "\n\tVisible: " << w->visible
-			<< "\n\tFocused: " << w->focused
-			<< "\n\tUrgent: " << w->urgent
-			<< "\n\tRect: "
-			<< "\n\t\tX: " << w->rect.x
-			<< "\n\t\tY: " << w->rect.y
-			<< "\n\t\tWidth: " << w->rect.width
-			<< "\n\t\tHeight: " << w->rect.height
-			<< "\n\tOutput: " << w->output
-			<< std::endl;
+	stream<<"Job \""<<job.jobname<<"\": ";
+	duration total_time;
+	for(const Doodle::Timespan& t : job.times)
+	{
+		total_time += t;
 	}
-	std::string  prefix_buf;
-	dump_tree_container(*conn.get_tree(), prefix_buf);
-	//for( auto&  w : conn.get_workspaces())
-	//{
-	//	std::cout<<'#'<<std::hex<<w.num<<std::dec
-	//	         <<"\n\tName: "<<w.name
-	//	         <<"\n\tVisible: "<<w.visible
-	//	         <<"\n\tFocused: "<<w.focused
-	//	         <<"\n\tUrgent: "<<w.urgent
-	//	         <<"\n\tRect: "
-	//	         <<"\n\t\tX: "<<w.rect.x
-	//	         <<"\n\t\tY: "<<w.rect.y
-	//	         <<"\n\t\tWidth: "<<w.rect.width
-	//	         <<"\n\t\tHeight: "<<w.rect.height
-	//	         <<"\n\tOutput: "<<w.output
-	//	         <<std::endl;
-	//}
+	stream << std::chrono::duration_cast<std::chrono::seconds>(total_time).count() << " seconds.";
+	return stream;
 }
+
+
+std::ostream& operator<< (std::ostream& stream, Doodle const& doodle)
+{
+	stream<<"Doodle class:\n";
+	stream<<"	Current job: "<<doodle.current_job->jobname<<std::endl;
+	stream<<"	Current workspace: "<<doodle.current_workspace<<std::endl;
+	stream<<"	Jobs:"<<std::endl;
+	for(const Doodle::Job& job : doodle.jobs)
+	{
+		stream<<"		"<<job<<std::endl;
+	}
+	stream<<"	Known windows:\n		win_id		jobname		matching_string"<<std::endl;
+	for (auto it : doodle.win_id_lookup)
+	{
+		std::cout<<"		"<<it.first<<"	"<<it.second.job<<"	"<<it.second.matching_string<<std::endl;
+	}
+	return stream;
+}
+
+
+
+
+//{{{
+//void  dump_tree_container(const i3ipc::container_t&  c, std::string&  prefix) {
+//	std::cout << prefix << "ID: " << c.id << " (i3's; X11's - " << c.xwindow_id << ")" << std::endl;
+//	prefix.push_back('\t');
+//	std::cout << prefix << "name = \"" << c.name << "\"" << std::endl;
+//	std::cout << prefix << "type = \"" << c.type << "\"" << std::endl;
+//	std::cout << prefix << "border = \"" << c.border_raw << "\"" << std::endl;
+//	std::cout << prefix << "current_border_width = " << c.current_border_width << std::endl;
+//	std::cout << prefix << "layout = \"" << c.layout_raw << "\"" << std::endl;
+//	std::cout << prefix << "percent = " << c.percent << std::endl;
+//	if (c.urgent) {
+//		std::cout << prefix << "urgent" << std::endl;
+//	}
+//	if (c.focused) {
+//		std::cout << prefix << "focused" << std::endl;
+//	}
+//	prefix.push_back('\t');
+//	for (auto&  n : c.nodes) {
+//		dump_tree_container(*n, prefix);
+//	}
+//	prefix.pop_back();
+//	prefix.pop_back();
+//}
+
+
+//void Doodle::print_workspaces()
+//{
+//	for (auto&  w : conn.get_workspaces()) {
+//		std::cout << '#' << std::hex << w->num << std::dec
+//			<< "\n\tName: " << w->name
+//			<< "\n\tVisible: " << w->visible
+//			<< "\n\tFocused: " << w->focused
+//			<< "\n\tUrgent: " << w->urgent
+//			<< "\n\tRect: "
+//			<< "\n\t\tX: " << w->rect.x
+//			<< "\n\t\tY: " << w->rect.y
+//			<< "\n\t\tWidth: " << w->rect.width
+//			<< "\n\t\tHeight: " << w->rect.height
+//			<< "\n\tOutput: " << w->output
+//			<< std::endl;
+//	}
+//	std::string  prefix_buf;
+//	//dump_tree_container(*conn.get_tree(), prefix_buf);
+//
+//	//for( auto&  w : conn.get_workspaces())
+//	//{
+//	//	std::cout<<'#'<<std::hex<<w.num<<std::dec
+//	//	         <<"\n\tName: "<<w.name
+//	//	         <<"\n\tVisible: "<<w.visible
+//	//	         <<"\n\tFocused: "<<w.focused
+//	//	         <<"\n\tUrgent: "<<w.urgent
+//	//	         <<"\n\tRect: "
+//	//	         <<"\n\t\tX: "<<w.rect.x
+//	//	         <<"\n\t\tY: "<<w.rect.y
+//	//	         <<"\n\t\tWidth: "<<w.rect.width
+//	//	         <<"\n\t\tHeight: "<<w.rect.height
+//	//	         <<"\n\tOutput: "<<w.output
+//	//	         <<std::endl;
+//	//}
+//}
+//}}}
