@@ -62,7 +62,7 @@ configure_file (
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=gnu++14 -Wall -Wextra -Wpedantic -Wfatal-errors -ggdb -DDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=gnu++14 -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=gnu++14 -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb")
 
 
 # Some used libraries

@@ -5,7 +5,7 @@
 
 
 //{{{
-Doodle::Doodle(i3ipc::connection& conn) : nojob{"NOJOB", {}, {}, {}}, conn(conn), evt_count(0)
+Doodle::Doodle(i3ipc::connection& conn) : nojob{"NOJOB", {}, {"!"}, {"!"}}, conn(conn), evt_count(0)
 {
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wpedantic"
@@ -56,8 +56,8 @@ Doodle::Doodle(i3ipc::connection& conn) : nojob{"NOJOB", {}, {}, {}}, conn(conn)
 //{{{
 inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
 {
-	win_id_lookup_entry retval;
-	//win_id_lookup_entry retval{&nojob, ""};
+	//win_id_lookup_entry retval;
+	win_id_lookup_entry retval{&nojob, ""};
 	for( Job& j : jobs)											// Search all the jobs to see, ...
 	{
 		for( std::string name_segment : j.window_name_segments)	// ... if one has a matching name segment.
@@ -82,9 +82,9 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
 					retval = { &j, name_segment};
 					return retval;
 					#else				// When debugging, continue searching to see if there are other matches
-					if(retval.job)		// e.g. if there is ambiguity in the window_name_segments.
+					if(retval.job != &nojob)		// e.g. if there is ambiguity in the window_name_segments.
 					{
-						std::cerr<<"(EE): Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
+						error<<"(EE): Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
 					}
 					else
 					{
@@ -107,7 +107,7 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	//{{{ Print some information about the event
 
 	#ifdef DEBUG
-	std::cout<<"(LL): on_window_change() called "<<++evt_count<<"th time."<<std::endl;
+	logger<<"(LL): on_window_change() called "<<++evt_count<<"th time."<<std::endl;
 	std::cout<<"	type: "<<static_cast<char>(evt.type)<<std::endl;
 	if(evt.container!=nullptr)
 	{
@@ -156,17 +156,26 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 //{{{
 void Doodle::on_workspace_change(const i3ipc::workspace_event_t&  evt)
 {
-	std::cout<<"(LL): on_workspace_change() called "<<++evt_count<<"th time."<<std::endl;
+	//logger<<"(LL): on_workspace_change() called "<<++evt_count<<"th time."<<std::endl;
+
+	logger<<"(LL): on_workspace_change() called "<<++evt_count<<"th time. Type: "<<static_cast<char>(evt.type)<<std::endl;
 	if(evt.type == i3ipc::WorkspaceEventType::FOCUS)
 	{
-		std::cout<<"kjhhghgkghkkgh"<<std::endl;
+		if(evt.current->focused)
+		{
+			current_workspace = evt.current->name;
+		}
+		else
+		{
+			error<<"(EE) Workspace focus changed but no new workspace is focussed."<<std::endl;
+		}
 	}
+	std::cout<<"Ignoring Workspace event"<<std::endl;
 
 
 
 
 
-	(void)evt;
 }
 //}}}
 
@@ -191,18 +200,18 @@ std::ostream& operator<< (std::ostream& stream, Doodle::Job const& job)
 //{{{
 std::ostream& operator<< (std::ostream& stream, Doodle const& doodle)
 {
-	stream<<"Doodle class:\n";
-	//stream<<"	Current job: "<<doodle.current_job->jobname<<std::endl;
+	stream<<"Doodle class:"<<std::endl;
+	stream<<"	Current job: "<<doodle.current_job->jobname<<std::endl;
 	stream<<"	Current workspace: "<<doodle.current_workspace<<std::endl;
 	stream<<"	Jobs:"<<std::endl;
 	for(const Doodle::Job& job : doodle.jobs)
 	{
 		stream<<"		"<<job<<std::endl;
 	}
-	stream<<"	Known windows:\n		win_id		jobname		matching_string"<<std::endl;
+	stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_string"<<std::endl;
 	for (auto it : doodle.win_id_lookup)
 	{
-		std::cout<<"		"<<it.first<<"	"<<it.second.job<<"	"<<it.second.matching_string<<std::endl;
+		stream<<"		"<<it.first<<"	"<<it.second.job<<"	"<<it.second.matching_string<<std::endl;
 	}
 	return stream;
 }

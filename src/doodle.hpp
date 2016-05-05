@@ -5,6 +5,7 @@
 #include <deque>
 #include <chrono>
 #include <ostream>
+#include "logstream.hpp"
 //#include <json/json.h>
 
 using window_id = uint64_t;
@@ -52,7 +53,7 @@ class Doodle : public sigc::trackable
 		//}}}
 
 
-		Job nojob;
+		Job nojob;											// Special job that will not match any job. Used to keep track of unaccounted time.
 		Job* current_job;
 		std::deque<Job> jobs;
 

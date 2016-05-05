@@ -11,6 +11,7 @@
 #include "auss.hpp"
 #include "getopt_pp.h"
 #include "doodle.hpp"
+#include "logstream.hpp"
 //#include "jason.hpp"
 
 #ifdef USE_NOTIFICATIONS
@@ -51,7 +52,7 @@ void signal_handler(int signum)
 		}
 		else
 		{
-			std::cerr<<"Doodle not initialised."<<std::endl;
+			error<<"Doodle not initialised."<<std::endl;
 		}
 	}
 }
