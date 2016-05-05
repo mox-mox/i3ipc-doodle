@@ -56,7 +56,7 @@ class LogStream : public std::ostream
 					output << "[" << std::setw(10) <<
 						std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() <<
 						"] " << prefix << str() << postfix;
-					//str("");
+					str("");
 					output.flush();
 					return 0;
 				}

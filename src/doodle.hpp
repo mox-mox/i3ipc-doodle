@@ -68,11 +68,13 @@ class Doodle : public sigc::trackable
 		std::map<window_id, win_id_lookup_entry> win_id_lookup;
 		inline win_id_lookup_entry find_job(std::string window_name);
 		bool simulate_window_change(std::list< std::shared_ptr<i3ipc::container_t> > nodes);
+		bool simulate_workspace_change(std::vector< std::shared_ptr<i3ipc::workspace_t> > workspaces);
 
 
 		i3ipc::connection& conn;
 		std::string current_workspace;
-		int evt_count;
+		int ws_evt_count;
+		int win_evt_count;
 
 
 
