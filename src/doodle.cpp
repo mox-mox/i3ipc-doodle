@@ -5,7 +5,7 @@
 
 
 //{{{
-Doodle::Doodle(i3ipc::connection& conn) : conn(conn), evt_count(0)
+Doodle::Doodle(i3ipc::connection& conn) : nojob{"NOJOB", {}, {}, {}}, conn(conn), evt_count(0)
 {
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wpedantic"
@@ -24,6 +24,9 @@ Doodle::Doodle(i3ipc::connection& conn) : conn(conn), evt_count(0)
 		}
 	};
 
+	nojob.start();
+	current_job = &nojob;
+
 			for( Job& j : jobs)
 			{
 				std::cout<<"Address of "<<j.jobname<<" is "<<&j<<"."<<std::endl;
@@ -35,47 +38,26 @@ Doodle::Doodle(i3ipc::connection& conn) : conn(conn), evt_count(0)
 	if(!conn.subscribe(i3ipc::ET_WORKSPACE | i3ipc::ET_WINDOW))
 	{
 		std::cout<<"could not connect"<<std::endl;
+		throw "Could not subscribe to the workspace- and window change events.";
 	}
+	#ifdef DEBUG
 	else
 	{
 		std::cout<<"successfully subscribed"<<std::endl;
 	}
+	#endif
 
-	simulate_window_change_event(conn.get_tree()->nodes);
+	simulate_window_change(conn.get_tree()->nodes); // Inject a fake window change event to start tracking the first window.
 }
 //}}}
 
-bool Doodle::simulate_window_change_event(std::list< std::shared_ptr<i3ipc::container_t > > nodes )
-{
-	for(std::shared_ptr<i3ipc::container_t>& container : nodes)
-	{
-		std::cout<<"Looking at container "<<container->id<<std::endl;
-		if(container->focused)
-		{
-			std::cout<<"... it is the focussed one."<<std::endl;
-			on_window_change( { i3ipc::WindowEventType::FOCUS,  container } );
-			return true;
-		}
-		else
-		{
-			if(simulate_window_change_event(container->nodes))
-				return true;
-		}
-
-
-
-
-
-	}
-
-	return false; // Should never be reached
-}
 
 
 //{{{
 inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
 {
 	win_id_lookup_entry retval;
+	//win_id_lookup_entry retval{&nojob, ""};
 	for( Job& j : jobs)											// Search all the jobs to see, ...
 	{
 		for( std::string name_segment : j.window_name_segments)	// ... if one has a matching name segment.
@@ -122,39 +104,21 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
 //{{{
 void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 {
+	//{{{ Print some information about the event
+
+	#ifdef DEBUG
 	std::cout<<"(LL): on_window_change() called "<<++evt_count<<"th time."<<std::endl;
 	std::cout<<"	type: "<<static_cast<char>(evt.type)<<std::endl;
 	if(evt.container!=nullptr)
 	{
 		std::cout<<"	id = "<<evt.container->id<<std::endl;
-		//std::cout<<"	xwindow_id = "<<evt.container->xwindow_id<<std::endl;
 		std::cout<<"	name = "<<evt.container->name<<std::endl;
 		std::cout<<"	type = "<<evt.container->type<<std::endl;
-		std::cout<<"	border = "<<static_cast<char>(evt.container->border)<<std::endl;
-		//std::cout<<"	border_raw = "<<evt.container->border_raw<<std::endl;
-		//std::cout<<"	current_border_width = "<<evt.container->current_border_width<<std::endl;
-		//std::cout<<"	layout = "<<static_cast<char>(evt.container->layout)<<std::endl;
-		//std::cout<<"	layout_raw = "<<evt.container->layout_raw<<std::endl;
-		//std::cout<<"	percent = "<<evt.container->percent<<std::endl;
-		//std::cout<<"	rect.x = "<<evt.container->rect.x<<std::endl;
-		//std::cout<<"	rect.y = "<<evt.container->rect.y<<std::endl;
-		//std::cout<<"	rect.width = "<<evt.container->rect.width<<std::endl;
-		//std::cout<<"	rect.height = "<<evt.container->rect.height<<std::endl;
-		//std::cout<<"	window_rect.x = "<<evt.container->window_rect.x<<std::endl;
-		//std::cout<<"	window_rect.y = "<<evt.container->window_rect.y<<std::endl;
-		//std::cout<<"	window_rect.width = "<<evt.container->window_rect.width<<std::endl;
-		//std::cout<<"	window_rect.height = "<<evt.container->window_rect.height<<std::endl;
-		//std::cout<<"	deco_rect.x = "<<evt.container->deco_rect.x<<std::endl;
-		//std::cout<<"	deco_rect.y = "<<evt.container->deco_rect.y<<std::endl;
-		//std::cout<<"	deco_rect.width = "<<evt.container->deco_rect.width<<std::endl;
-		//std::cout<<"	deco_rect.height = "<<evt.container->deco_rect.height<<std::endl;
-		//std::cout<<"	geometry.x = "<<evt.container->geometry.x<<std::endl;
-		//std::cout<<"	geometry.y = "<<evt.container->geometry.y<<std::endl;
-		//std::cout<<"	geometry.width = "<<evt.container->geometry.width<<std::endl;
-		//std::cout<<"	geometry.height = "<<evt.container->geometry.height<<std::endl;
 		std::cout<<"	urgent = "<<evt.container->urgent<<std::endl;
 		std::cout<<"	focused = "<<evt.container->focused<<std::endl;
 	}
+	#endif
+	//}}}
 	if((evt.type == i3ipc::WindowEventType::FOCUS || evt.type == i3ipc::WindowEventType::TITLE) && evt.container!=nullptr)
 	{
 		Job* old_job = current_job;
@@ -193,9 +157,22 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 void Doodle::on_workspace_change(const i3ipc::workspace_event_t&  evt)
 {
 	std::cout<<"(LL): on_workspace_change() called "<<++evt_count<<"th time."<<std::endl;
+	if(evt.type == i3ipc::WorkspaceEventType::FOCUS)
+	{
+		std::cout<<"kjhhghgkghkkgh"<<std::endl;
+	}
+
+
+
+
+
 	(void)evt;
 }
 //}}}
+
+
+
+
 
 //{{{
 std::ostream& operator<< (std::ostream& stream, Doodle::Job const& job)
@@ -215,7 +192,7 @@ std::ostream& operator<< (std::ostream& stream, Doodle::Job const& job)
 std::ostream& operator<< (std::ostream& stream, Doodle const& doodle)
 {
 	stream<<"Doodle class:\n";
-	stream<<"	Current job: "<<doodle.current_job->jobname<<std::endl;
+	//stream<<"	Current job: "<<doodle.current_job->jobname<<std::endl;
 	stream<<"	Current workspace: "<<doodle.current_workspace<<std::endl;
 	stream<<"	Jobs:"<<std::endl;
 	for(const Doodle::Job& job : doodle.jobs)
@@ -231,6 +208,22 @@ std::ostream& operator<< (std::ostream& stream, Doodle const& doodle)
 }
 //}}}
 
-
-
-
+//{{{
+bool Doodle::simulate_window_change(std::list< std::shared_ptr<i3ipc::container_t > > nodes )
+{	// Iterate through all containers and call on_window_change() for the focussed one.
+	for(std::shared_ptr<i3ipc::container_t>& container : nodes)
+	{
+		if(container->focused)
+		{
+			on_window_change( { i3ipc::WindowEventType::FOCUS,  container } );
+			return true;
+		}
+		else
+		{
+			if(simulate_window_change(container->nodes))
+				return true;
+		}
+	}
+	return false; // Should never be reached
+}
+//}}}

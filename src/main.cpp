@@ -13,6 +13,9 @@
 #include "doodle.hpp"
 //#include "jason.hpp"
 
+#ifdef USE_NOTIFICATIONS
+#include <libnotify/notify.h>
+#endif
 
 
 //{{{ Help and version messages
@@ -42,7 +45,14 @@ void signal_handler(int signum)
 	if (signum == SIGUSR1)
 	{
 		std::cout<<"Received SIGUSR1!"<<std::endl;
-		std::cout<<*doodle<<std::endl;
+		if(doodle)
+		{
+			std::cout<<*doodle<<std::endl;
+		}
+		else
+		{
+			std::cerr<<"Doodle not initialised."<<std::endl;
+		}
 	}
 }
 
@@ -96,6 +106,13 @@ int main(int argc, char* argv[])
 	//}}}
 
 
+#ifdef USE_NOTIFICATIONS
+	notify_init ("Hello world!");
+	NotifyNotification * Hello = notify_notification_new ("Hello world", "This is an example notification.", "dialog-information");
+	notify_notification_show (Hello, NULL);
+	g_object_unref(G_OBJECT(Hello));
+	notify_uninit();
+#endif
 
 	i3ipc::connection conn;
 

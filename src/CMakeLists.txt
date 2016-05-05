@@ -1,11 +1,16 @@
 cmake_minimum_required(VERSION 3.0)
 project(i3ipc-doodle)
 
+MESSAGE( STATUS "\n\n\n\n\n\n\n\n==== STARTING CMAKE ===========================================\n\n")
+
 # Some general settings:
 
 
 # Where to install the compiled package to. TODO: Remove this to install to the standard locations
 SET(CMAKE_INSTALL_PREFIX /home/mox/projects/software/install)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
+MESSAGE( STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH} )
 
 # Version number and git information will are #define'ed in doodle_config.h.in
 # The version number.
@@ -34,6 +39,18 @@ execute_process(
 #}}}
 
 
+# The popup notification will always be visible and will not be detected by IPC_DOODLE so viewing it does not create more output.
+option (USE_NOTIFICATIONS "Print debugging information to notification popup instead of console." OFF) 
+
+if (USE_NOTIFICATIONS)
+
+	find_package(Libnotify REQUIRED)
+	find_package(GDK-PixBuf REQUIRED)
+	set(LIBS ${LIBS} ${GLIB2_LIBRARIES} ${GDK-PIXBUF_LIBRARIES})
+	set(INCDIRS ${INCDIRS} ${GLIB2_INCLUDE_DIRS} ${GDK-PIXBUF_INCLUDE_DIRS})
+
+endif (USE_NOTIFICATIONS)
+
 
 # configure a header file to pass some of the CMake settings
 # to the source code
@@ -42,14 +59,10 @@ configure_file (
   "${PROJECT_BINARY_DIR}/doodle_config.hpp"
   )
 
-# add the binary tree to the search path for include files
-# so that we will find TutorialConfig.h
-include_directories("${PROJECT_BINARY_DIR}")
 
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall -Wextra -Wpedantic -Wfatal-errors")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=gnu++14 -Wall -Wextra -Wpedantic -Wfatal-errors -ggdb -DDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=gnu++14 -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DDEBUG")
 
 
 # Some used libraries
@@ -60,19 +73,51 @@ pkg_check_modules(SIGCPP REQUIRED sigc++-2.0)
 
 add_subdirectory(i3ipc++)
 
-include_directories(
+set(INCDIRS ${INCDIRS}
+	"${PROJECT_BINARY_DIR}"
 	${SIGCPP_INCLUDE_DIRS}
+	${LIBNOTIFY_INCLUDE_DIR}
 	${I3IPCpp_INCLUDE_DIRS}
 	"${GETOPTPP}"
 	"${GETOPTPP}/getoptpp"
-)
+	)
+
+MESSAGE( STATUS "Include directories:")
+foreach(dir ${INCDIRS})
+	MESSAGE( STATUS "	" ${dir})
+endforeach(dir)
+
+include_directories( ${INCDIRS})
+
+
+
+
+set(LINKDIRS ${LINKDIRS}
+	${LIBS}
+	${SIGCPP_LIBRARY_DIRS}
+	${LIBNOTIFY_LIBRARIES}
+	${I3IPCpp_LIBRARY_DIRS}
+	)
+MESSAGE( STATUS "Link directories:")
+foreach(dir ${LINKDIRS})
+	MESSAGE( STATUS "	" ${dir})
+endforeach(dir)
 
 link_directories(
-	${SIGCPP_LIBRARY_DIRS}
-	${I3IPCpp_LIBRARY_DIRS}
+	${LINKDIRS}
 )
 
 file(GLOB SRCS ../src/*.cpp ${GETOPTPP}/src/getopt_pp.cpp)
 
 add_executable(doodle ${SRCS} ${GETOPTPP}/src/getopt_pp.cpp)
-target_link_libraries(doodle ${I3IPCpp_LIBRARIES})
+target_link_libraries(doodle ${LIBS} ${I3IPCpp_LIBRARIES})
+
+
+
+
+
+
+
+
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}   -lnotify -lgdk_pixbuf-2.0 -lgio-2.0 -lgobject-2.0 -lglib-2.0            -std=gnu++14 -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DDEBUG")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}   -pthread -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/libpng16 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -lnotify -lgdk_pixbuf-2.0 -lgio-2.0 -lgobject-2.0 -lglib-2.0            -std=gnu++14 -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DDEBUG")

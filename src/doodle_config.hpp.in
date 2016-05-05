@@ -7,4 +7,4 @@
 #define GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
 
 
-#cmakedefine USE_MYMATH
+#cmakedefine USE_NOTIFICATIONS

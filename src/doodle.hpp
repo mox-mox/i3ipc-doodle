@@ -51,6 +51,8 @@ class Doodle : public sigc::trackable
 		friend std::ostream& operator<< (std::ostream& stream, Job const& job);
 		//}}}
 
+
+		Job nojob;
 		Job* current_job;
 		std::deque<Job> jobs;
 
@@ -64,7 +66,7 @@ class Doodle : public sigc::trackable
 		//}}}
 		std::map<window_id, win_id_lookup_entry> win_id_lookup;
 		inline win_id_lookup_entry find_job(std::string window_name);
-		bool simulate_window_change_event(std::list< std::shared_ptr<i3ipc::container_t> > nodes);
+		bool simulate_window_change(std::list< std::shared_ptr<i3ipc::container_t> > nodes);
 
 
 		i3ipc::connection& conn;
