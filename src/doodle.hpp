@@ -70,7 +70,6 @@ class Doodle : public sigc::trackable
 		bool simulate_window_change(std::list< std::shared_ptr<i3ipc::container_t> > nodes);
 		bool simulate_workspace_change(std::vector< std::shared_ptr<i3ipc::workspace_t> > workspaces);
 
-
 		i3ipc::connection& conn;
 		std::string current_workspace;
 		int ws_evt_count;

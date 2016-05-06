@@ -50,7 +50,6 @@ Doodle::Doodle(i3ipc::connection& conn) : nojob{"NOJOB", {}, {"!"}, {"!"}}, conn
 //{{{
 inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
 {
-	//win_id_lookup_entry retval;
 	win_id_lookup_entry retval{&nojob, ""};
 	for( Job& j : jobs)											// Search all the jobs to see, ...
 	{
@@ -78,7 +77,8 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
 					#else				// When debugging, continue searching to see if there are other matches
 					if(retval.job != &nojob)		// e.g. if there is ambiguity in the window_name_segments.
 					{
-						error<<"Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
+						error<<"Ambiguity: Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
+						// TODO: Show an errow window that asks to which job the window belongs to.
 					}
 					else
 					{
