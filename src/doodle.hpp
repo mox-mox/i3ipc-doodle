@@ -6,6 +6,7 @@
 #include <chrono>
 #include <ostream>
 #include "logstream.hpp"
+#include <json/json.h>
 //#include <json/json.h>
 
 using window_id = uint64_t;
@@ -20,6 +21,7 @@ class Doodle : public sigc::trackable
 		{
 			public:
 				Timespan(void) : start(std::chrono::system_clock::now()) {}
+				Timespan(Json::Value timespan);
 				void stop(void) { end=std::chrono::system_clock::now(); }
 				operator duration() const  { return (end!=timepoint() ? end : std::chrono::system_clock::now()) - start; }
 
@@ -31,6 +33,9 @@ class Doodle : public sigc::trackable
 		//{{{
 		struct Job
 		{
+			Job(Json::Value job);
+			//Job(std::string jobname, std::deque<Timespan> times, std::deque<std::string> window_name_segments, std::deque<std::string> workspaces);
+			Job(const std::string& jobname, const std::deque<Timespan>& times, const std::deque<std::string>& window_name_segments, const std::deque<std::string>& workspaces);
 			void start(void)
 			{
 				times.push_back(Timespan());
@@ -76,10 +81,11 @@ class Doodle : public sigc::trackable
 		int win_evt_count;
 
 
+		//void read_jobs(Json::Value json_jobs);
 
 
 	public:
-		Doodle(i3ipc::connection& conn);
+		Doodle(i3ipc::connection& conn, std::string config_filename=".doodle_config");
 
 		void on_window_change(const i3ipc::window_event_t& evt);
 		void on_workspace_change(const i3ipc::workspace_event_t&  evt);
