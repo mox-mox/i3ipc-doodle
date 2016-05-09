@@ -34,7 +34,6 @@ class Doodle : public sigc::trackable
 		struct Job
 		{
 			Job(Json::Value job);
-			//Job(std::string jobname, std::deque<Timespan> times, std::deque<std::string> window_name_segments, std::deque<std::string> workspaces);
 			Job(const std::string& jobname, const std::deque<Timespan>& times, const std::deque<std::string>& window_name_segments, const std::deque<std::string>& workspaces);
 			void start(void)
 			{
@@ -53,6 +52,7 @@ class Doodle : public sigc::trackable
 			// Matching
 			std::deque<std::string> window_name_segments;	// Window name segments prefixed by "!" are excluded. Note: Group exclude names first.
 			std::deque<std::string> workspaces;				// Prefix by "!" to exclude specific workspaces
+			void print(void);
 		};
 		friend std::ostream& operator<< (std::ostream& stream, Job const& job);
 		//}}}
@@ -81,7 +81,6 @@ class Doodle : public sigc::trackable
 		int win_evt_count;
 
 
-		//void read_jobs(Json::Value json_jobs);
 
 
 	public:

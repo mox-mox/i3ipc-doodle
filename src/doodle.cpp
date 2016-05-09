@@ -40,7 +40,7 @@ Doodle::Job::Job(Json::Value job)
 	{
 		for(auto& workspace : job.get("workspaces", "no workspaces"))
 		{
-			window_name_segments.push_back(workspace.asString());
+			workspaces.push_back(workspace.asString());
 		}
 	}
 	else
@@ -50,114 +50,110 @@ Doodle::Job::Job(Json::Value job)
 }
 //}}}
 
-
+//{{{
 Doodle::Job::Job(const std::string& jobname, const std::deque<Timespan>& times, const std::deque<std::string>& window_name_segments, const std::deque<std::string>& workspaces) :
 	jobname(jobname), times(times), window_name_segments(window_name_segments), workspaces(workspaces)
 {
 }
+//}}}
 
-
-//void Doodle::read_jobs(Json::Value json_jobs)
-//{
-//	for(auto& job : json_jobs)
-//	{
-//		jobs.push_back(job);
-//	}
-//
-//}
-
-
+//{{{
+void Doodle::Job::print(void)
+{
+	std::cout<<*this;
+	std::cout<<"Window name segments: ";
+	for( const std::string& segment : window_name_segments )
+	{
+		std::cout<<segment<<" ";
+	}
+	std::cout<<std::endl<<std::endl;
+}
+//}}}
 
 //{{{
 Doodle::Doodle(i3ipc::connection& conn, std::string config_filename)
 	: nojob{"NOJOB", {}, { "!" }, { "!" }}, conn(conn), ws_evt_count(0), win_evt_count(0)
 {
 	//////////////////////////////////
-
-
-		Json::Value root;	// will contains the root value after parsing.
-		Json::Reader reader;
-		std::ifstream config_file(config_filename);
-		{
-			std::ofstream config_copy(config_filename+"_backup");
-			config_copy<<config_file.rdbuf();
-			config_file.clear();
-			config_file.seekg(0, std::ios::beg);
-		}
-		if( !reader.parse(config_file, root, false) )
-		{
-			// report to the user the failure and their locations in the document.
-			std::cout<<reader.getFormattedErrorMessages() <<"\n";
-		}
-
-		if(root.isObject())
-		{
-			if(root.isMember("config"))
-			{
-				std::cout<<"retrieving config"<<std::endl;
-				//std::cout<<root.get("config", "asdf")<<std::endl;
-			}
-			if(root.isMember("jobs"))
-			{
-				for(auto& job : root.get("jobs", "no jobs"))
-				{
-					jobs.push_back(job);
-				}
-			}
-		}
-
-		//std::string encoding = root.get("encoding", "asdfasdfUTF-8").asString();
-		//std::cout<<encoding<<"\n";
-		//std::cout<<root<<std::endl;
-
-
-
-
-
-
-
-
-
-
-
-		////////////////////////////////////
 	//#pragma GCC diagnostic push
 	//#pragma GCC diagnostic ignored "-Wpedantic"
-	//	jobs = {
-	//		{
-	//			.jobname = "project",
-	//			.times = {},
-	//			.window_name_segments = { "home/mox/projects", "~/projects", "zathura" },
-	//			.workspaces = { "" }
-	//		},
-	//		{
-	//			.jobname = "scratch",
-	//			.times = {},
-	//			.window_name_segments = { "home/mox/scratch", "~/scratch", "okular" },
-	//			.workspaces = { "" }
-	//		}
-	//	};
+	//jobs = {
+	//	{
+	//		.jobname = "project",
+	//		.times = {},
+	//		.window_name_segments = { "home/mox/projects", "~/projects", "zathura" },
+	//		.workspaces = { "" }
+	//	},
+	//	{
+	//		.jobname = "scratch",
+	//		.times = {},
+	//		.window_name_segments = { "home/mox/scratch", "~/scratch", "okular" },
+	//		.workspaces = { "" }
+	//	}
+	//};
 	//#pragma GCC diagnostic pop
+	//////////////////////////////////
 
-		nojob.start();									// Account for time spend on untracked jobs
-		current_job = &nojob;
 
-		simulate_workspace_change(conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
-		simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+	Json::Value root;	// will contains the root value after parsing.
+	Json::Reader reader;
+	std::ifstream config_file(config_filename);
+	{
+		std::ofstream config_copy(config_filename+"_backup");
+		config_copy<<config_file.rdbuf();
+		config_file.clear();
+		config_file.seekg(0, std::ios::beg);
+	}
+	if( !reader.parse(config_file, root, false) )
+	{
+		// report to the user the failure and their locations in the document.
+		error<<reader.getFormattedErrorMessages() <<"\n";
+	}
 
-		conn.signal_window_event.connect(sigc::mem_fun(*this, &Doodle::on_window_change));
-		conn.signal_workspace_event.connect(sigc::mem_fun(*this, &Doodle::on_workspace_change));
-
-		if( !conn.subscribe(i3ipc::ET_WORKSPACE|i3ipc::ET_WINDOW))
+	if(root.isObject())
+	{
+		if(root.isMember("config"))
 		{
-			error<<"could not connect"<<std::endl;
-			throw "Could not subscribe to the workspace- and window change events.";
+			std::cout<<"retrieving config"<<std::endl;
+			//std::cout<<root.get("config", "asdf")<<std::endl;
 		}
-	#ifdef DEBUG
-			else
+		if(root.isMember("jobs"))
+		{
+			for(auto& job : root.get("jobs", "no jobs"))
 			{
-				logger<<"successfully subscribed"<<std::endl;
+				jobs.push_back(job);
 			}
+		}
+	}
+
+	//std::cout<<"Jobs:"<<std::endl;
+	//for(auto& job : jobs)
+	//{
+	//	job.print();
+	//	//std::cout<<"	"<<job<<std::endl;
+	//}
+
+	////////////////////////////////////
+
+	nojob.start();									// Account for time spend on untracked jobs
+	current_job = &nojob;
+
+	simulate_workspace_change(conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
+	simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+
+	conn.signal_window_event.connect(sigc::mem_fun(*this, &Doodle::on_window_change));
+	conn.signal_workspace_event.connect(sigc::mem_fun(*this, &Doodle::on_workspace_change));
+
+	if( !conn.subscribe(i3ipc::ET_WORKSPACE|i3ipc::ET_WINDOW))
+	{
+		error<<"could not connect"<<std::endl;
+		throw "Could not subscribe to the workspace- and window change events.";
+	}
+	#ifdef DEBUG
+	else
+	{
+		logger<<"successfully subscribed"<<std::endl;
+	}
 	#endif
 	}
 //}}}
@@ -191,20 +187,20 @@ Doodle::Doodle(i3ipc::connection& conn, std::string config_filename)
 					else				// The window belongs to the job.
 					{
 						//std::cout<<"Window matched job "<<j.jobname<<", matching name segment: "<<name_segment<<". Address:"<<&j<<std::endl;
-					#ifndef DEBUG		// For normal operation, just report the first match.
-							retval = { &j, name_segment };
-							return retval;
+						#ifndef DEBUG	// For normal operation, just report the first match.
+						retval = { &j, name_segment };
+						return retval;
 
-					#else				// When debugging, continue searching to see if there are other matches
-							if( retval.job != &nojob )	// e.g. if there is ambiguity in the window_name_segments.
-							{
-								error<<"Ambiguity: Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
-								// TODO: Show an errow window that asks to which job the window belongs to.
-							}
-							else
-							{
-								retval = { &j, name_segment };
-							}
+						#else			// When debugging, continue searching to see if there are other matches
+						if( retval.job != &nojob )	// e.g. if there is ambiguity in the window_name_segments.
+						{
+							error<<"Ambiguity: Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
+							// TODO: Show an errow window that asks to which job the window belongs to.
+						}
+						else
+						{
+							retval = { &j, name_segment };
+						}
 					#endif
 					}
 				}
@@ -301,6 +297,17 @@ Doodle::Doodle(i3ipc::connection& conn, std::string config_filename)
 				total_time += t;
 			}
 		    stream<<std::chrono::duration_cast < std::chrono::seconds > (total_time).count()<<" seconds.";
+			stream<<" Names:";
+		    for( const std::string& n : job.window_name_segments )
+			{
+				stream<<" |"<<n<<"|";
+			}
+			stream<<" workspaces:";
+		    for( const std::string& w : job.workspaces )
+			{
+				stream<<" "<<w;
+			}
+			stream<<std::endl;
 		    return stream;
 		}
 //}}}
