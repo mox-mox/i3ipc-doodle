@@ -7,10 +7,10 @@
 //{{{
 Doodle::Timespan::Timespan(Json::Value timespan)
 {
-	if(timespan.isMember("start") && timespan.isMember("end"))
+	if(timespan.isValidIndex(1))
 	{
 		std::time_t temp;
-		if(( temp = timespan.get("start", "0").asInt64() ))
+		if(( temp = timespan.get(0u, 0).asInt64() ))
 		{
 			//logger<<"Start time = "<<temp<<std::endl;
 			start=temp;
@@ -19,7 +19,7 @@ Doodle::Timespan::Timespan(Json::Value timespan)
 		{
 			error<<"Start time invalid"<<std::endl;
 		}
-		if(( temp = timespan.get("end", "0").asInt64() ))
+		if(( temp = timespan.get(1u, 0).asInt64() ))
 		{
 			//logger<<"End time = "<<temp<<std::endl;
 			end=temp;
@@ -75,6 +75,7 @@ Doodle::Job::Job(Json::Value job)
 		{
 			window_name_segments.push_back(window_name_segment.asString());
 		}
+		std::sort(window_name_segments.begin(), window_name_segments.end(), [](const std::string& lhs, const std::string& rhs) -> bool { if(lhs[0]=='!' && rhs[0]!='!') return true; else return false; }); // Sort the entries prepended with '!' first.
 	}
 	else
 	{
@@ -86,6 +87,7 @@ Doodle::Job::Job(Json::Value job)
 		{
 			workspaces.push_back(workspace.asString());
 		}
+		std::sort(workspaces.begin(), workspaces.end(), [](const std::string& lhs, const std::string& rhs) -> bool { if(lhs[0]=='!' && rhs[0]!='!') return true; else return false; }); // Sort the entries prepended with '!' first.
 	}
 	else
 	{
@@ -129,27 +131,6 @@ void Doodle::Job::print(void)
 Doodle::Doodle(i3ipc::connection& conn, std::string config_filename)
 	: nojob{"NOJOB", {}, { "!" }, { "!" }}, conn(conn), ws_evt_count(0), win_evt_count(0)
 {
-	//////////////////////////////////
-	//#pragma GCC diagnostic push
-	//#pragma GCC diagnostic ignored "-Wpedantic"
-	//jobs = {
-	//	{
-	//		.jobname = "project",
-	//		.times = {},
-	//		.window_name_segments = { "home/mox/projects", "~/projects", "zathura" },
-	//		.workspaces = { "" }
-	//	},
-	//	{
-	//		.jobname = "scratch",
-	//		.times = {},
-	//		.window_name_segments = { "home/mox/scratch", "~/scratch", "okular" },
-	//		.workspaces = { "" }
-	//	}
-	//};
-	//#pragma GCC diagnostic pop
-	//////////////////////////////////
-
-
 	Json::Value root;	// will contains the root value after parsing.
 	Json::Reader reader;
 	std::ifstream config_file(config_filename);
@@ -176,6 +157,7 @@ Doodle::Doodle(i3ipc::connection& conn, std::string config_filename)
 		{
 			for(auto& job : root.get("jobs", "no jobs"))
 			{
+				std::cout<<"JOB "<<job<<std::endl;
 				jobs.push_back(job);
 			}
 		}
@@ -188,7 +170,6 @@ Doodle::Doodle(i3ipc::connection& conn, std::string config_filename)
 	//	//std::cout<<"	"<<job<<std::endl;
 	//}
 
-	////////////////////////////////////
 
 	nojob.start();									// Account for time spend on untracked jobs
 	current_job = &nojob;
@@ -218,41 +199,72 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
 {
 	win_id_lookup_entry retval { &nojob, "" };
 
-	for( Job& j : jobs )									// Search all the jobs to see, ...
+	for( Job& j : jobs )									// Search all the jobs to see, if one matches the new window
 	{
+		// First check if the current workspace matches the job:
+		if(!j.workspaces.empty())		// If there are workspaces specified...
+		{
+			bool exclude_job = true;	// ... at least one workspace name segment must match the current window
+			for( std::string name_segment : j.workspaces )
+			{
+				bool exclude_ws = false;
+				if( '!' == name_segment[0] )	// Workspace name segments prepended with '!' mean that the job may not
+				{								// have windows on workspaces matching the given name segment.
+					exclude_ws = true;
+					name_segment.erase(0, 1);
+				}
+
+				if( std::regex_search(current_workspace, std::regex(name_segment)))
+				{
+					if( exclude_ws )		// This job may _not_ have windows on this workspace.
+					{
+						break;
+					}
+					else					// This job may have windows on this workspace.
+					{
+						exclude_job = false;
+					}
+				}
+			}
+			if(exclude_job) continue; // If no workspaces matched, give up on this job and consider the next one.
+		}
+
+		// If the workspaces were no knock-out criterion, check if the window title matches:
 		for( std::string name_segment : j.window_name_segments )// ... if one has a matching name segment.
 		{
-			bool exclude = false;
-			if( '!' == name_segment[0] )// If the name segment is prepended with a '!', finding the name segment
-			{						// in the window name means that the window does NOT belong to the job.
-				exclude = true;
+			bool exclude_name = false;
+			if( '!' == name_segment[0] )	// Window name segments prepended with '!' mean that the job may not
+			{								// have windows whose title matches the give name segment.
+				exclude_name = true;
 				name_segment.erase(0, 1);
 			}
 
 			if( std::regex_search(window_name, std::regex(name_segment)))
 			{
-				if( exclude )		// The window does not belong to the job.
+				if( exclude_name )			// The window does not belong to the job.
 				{
-					break;			// out of the name_segment loop -> go to the next job.
+					break;					// out of the name_segment loop -> go to the next job.
 				}
-				else				// The window belongs to the job.
+				else						// The window belongs to the job.
 				{
 					//std::cout<<"Window matched job "<<j.jobname<<", matching name segment: "<<name_segment<<". Address:"<<&j<<std::endl;
-					#ifndef DEBUG	// For normal operation, just report the first match.
-					retval = { &j, name_segment };
-					return retval;
-
-					#else			// When debugging, continue searching to see if there are other matches
-					if( retval.job != &nojob )	// e.g. if there is ambiguity in the window_name_segments.
-					{
-						error<<"Ambiguity: Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
-						// TODO: Show an errow window that asks to which job the window belongs to.
-					}
-					else
+					if(!settings.detect_ambiguity) // For normal operation, just report the first match.
 					{
 						retval = { &j, name_segment };
+						return retval;
 					}
-					#endif
+					else  // To detect ambiguity, continue searching to see if there are other matches
+					{
+						if( retval.job != &nojob )
+						{
+							error<<"Ambiguity: Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
+							// TODO: Show an errow window that asks to which job the window belongs to.
+						}
+						else
+						{
+							retval = { &j, name_segment };
+						}
+					}
 				}
 			}
 		}
@@ -313,7 +325,6 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	{
 		win_id_lookup.erase(evt.container->id);
 	}
-	//std::cout<<"==============================================================="<<std::endl;
 }
 //}}}
 

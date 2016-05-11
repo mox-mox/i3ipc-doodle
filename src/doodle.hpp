@@ -16,6 +16,13 @@ class Doodle : public sigc::trackable
 	private:
 		//{{{ Nested classes
 
+		struct
+		{
+			unsigned int max_idle_time = 0;
+			bool detect_ambiguity = false;
+		} settings;
+
+
 		//{{{
 		class Timespan
 		{
