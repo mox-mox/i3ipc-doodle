@@ -7,62 +7,51 @@
 #include <ostream>
 #include "logstream.hpp"
 #include <json/json.h>
-//#include <json/json.h>
+#include <ctime>
 
 using window_id = uint64_t;
-using timepoint = std::chrono::system_clock::time_point;
-using duration  = std::chrono::duration<double>;
 
 class Doodle : public sigc::trackable
 {
 	private:
+		//{{{ Nested classes
+
 		//{{{
 		class Timespan
 		{
+			std::time_t start;
+			std::time_t end;
 			public:
-				Timespan(void) : start(std::chrono::system_clock::now()) {}
+				Timespan(void);
 				Timespan(Json::Value timespan);
-				void stop(void) { end=std::chrono::system_clock::now(); }
-				operator duration() const  { return (end!=timepoint() ? end : std::chrono::system_clock::now()) - start; }
-
-			private:
-				timepoint start;
-				timepoint end;
+				void stop(void);
+				operator std::time_t() const;
 		};
 		//}}}
 		//{{{
 		struct Job
 		{
-			Job(Json::Value job);
-			Job(const std::string& jobname, const std::deque<Timespan>& times, const std::deque<std::string>& window_name_segments, const std::deque<std::string>& workspaces);
-			void start(void)
-			{
-				times.push_back(Timespan());
-			}
-			void stop(void)
-			{
-				times.back().stop();
-			}
 			std::string jobname;
 
-			// Time-keeping
 			std::deque<Timespan> times;
-			//duration aggregate_time;						// Small amounts of time, that are not tracked
+			//std::time_t aggregate_time;						// Small amounts of time, that are not tracked
 
-			// Matching
 			std::deque<std::string> window_name_segments;	// Window name segments prefixed by "!" are excluded. Note: Group exclude names first.
 			std::deque<std::string> workspaces;				// Prefix by "!" to exclude specific workspaces
 			void print(void);
+
+			Job(Json::Value job);
+			Job(const std::string& jobname,
+			    const std::deque<Timespan>& times,
+			    const std::deque<std::string>& window_name_segments,
+			    const std::deque<std::string>& workspaces);
+			void start(void);
+			void stop(void);
+			friend std::ostream& operator<< (std::ostream& stream, Job const& job);
+
 		};
 		friend std::ostream& operator<< (std::ostream& stream, Job const& job);
 		//}}}
-
-
-		Job nojob;											// Special job that will not match any job. Used to keep track of unaccounted time.
-		Job* current_job;
-		std::deque<Job> jobs;
-
-		// Window recognition
 		//{{{
 		struct win_id_lookup_entry
 		{
@@ -70,6 +59,12 @@ class Doodle : public sigc::trackable
 			std::string matching_string = "";
 		};
 		//}}}
+		//}}}
+
+		Job nojob;											// Special job that will not match any job. Used to keep track of unaccounted time.
+		Job* current_job;
+		std::deque<Job> jobs;
+
 		std::map<window_id, win_id_lookup_entry> win_id_lookup;
 		inline win_id_lookup_entry find_job(std::string window_name);
 		bool simulate_window_change(std::list< std::shared_ptr<i3ipc::container_t> > nodes);
@@ -82,12 +77,13 @@ class Doodle : public sigc::trackable
 
 
 
-
 	public:
 		Doodle(i3ipc::connection& conn, std::string config_filename=".doodle_config");
 
 		void on_window_change(const i3ipc::window_event_t& evt);
 		void on_workspace_change(const i3ipc::workspace_event_t&  evt);
+
+		void write_config(void);
 
 		friend std::ostream& operator<< (std::ostream& stream, Doodle const& doodle);
 };

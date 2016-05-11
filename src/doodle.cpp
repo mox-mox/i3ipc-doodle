@@ -2,13 +2,57 @@
 #include <iostream>
 #include <fstream>
 #include <ios>
+#include <regex>
 
 //{{{
 Doodle::Timespan::Timespan(Json::Value timespan)
 {
-	//TODO
+	if(timespan.isMember("start") && timespan.isMember("end"))
+	{
+		std::time_t temp;
+		if(( temp = timespan.get("start", "0").asInt64() ))
+		{
+			//logger<<"Start time = "<<temp<<std::endl;
+			start=temp;
+		}
+		else
+		{
+			error<<"Start time invalid"<<std::endl;
+		}
+		if(( temp = timespan.get("end", "0").asInt64() ))
+		{
+			//logger<<"End time = "<<temp<<std::endl;
+			end=temp;
+		}
+		else
+		{
+			error<<"End time invalid"<<std::endl;
+		}
+	}
+	else
+	{
+		error<<"Could not get the times for this Timespan"<<std::endl;
+	}
 }
 //}}}
+//{{{
+Doodle::Timespan::Timespan(void) : start(std::time(nullptr)), end(0)
+{}
+//}}}
+//{{{
+Doodle::Timespan::operator std::time_t() const
+{
+	return (end!=0 ? end : std::time(nullptr)) - start;
+}
+//}}}
+//{{{
+void Doodle::Timespan::stop(void)
+{
+	end = std::time(nullptr);
+}
+//}}}
+
+
 
 //{{{
 Doodle::Job::Job(Json::Value job)
@@ -49,14 +93,24 @@ Doodle::Job::Job(Json::Value job)
 	}
 }
 //}}}
-
 //{{{
 Doodle::Job::Job(const std::string& jobname, const std::deque<Timespan>& times, const std::deque<std::string>& window_name_segments, const std::deque<std::string>& workspaces) :
 	jobname(jobname), times(times), window_name_segments(window_name_segments), workspaces(workspaces)
 {
 }
 //}}}
-
+//{{{
+void Doodle::Job::start(void)
+{
+	times.push_back(Timespan());
+}
+//}}}
+//{{{
+void Doodle::Job::stop(void)
+{
+	times.back().stop();
+}
+//}}}
 //{{{
 void Doodle::Job::print(void)
 {
@@ -69,6 +123,7 @@ void Doodle::Job::print(void)
 	std::cout<<std::endl<<std::endl;
 }
 //}}}
+
 
 //{{{
 Doodle::Doodle(i3ipc::connection& conn, std::string config_filename)
@@ -158,211 +213,210 @@ Doodle::Doodle(i3ipc::connection& conn, std::string config_filename)
 	}
 //}}}
 
-
-
 //{{{
-	inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
+inline Doodle::win_id_lookup_entry Doodle::find_job(std::string window_name)
+{
+	win_id_lookup_entry retval { &nojob, "" };
+
+	for( Job& j : jobs )									// Search all the jobs to see, ...
 	{
-		win_id_lookup_entry retval {
-			&nojob, ""
-		};
-
-		for( Job& j : jobs )									// Search all the jobs to see, ...
+		for( std::string name_segment : j.window_name_segments )// ... if one has a matching name segment.
 		{
-			for( std::string name_segment : j.window_name_segments )// ... if one has a matching name segment.
-			{
-				bool exclude = false;
-				if( '!' == name_segment[0] )// If the name segment is prepended with a '!', finding the name segment
-				{						// in the window name means that the window does NOT belong to the job.
-					exclude = true;
-					name_segment.erase(0, 1);
-				}
+			bool exclude = false;
+			if( '!' == name_segment[0] )// If the name segment is prepended with a '!', finding the name segment
+			{						// in the window name means that the window does NOT belong to the job.
+				exclude = true;
+				name_segment.erase(0, 1);
+			}
 
-				if( std::string::npos != window_name.find(name_segment))
+			if( std::regex_search(window_name, std::regex(name_segment)))
+			{
+				if( exclude )		// The window does not belong to the job.
 				{
-					if( exclude )		// The window does not belong to the job.
+					break;			// out of the name_segment loop -> go to the next job.
+				}
+				else				// The window belongs to the job.
+				{
+					//std::cout<<"Window matched job "<<j.jobname<<", matching name segment: "<<name_segment<<". Address:"<<&j<<std::endl;
+					#ifndef DEBUG	// For normal operation, just report the first match.
+					retval = { &j, name_segment };
+					return retval;
+
+					#else			// When debugging, continue searching to see if there are other matches
+					if( retval.job != &nojob )	// e.g. if there is ambiguity in the window_name_segments.
 					{
-						break;			// out of the name_segment loop -> go to the next job.
+						error<<"Ambiguity: Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
+						// TODO: Show an errow window that asks to which job the window belongs to.
 					}
-					else				// The window belongs to the job.
+					else
 					{
-						//std::cout<<"Window matched job "<<j.jobname<<", matching name segment: "<<name_segment<<". Address:"<<&j<<std::endl;
-						#ifndef DEBUG	// For normal operation, just report the first match.
 						retval = { &j, name_segment };
-						return retval;
-
-						#else			// When debugging, continue searching to see if there are other matches
-						if( retval.job != &nojob )	// e.g. if there is ambiguity in the window_name_segments.
-						{
-							error<<"Ambiguity: Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
-							// TODO: Show an errow window that asks to which job the window belongs to.
-						}
-						else
-						{
-							retval = { &j, name_segment };
-						}
-					#endif
 					}
+					#endif
 				}
 			}
 		}
-		return retval;
 	}
+	return retval;
+}
 //}}}
 
 //{{{
-	void Doodle::on_window_change(const i3ipc::window_event_t& evt)
-	{
-		//{{{ Print some information about the event
+void Doodle::on_window_change(const i3ipc::window_event_t& evt)
+{
+	//{{{ Print some information about the event
 
 	#ifdef DEBUG
-			//logger<<"on_window_change() called "<<++win_evt_count<<"th time. Type: "<<static_cast<char>(evt.type)<<std::endl;;
-			//if(evt.container!=nullptr)
-			//{
-			//	std::cout<<"	id = "<<evt.container->id<<std::endl;
-			//	std::cout<<"	name = "<<evt.container->name<<std::endl;
-			//	std::cout<<"	type = "<<evt.container->type<<std::endl;
-			//	std::cout<<"	urgent = "<<evt.container->urgent<<std::endl;
-			//	std::cout<<"	focused = "<<evt.container->focused<<std::endl;
-			//}
+	logger<<"on_window_change() called "<<++win_evt_count<<"th time. Type: "<<static_cast<char>(evt.type)<<std::endl;;
+	if(evt.container!=nullptr)
+	{
+		//logger<<"	id = "<<evt.container->id<<std::endl;
+		logger<<"	name = "<<evt.container->name<<std::endl;
+		//logger<<"	type = "<<evt.container->type<<std::endl;
+		//logger<<"	urgent = "<<evt.container->urgent<<std::endl;
+		//logger<<"	focused = "<<evt.container->focused<<std::endl;
+	}
 	#endif
-		//}}}
-		if(((evt.type == i3ipc::WindowEventType::FOCUS) || (evt.type == i3ipc::WindowEventType::TITLE)) && (evt.container != nullptr))
-		{
-			Job* old_job = current_job;
-			win_id_lookup_entry& entry = win_id_lookup[evt.container->id];
+	//}}}
+	if(((evt.type == i3ipc::WindowEventType::FOCUS) || (evt.type == i3ipc::WindowEventType::TITLE)) && (evt.container != nullptr))
+	{
+		Job* old_job = current_job;
+		win_id_lookup_entry& entry = win_id_lookup[evt.container->id];
+		//logger<<"matching string: |"<<entry.matching_string<<"|"<<std::endl;
 
-			if( !entry.job || (std::string::npos == evt.container->name.find(entry.matching_string)))	// Window not yet associated with a job
-			{																					// or needs re-association
-				entry = find_job(evt.container->name);
-			}
+		if(!entry.job || entry.matching_string == "" || !std::regex_search(evt.container->name, std::regex(entry.matching_string)))
+		{
+			//std::cout<<"Job not found in map."<<std::endl;
+			entry = find_job(evt.container->name);
+		}
 		#ifdef DEBUG
-				else
-				{
-					std::cout<<"Job found in map."<<std::endl;
-				}
+		else
+		{
+			std::cout<<"Job found in map."<<std::endl;
+		}
 		#endif
-			current_job = entry.job;
-			if( old_job != current_job )
-			{
-				if( old_job )
-				{
-					old_job->stop();
-				}
-				if( current_job )
-				{
-					current_job->start();
-				}
-			}
-			logger<<"New current_job: "<<current_job->jobname<<std::endl;
-		}
-		else if( evt.type == i3ipc::WindowEventType::CLOSE )
+		current_job = entry.job;
+		if( old_job != current_job )
 		{
-			win_id_lookup.erase(evt.container->id);
+			if( old_job )
+			{
+				old_job->stop();
+			}
+			if( current_job )
+			{
+				current_job->start();
+			}
 		}
+		logger<<"New current_job: "<<current_job->jobname<<std::endl;
 	}
-//}}}
-
-//{{{
-	void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
+	else if( evt.type == i3ipc::WindowEventType::CLOSE )
 	{
-		//logger<<"on_workspace_change() called "<<++ws_evt_count<<"th time. Type: "<<static_cast<char>(evt.type)<<std::endl;
-		//std::cout<<"	Type: "<<static_cast<char>(evt.type)<<std::endl;
-		//std::cout<<"	Current.num: "<<evt.current->num<<std::endl;
-		//std::cout<<"	Current.visible: "<<evt.current->visible<<std::endl;
-		//std::cout<<"	Current.focused: "<<evt.current->focused<<std::endl;
-		//std::cout<<"	Current.urgent: "<<evt.current->urgent<<std::endl;
-
-		if( evt.type == i3ipc::WorkspaceEventType::FOCUS )
-		{
-			logger<<"New current_workspace: "<<evt.current->name<<std::endl;
-			current_workspace = evt.current->name;
-		}
-	#ifdef DEBUG
-			else
-			{
-				logger<<"Ignoring Workspace event"<<std::endl;
-			}
-	#endif
+		win_id_lookup.erase(evt.container->id);
 	}
+	//std::cout<<"==============================================================="<<std::endl;
+}
 //}}}
 
 //{{{
-	std::ostream& operator<<(std::ostream&stream, Doodle::Job const&job)
-		    {
-		    stream<<"Job \""<<job.jobname<<"\": ";
-		    duration total_time;
-		    for( const Doodle::Timespan& t : job.times )
-			{
-				total_time += t;
-			}
-		    stream<<std::chrono::duration_cast < std::chrono::seconds > (total_time).count()<<" seconds.";
-			stream<<" Names:";
-		    for( const std::string& n : job.window_name_segments )
-			{
-				stream<<" |"<<n<<"|";
-			}
-			stream<<" workspaces:";
-		    for( const std::string& w : job.workspaces )
-			{
-				stream<<" "<<w;
-			}
-			stream<<std::endl;
-		    return stream;
-		}
+void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
+{
+	//logger<<"on_workspace_change() called "<<++ws_evt_count<<"th time. Type: "<<static_cast<char>(evt.type)<<std::endl;
+	//std::cout<<"	Type: "<<static_cast<char>(evt.type)<<std::endl;
+	//std::cout<<"	Current.num: "<<evt.current->num<<std::endl;
+	//std::cout<<"	Current.visible: "<<evt.current->visible<<std::endl;
+	//std::cout<<"	Current.focused: "<<evt.current->focused<<std::endl;
+	//std::cout<<"	Current.urgent: "<<evt.current->urgent<<std::endl;
+
+	if( evt.type == i3ipc::WorkspaceEventType::FOCUS )
+	{
+		logger<<"New current_workspace: "<<evt.current->name<<std::endl;
+		current_workspace = evt.current->name;
+	}
+#ifdef DEBUG
+	else
+	{
+		logger<<"Ignoring Workspace event"<<std::endl;
+	}
+#endif
+}
 //}}}
 
 //{{{
-	    std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
-		    {
-		    stream<<"Doodle class:"<<std::endl;
-		    stream<<"	Current job: "<<doodle.current_job->jobname<<std::endl;
-		    stream<<"	Current workspace: "<<doodle.current_workspace<<std::endl;
-		    stream<<"	Jobs:"<<std::endl;
-		    for( const Doodle::Job& job : doodle.jobs )
-			{
-				stream<<"		"<<job<<std::endl;
-			}
-		    stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_string"<<std::endl;
-		    for( auto it : doodle.win_id_lookup )
-			{
-				stream<<"		"<<it.first<<"	"<<it.second.job<<"	"<<it.second.matching_string<<std::endl;
-			}
-		    return stream;
-		}
+std::ostream& operator<<(std::ostream&stream, Doodle::Job const&job)
+{
+	stream<<"Job \""<<job.jobname<<"\": ";
+	std::time_t total_time = 0;
+	for( const Doodle::Timespan& t : job.times )
+	{
+		total_time += t;
+	}
+	stream<<total_time<<" seconds.";
+	stream<<" Names:";
+	for( const std::string& n : job.window_name_segments )
+	{
+		stream<<" |"<<n<<"|";
+	}
+	stream<<" workspaces:";
+	for( const std::string& w : job.workspaces )
+	{
+		stream<<" "<<w;
+	}
+	stream<<std::endl;
+	return stream;
+}
 //}}}
 
 //{{{
-	    bool Doodle::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces)
-		    {	// Iterate through all workspaces and call on_workspace_change() for the focussed one.
-		    for( std::shared_ptr < i3ipc::workspace_t > &workspace : workspaces )
-			{
-				if( workspace->focused )
-				{
-					on_workspace_change({ i3ipc::WorkspaceEventType::FOCUS,  workspace, nullptr });
-					return true;
-				}
-			}
-		    error<<"No workspace is focused."<<std::endl;
-		    return false;	// Should never be reached
-		}
+std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
+{
+	stream<<"Doodle class:"<<std::endl;
+	stream<<"	Current job: "<<doodle.current_job->jobname<<std::endl;
+	stream<<"	Current workspace: "<<doodle.current_workspace<<std::endl;
+	stream<<"	Jobs:"<<std::endl;
+	for( const Doodle::Job& job : doodle.jobs )
+	{
+		stream<<"		"<<job<<std::endl;
+	}
+	stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_string"<<std::endl;
+	for( auto it : doodle.win_id_lookup )
+	{
+		stream<<"		"<<it.first<<"	"<<it.second.job<<"	"<<it.second.matching_string<<std::endl;
+	}
+	return stream;
+}
 //}}}
 
 //{{{
-	    bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::container_t>>nodes)
-		    {	// Iterate through all containers and call on_window_change() for the focussed one.
-		    for( std::shared_ptr < i3ipc::container_t > &container : nodes )
-			{
-				if( container->focused )
-				{
-					on_window_change({ i3ipc::WindowEventType::FOCUS,  container });
-					return true;
-				}
-				else
-				{
-					if( simulate_window_change(container->nodes)) return true;
-				}
-			}
-		    return false;	// Should never be reached
+bool Doodle::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces)
+{	// Iterate through all workspaces and call on_workspace_change() for the focussed one.
+	for( std::shared_ptr < i3ipc::workspace_t > &workspace : workspaces )
+	{
+		if( workspace->focused )
+		{
+			on_workspace_change({ i3ipc::WorkspaceEventType::FOCUS,  workspace, nullptr });
+			return true;
 		}
+	}
+	error<<"No workspace is focused."<<std::endl;
+	return false;	// Should never be reached
+}
+//}}}
+
+//{{{
+bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::container_t>>nodes)
+{	// Iterate through all containers and call on_window_change() for the focussed one.
+	for( std::shared_ptr < i3ipc::container_t > &container : nodes )
+	{
+		if( container->focused )
+		{
+			on_window_change({ i3ipc::WindowEventType::FOCUS,  container });
+			return true;
+		}
+		else
+		{
+			if( simulate_window_change(container->nodes)) return true;
+		}
+	}
+	return false;	// Should never be reached
+}
 //}}}
