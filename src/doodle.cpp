@@ -53,7 +53,6 @@ void Doodle::Timespan::stop(void)
 //}}}
 
 
-
 //{{{
 Doodle::Job::Job(Json::Value job)
 {
@@ -179,31 +178,21 @@ Doodle::Doodle(i3ipc::connection& conn, std::string config_filename)
 		if(root.isMember("config"))
 		{
 			std::cout<<"retrieving config"<<std::endl;
-			//std::cout<<root.get("config", "asdf")<<std::endl;
 		}
 		if(root.isMember("jobs"))
 		{
 			for(auto& job : root.get("jobs", "no jobs"))
 			{
-				std::cout<<"JOB "<<job<<std::endl;
 				jobs.push_back(job);
 			}
 		}
 	}
 
-	//std::cout<<"Jobs:"<<std::endl;
-	//for(auto& job : jobs)
-	//{
-	//	job.print();
-	//	//std::cout<<"	"<<job<<std::endl;
-	//}
-
-
 	nojob.start();									// Account for time spend on untracked jobs
 	current_job = &nojob;
 
 	simulate_workspace_change(conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
-	simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+	//simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
 
 	conn.signal_window_event.connect(sigc::mem_fun(*this, &Doodle::on_window_change));
 	conn.signal_workspace_event.connect(sigc::mem_fun(*this, &Doodle::on_workspace_change));
@@ -221,7 +210,6 @@ Doodle::Doodle(i3ipc::connection& conn, std::string config_filename)
 	#endif
 	}
 //}}}
-
 
 //{{{ Name matching functions
 
@@ -279,9 +267,6 @@ std::string Doodle::win_included(const Job& job, const std::string& window_title
 }
 //}}}
 //}}}
-
-
-
 //{{{
 inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_name)
 {
@@ -296,26 +281,24 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_na
 		}
 
 		if(win_excluded(j, window_name)) continue; // If the window matches an excluded name, forget about this job and consider the next one.
+
 		if((retval.matching_name = win_included(j, window_name)) != "")
 		{
-			std::cout<<"Window matched job "<<j.jobname<<", matching name segment: "<<retval.matching_name<<". Address:"<<&j<<std::endl;
 			if(!settings.detect_ambiguity) // For normal operation, just report the first match.
 			{
 				retval.job = &j;
-				//retval = { &j, matching_name };
 				return retval;
 			}
 			else  // To detect ambiguity, continue searching to see if there are other matches
 			{
 				if( retval.job != &nojob )
 				{
-					error<<"Ambiguity: Window name matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
+					error<<"Ambiguity: Window name \""<<window_name<<"\" matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
 					// TODO: Show an errow window that asks to which job the window belongs to.
 				}
 				else
 				{
 					retval.job = &j;
-					//retval = { &j, name_segment };
 				}
 			}
 		}
@@ -352,7 +335,6 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	{
 		Job* old_job = current_job;
 		win_id_lookup_entry& entry = win_id_lookup[evt.container->id];
-		//logger<<"matching string: |"<<entry.matching_name<<"|"<<std::endl;
 
 		if(!entry.job || entry.matching_name == "" || !std::regex_search(evt.container->name, std::regex(entry.matching_name)))
 		{
@@ -382,6 +364,7 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	else if( evt.type == i3ipc::WindowEventType::CLOSE )
 	{
 		win_id_lookup.erase(evt.container->id);
+		simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
 	}
 }
 //}}}
@@ -389,17 +372,11 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 //{{{
 void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 {
-	//logger<<"on_workspace_change() called "<<++ws_evt_count<<"th time. Type: "<<static_cast<char>(evt.type)<<std::endl;
-	//std::cout<<"	Type: "<<static_cast<char>(evt.type)<<std::endl;
-	//std::cout<<"	Current.num: "<<evt.current->num<<std::endl;
-	//std::cout<<"	Current.visible: "<<evt.current->visible<<std::endl;
-	//std::cout<<"	Current.focused: "<<evt.current->focused<<std::endl;
-	//std::cout<<"	Current.urgent: "<<evt.current->urgent<<std::endl;
-
 	if( evt.type == i3ipc::WorkspaceEventType::FOCUS )
 	{
 		logger<<"New current_workspace: "<<evt.current->name<<std::endl;
 		current_workspace = evt.current->name;
+		simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
 	}
 #ifdef DEBUG
 	else
@@ -491,7 +468,7 @@ bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::contain
 		}
 		else
 		{
-			if( simulate_window_change(container->nodes)) return true;
+			if(simulate_window_change(container->nodes)) return true;
 		}
 	}
 	return false;	// Should never be reached
