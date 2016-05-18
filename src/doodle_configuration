@@ -1,0 +1,43 @@
+{
+	"config" : // This field will contain all configuration options
+	{// !! Currently no configuration options are supported !!
+		"max_idle_time": 60,		// Seconds the user may be idle before the timeer for the current job is halted.
+		"testintA" : 42,
+		"testfloatA" : 3.14159,
+		"teststringA" : "foo",
+		"testboolA" : true
+	},
+	"jobs" :// Each object in this list describes a job entity, think of e.g. a project with a number of windows
+			// (on certain workspaces) belonging to it. Whenever one of these windows is focused, the timer for that
+			// job counts up, allowing to keep track of the time spent on that project.
+	[
+	    {
+	        "jobname" : "project",	// The project name is for reference only
+			"times" :[ ],			// Each field in "times" is a timeslot where that job was active.
+									// When adding a new job to the list, just add an empty list like shown here.
+
+	        "window_name_segments" :// A list of regular expressions to match the window titles of the job. Matching
+			[						// uses std::regex_search() so "~/projects" will also match
+				"~/projects",		// "ZSH: ~/projects/software/i3ipc-doodle/build"
+				"!special_project",	// Prepend a regex with '!' to exclude all windows matching that regex from the job.
+				"home/mox/projects",// !! Avoid matching the same window name in different jobs !!
+				"Vimperator"		// You can set DETECT_AMBIGUITY to ON to check for ambigous matches at runtime.
+			],
+	        "workspaces" :			// A list of workspaces where the windows for the job may reside for cases where
+			[						// matching by window title does not suffice. For example matching browser windows
+				"1",				// would be difficult by name, but with this feature, windows can be placed at
+				"2",				// specific workspaces. Uses the same matching logic as described for the window
+				"!private"			// titles. With an empty list, windows in all workspaces are matched.
+			]
+		},
+	    {
+	        "jobname" : "scratch",
+			"times" : [
+				[ 10, 20 ],
+				[ 40, 60 ]
+			],
+	        "window_name_segments" :[ "home/mox/scratch", "~/scratch", "okular" ],
+	        "workspaces" :[ "" ]
+		}
+	]
+}
