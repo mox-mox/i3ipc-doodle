@@ -12,7 +12,7 @@
 		"3",				// specific workspaces. Uses the same matching logic as described for the window
 		"!private"			// titles. With an empty list, windows in all workspaces are matched.
 	],
-	"total_time" : 1000,		// The current total time of the job. f
-	"times" :[ ]			// Each field in "times" is a timeslot where that job was active.
+	"times" :[ ],			// Each field in "times" is a timeslot where that job was active.
 							// When adding a new job to the list, just add an empty list like shown here.
+	"total_time" : 1000		// The current total time of the job. f
 }

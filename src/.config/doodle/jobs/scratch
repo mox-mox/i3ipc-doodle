@@ -1,10 +1,10 @@
 {
 	"window_names" :[ "home/mox/scratch", "~/scratch", "okular" ],
 	"workspace_names" :[ "" ],
-	"total_time" : 1000,
 	"times" :
 	[
 	    [ 10, 20 ],
 	    [ 40, 60 ]
-	]
+	],
+	"total_time" : 1000
 }
