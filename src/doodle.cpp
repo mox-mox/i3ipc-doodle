@@ -4,16 +4,9 @@
 #include <fstream>
 #include <iostream>
 #include <experimental/filesystem>
+#include "logstream.hpp"
 
-namespace fs = std::experimental::filesystem;
 
-void Doodle::read_config(Json::Value config)
-{
-	settings.max_idle_time = config.get("max_idle_time", MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
-	std::cout<<"	max_idle_time = "<<settings.max_idle_time<<std::endl;
-	settings.detect_ambiguity = config.get("detect_ambiguity", DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
-	std::cout<<"	detect_ambiguity = "<<settings.detect_ambiguity<<std::endl;
-}
 
 
 
@@ -39,9 +32,9 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
 		std::cout<<"retrieving config"<<std::endl;
 		read_config(configuration_root.get("config", "no config"));
 	}
-	for( auto&f: fs::directory_iterator(config_path+"/jobs"))
+	for( auto&f: std::experimental::filesystem::directory_iterator(config_path+"/jobs"))
 	{
-		if((f.path() != config_path+"/doodlerc") && fs::is_regular_file(f))
+		if((f.path() != config_path+"/doodlerc") && std::experimental::filesystem::is_regular_file(f))
 		{
 			std::ifstream jobfile(f.path());
 			Json::Value job;
@@ -79,6 +72,15 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
 }
 //}}}
 
+//{{{
+void Doodle::read_config(Json::Value config)
+{
+	settings.max_idle_time = config.get("max_idle_time", MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
+	std::cout<<"	max_idle_time = "<<settings.max_idle_time<<std::endl;
+	settings.detect_ambiguity = config.get("detect_ambiguity", DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
+	std::cout<<"	detect_ambiguity = "<<settings.detect_ambiguity<<std::endl;
+}
+//}}}
 
 //{{{
 inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_name)
@@ -113,13 +115,6 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_na
 	return retval;
 }
 //}}}
-
-
-
-
-
-
-
 
 //{{{
 void Doodle::on_window_change(const i3ipc::window_event_t& evt)

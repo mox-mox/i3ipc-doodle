@@ -1,16 +1,9 @@
 #pragma once
 
 #include <i3ipc++/ipc.hpp>
-#include <map>
-//#include <deque>
-//#include <chrono>
-#include <ostream>
-#include "logstream.hpp"
 #include <json/json.h>
-//#include <ctime>
-
 #include "job.hpp"
-#include "timespan.hpp"
+#include "timer.hpp"
 
 using window_id = uint64_t;
 
