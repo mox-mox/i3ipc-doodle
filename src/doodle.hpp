@@ -3,7 +3,7 @@
 #include <i3ipc++/ipc.hpp>
 #include <json/json.h>
 #include "job.hpp"
-#include "timer.hpp"
+//#include "timer.hpp"
 
 using window_id = uint64_t;
 

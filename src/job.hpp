@@ -4,26 +4,19 @@
 #include <json/json.h>
 #include "timespan.hpp"
 #include <regex>
+#include <thread>
+#include <experimental/filesystem>
+#include <mutex>
 
 
 struct Job
 {
-	std::string jobname;
+	//{{{ Constructors
 
-	std::time_t total_time;
-
-
-	std::deque < Timespan > times;
-	//std::time_t aggregate_time;						// Small amounts of time, that are not tracked
-
-	std::deque < std::string > win_names_include;
-	std::deque < std::string > win_names_exclude;
-	std::deque < std::string > ws_names_include;
-	std::deque < std::string > ws_names_exclude;
-
-	Job(std::string jobname, Json::Value job);
-	Job(Json::Value job);
+	Job(std::string jobname, Json::Value job, const std::experimental::filesystem::path& jobfile);
 	Job(void);
+	//}}}
+
 	void start(void);
 	void stop(void);
 
@@ -31,12 +24,35 @@ struct Job
 
 	inline std::string match(const std::string& current_workspace, const std::string& window_title) const;
 
+
+
+	const std::string jobname;
+
+
+
 	private:
+		std::experimental::filesystem::path jobfile;
+
+		std::time_t total_time;
+
+
+		std::deque < Timespan > times;
+		std::mutex times_mutex;
+
+		void save_times(std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds> when);
+
+
+		std::deque < std::string > win_names_include;
+		std::deque < std::string > win_names_exclude;
+		std::deque < std::string > ws_names_include;
+		std::deque < std::string > ws_names_exclude;
+
 		inline bool ws_excluded(const std::string& current_workspace) const;
 		inline bool ws_included(const std::string& current_workspace) const;
 
 		inline bool win_excluded(const std::string& window_title) const;
 		inline std::string win_included(const std::string& window_title) const;
+	std::thread waker;
 };
 
 //{{{ Name matching functions ( inline )

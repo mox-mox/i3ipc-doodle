@@ -44,7 +44,7 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
 			}
 			else
 			{
-				jobs.push_back(Job(f.path().filename(), job));
+				jobs.push_back(Job(f.path().filename(), job, f.path()));
 			}
 		}
 	}
