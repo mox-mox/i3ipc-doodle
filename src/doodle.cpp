@@ -17,12 +17,20 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
 	: conn(conn), config_path(config_path), nojob()
 {
 	std::ifstream config_file(config_path+"/doodlerc");
+
+
+	//error<<"config file: "<<config_path+"/doodlerc"<<std::endl;
+	//std::cout<<config_file.rdbuf();
+	//config_file.clear();
+	//config_file.seekg(0, std::ios::beg);
+
+
 	Json::Value configuration_root;
 	Json::Reader reader;
 
 	if( !reader.parse(config_file, configuration_root, false))
 	{
-		error<<reader.getFormattedErrorMessages()<<"\n";
+		error<<reader.getFormattedErrorMessages()<<std::endl;
 	}
 	std::cout<<"retrieving config"<<std::endl;
 	read_config(configuration_root);
@@ -49,7 +57,7 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
 		}
 	}
 
-	nojob.start();										// Account for time spent on untracked jobs
+	nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
 	current_job = &nojob;
 
 	simulate_workspace_change(conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
@@ -75,9 +83,9 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
 //{{{
 void Doodle::read_config(Json::Value config)
 {
-	settings.max_idle_time = config.get("max_idle_time", MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
+	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
 	std::cout<<"	max_idle_time = "<<settings.max_idle_time<<std::endl;
-	settings.detect_ambiguity = config.get("detect_ambiguity", DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
+	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
 	std::cout<<"	detect_ambiguity = "<<settings.detect_ambiguity<<std::endl;
 }
 //}}}
@@ -102,7 +110,7 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_na
 			{
 				if( retval.job != &nojob )
 				{
-					error<<"Ambiguity: Window name \""<<window_name<<"\" matched "<<retval.job->jobname<<" and "<<j.jobname<<"."<<std::endl;
+					error<<"Ambiguity: Window name \""<<window_name<<"\" matched "<<retval.job->get_jobname()<<" and "<<j.get_jobname()<<"."<<std::endl;
 					// TODO: Show an errow window that asks to which job the window belongs to.
 				}
 				else
@@ -119,6 +127,7 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_na
 //{{{
 void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 {
+	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 	//{{{ Print some information about the event
 
 	#ifdef DEBUG
@@ -155,14 +164,14 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 		{
 			if( old_job )
 			{
-				old_job->stop();
+				old_job->stop(now);
 			}
 			if( current_job )
 			{
-				current_job->start();
+				current_job->start(now);
 			}
 		}
-		logger<<"New current_job: "<<current_job->jobname<<std::endl;
+		logger<<"New current_job: "<<current_job->get_jobname()<<std::endl;
 	}
 	else if( evt.type == i3ipc::WindowEventType::CLOSE )
 	{
@@ -190,44 +199,12 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 }
 //}}}
 
-//{{{
-std::ostream& operator<<(std::ostream&stream, Job const&job)
-	    {
-	    stream<<"Job \""<<job.jobname<<"\": ";
-	    std::time_t total_time = job.total_time;
-	    for( const Timespan& t : job.times )
-		{
-			total_time += t;
-		}
-	    stream<<total_time<<" seconds.";
-	    stream<<" Names:";
-	    for( const std::string& n : job.win_names_include )
-		{
-			stream<<" |"<<n<<"|";
-		}
-	    for( const std::string& n : job.win_names_exclude )
-		{
-			stream<<" |!"<<n<<"|";
-		}
-	    stream<<" workspaces:";
-	    for( const std::string& w : job.ws_names_include )
-		{
-			stream<<" |"<<w<<"|";
-		}
-	    for( const std::string& w : job.ws_names_exclude )
-		{
-			stream<<" |!"<<w<<"|";
-		}
-	    stream<<std::endl;
-	    return stream;
-	}
-//}}}
 
 //{{{
 std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
 {
 	stream<<"Doodle class:"<<std::endl;
-	stream<<"	Current job: "<<doodle.current_job->jobname<<std::endl;
+	stream<<"	Current job: "<<doodle.current_job->get_jobname()<<std::endl;
 	stream<<"	Current workspace: "<<doodle.current_workspace<<std::endl;
 	stream<<"	Jobs:"<<std::endl;
 	for( const Job& job : doodle.jobs )

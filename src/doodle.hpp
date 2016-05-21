@@ -16,11 +16,11 @@ class Doodle : public sigc::trackable
 
 		//{{{ Nested classes
 
-		struct
+		struct settings
 		{
-			#define MAX_IDLE_TIME_DEFAULT_VALUE 60
+			static constexpr unsigned int MAX_IDLE_TIME_DEFAULT_VALUE = 60;
 			unsigned int max_idle_time = MAX_IDLE_TIME_DEFAULT_VALUE;
-			#define DETECT_AMBIGUITY_DEFAULT_VALUE false
+			static constexpr bool DETECT_AMBIGUITY_DEFAULT_VALUE = false;
 			bool detect_ambiguity = DETECT_AMBIGUITY_DEFAULT_VALUE;
 		} settings;
 

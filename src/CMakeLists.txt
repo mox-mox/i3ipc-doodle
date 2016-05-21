@@ -90,7 +90,7 @@ endforeach(dir)
 include_directories( ${INCDIRS})
 
 
-	set(LIBS ${LIBS} -lstdc++fs)
+	set(LIBS ${LIBS} -lpthread -lstdc++fs)
 
 
 set(LINKDIRS ${LINKDIRS}

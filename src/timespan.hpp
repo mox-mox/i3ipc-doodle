@@ -9,6 +9,7 @@ class Timespan
 	std::time_t end;
 	public:
 		Timespan(void);
+		//Timespan(Timespan&&) = default;
 		Timespan(Json::Value timespan);
 		void stop(void);
 		operator std::time_t() const;
