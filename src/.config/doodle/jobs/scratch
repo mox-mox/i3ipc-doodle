@@ -1,6 +1,6 @@
 {
 	"total_time" : 1000,
-	"granularity" : 5,
+	"granularity" : 10,
 	"window_names" :[ "home/mox/scratch", "~/scratch", "okular" ],
 	"workspace_names" :[ "" ]
 }

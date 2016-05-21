@@ -1,16 +1,14 @@
 #include "job.hpp"
 #include "logstream.hpp"
 #include  <sstream>
+       #include <unistd.h>
 
 
 //{{{
 Job::Job(std::string jobname, Json::Value job, const std::experimental::filesystem::path& jobfile) : jobname(jobname), jobfile(jobfile)
 {
-	//if((jobname = job.get("jobname", "unset").asString()) == "unset" )
-	//{
-	//	error<<"Jobname not found"<<std::endl;
-	//}
-
+	logger<<"Constructing job "<<jobname<<"."<<std::endl;
+	//{{{
 	if( job.isMember("window_names"))
 	{
 		for( auto&window_name : job.get("window_names", "no window_names"))
@@ -38,7 +36,9 @@ Job::Job(std::string jobname, Json::Value job, const std::experimental::filesyst
 	{
 		error<<"Job "<<jobname<<": No window name segments specified."<<std::endl;
 	}
+	//}}}
 
+	//{{{
 	if( job.isMember("workspace_names"))
 	{
 		for( auto&workspace_name : job.get("workspace_names", "no workspace_names"))
@@ -66,24 +66,12 @@ Job::Job(std::string jobname, Json::Value job, const std::experimental::filesyst
 	{
 		error<<"Job "<<jobname<<": No workspace name segments specified."<<std::endl;
 	}
+	//}}}
 
-	//if( job.isMember("total_time"))
-	//{
 	times.total = std::chrono::seconds(job.get("total_time", 0).asInt64());
-	//}
-
-	//if( job.isMember("times"))
-	//{
-	//	std::lock_guard<std::mutex> lock(times_mutex);
-	//	for( auto&timespan : job.get("times", "no times"))
-	//	{
-	//		times.push_back(Timespan(timespan));
-	//	}
-	//}
-
 
 	settings.granularity = std::chrono::seconds(job.get("granularity", settings.GRANULARITY_DEFAULT_VALUE).asInt64());
-	//std::thread(&Job::save_times, this);
+	//waker = std::thread(&Job::save_times, this); // this is a hack: The real jobs are move-constructed into the container, so start the thread only after move-construction
 }
 //}}}
 
@@ -95,82 +83,108 @@ Job::Job(Job&& other) noexcept
 	jobname = std::move(other.jobname);
 	jobfile = std::move(other.jobfile);
 
-	times = std::move(other.times);
 
-	//times.total_time = std::move(other.times.total_time);
-	//times = std::move(other.times);
+	settings = std::move(other.settings);
+
+	times = std::move(other.times);
+	waker = std::move(other.waker);
 
 	win_names_include = std::move(other.win_names_include);
 	win_names_exclude = std::move(other.win_names_exclude);
 	ws_names_include  = std::move(other.ws_names_include);
 	ws_names_exclude  = std::move(other.ws_names_exclude);
+	waker = std::thread(&Job::save_times, this);
 }
 //}}}
 
 //{{{
-Job::Job(void) : jobname("NOJOB"), times(), win_names_include(), win_names_exclude( {"!"}), ws_names_include(), ws_names_exclude({ "!" }) {}
+Job::Job(void) : jobname("NOJOB"), times(), win_names_include(), win_names_exclude( {"!"}), ws_names_include(), ws_names_exclude({ "!" }) {times.waker_running = true;}
+//}}}
+//
+//{{{
+Job::~Job(void)
+{
+	if(waker.joinable()) waker.join();
+}
 //}}}
 
 //{{{
 void Job::start(std::chrono::steady_clock::time_point start_time)
 {
-	//std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-	std::lock_guard<std::mutex> lock(times_mutex);
-	times.job_start=start_time;
-	times.running = true;
+	//std::cout<<"	"<<jobname<<".start() called."<<std::endl;
+	{
+		std::lock_guard<std::mutex> lock(times_mutex);
+		times.job_start=start_time;
+		times.job_running = true;
+	}
 
-	//times.push_back(Timespan());
-	//if(!waker.joinable())
-	//{
-	//	//std::thread waker(save_times, std::chrono::high_resolution_clock::now()+std::chrono::seconds(2));
-	//}
+	if(!times.waker_running)	// Get the saver to start.
+	{
+		error<<"Starting the saver for Job "<<jobname<<std::endl;
+		times_cv.notify_one();
+	}
 }
 //}}}
 
 //{{{
 void Job::stop(std::chrono::steady_clock::time_point stop_time)
 {
-	//std::chrono::steady_clock::time_point job_stop = std::chrono::steady_clock::now();
 	std::lock_guard<std::mutex> lock(times_mutex);
 	std::chrono::seconds elapsed = std::chrono::duration_cast<std::chrono::seconds>(stop_time - times.job_start);
+	times.job_start=std::chrono::steady_clock::time_point(); // reset to 'zero'
 	times.total += elapsed;
 	times.slot  += elapsed;
-	times.running = false;
+	times.job_running = false;
 }
 //}}}
 
-//void Job::save_times(std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds> when)
 void Job::save_times(void)
 {
+	std::unique_lock<std::mutex> lock(times_mutex);	// Grab the mutex. Whenever the thread is sleeping, it will free the mutex.
 	for(;;)
 	{
-		// Wait until the job is activated the (first) time
-		std::unique_lock<std::mutex> lk(running_mutex);
-		running_cv.wait(lk, [this]{return running;});
+		if(times.destructor_called) { lock.unlock(); return; }
 
+		// Wait until the job is activated the (first) time.
+		if(!times.job_running)	// No need to wait, when the job is already running.
+		{
+			times.waker_running = false;
+			times_cv.wait(lock, [this]{return times.job_running || times.destructor_called;});	// Wait until the job is started or destructor is called.
+		}
 
+		if(times.destructor_called) { lock.unlock(); return; }
 
-
+		// Remember the date when the tims_slot started.
 		std::chrono::system_clock::time_point slot_start = std::chrono::system_clock::now();
 
-		std::this_thread::sleep_until(std::chrono::steady_clock::now()+settings.granularity);
-		std::lock_guard<std::mutex> lock(times_mutex);
+		times.waker_running = true;
 
-		(void) slot_start;
-		error<<"TODO: Write the time of the last hour to file."<<std::endl;
+		// Wait until it is time to write the time slot to disk or the destructor has been called.
+		times_cv.wait_until(lock, std::chrono::steady_clock::now()+settings.granularity, [this](){return times.destructor_called;});
 
+
+		std::cerr<<"TODO: Write the time of the last hour to file."<<std::endl;
+
+
+		if(times.job_running) // Account for a currently running job.
+		{
+			std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+			std::chrono::seconds current_runtime = std::chrono::duration_cast<std::chrono::seconds>(now - times.job_start);
+			times.total += current_runtime;
+			times.slot += current_runtime;
+			times.job_start = now;
+		}
+
+		std::stringstream ss;
+		ss << std::setw(20) << std::setfill('0') << times.total.count();
+		std::cerr<<"	New total_time for job "<<jobname<<": "<<ss.str()<<std::endl;
+		std::cerr<<"	[ "<<slot_start.time_since_epoch().count()<<", "<<times.slot.count()<<" ]"<<std::endl;
+		times.slot = std::chrono::seconds(0);
+		std::cerr<<std::endl;
+		std::cerr<<std::endl;
 	}
-	//std::this_thread::sleep_until(when);
-
-	//std::lock_guard<std::mutex> lock(times_mutex);
-	//error<<"TODO: Write the time of the last hour to file."<<std::endl;
-	//std::stringstream ss;
-	//ss << std::setw(20) << std::setfill('0') << 10;
-	//std::string s = ss.str();
-	//std::cout<<"total_time is "<<s<<std::endl;;
 }
 
-//void Job::
 
 
 
@@ -178,7 +192,7 @@ void Job::save_times(void)
 std::ostream& operator<<(std::ostream&stream, Job const&job)
 {
     stream<<"Job \""<<job.jobname<<"\": ";
-    stream<<(job.times.total + (job.times.running ? (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - job.times.job_start)):std::chrono::seconds(0))).count()   <<" seconds.";
+    stream<<(job.times.total + (job.times.job_running ? (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - job.times.job_start)):std::chrono::seconds(0))).count()   <<" seconds.";
     stream<<" Names:";
     for( const std::string& n : job.win_names_include )
 	{

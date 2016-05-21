@@ -18,6 +18,7 @@ struct Job
 	Job(void);
 	//Job(Job&&) = default;
     Job(Job&& o) noexcept;// : s(std::move(o.s)) { }
+	~Job(void);
 	//}}}
 
 	void start(std::chrono::steady_clock::time_point now);
@@ -44,13 +45,16 @@ struct Job
 
 
 		std::mutex times_mutex;
+		std::condition_variable times_cv;
 		struct timekeeping
 		{
 			std::chrono::seconds total;							// The total elapsed time of the job
 
-			bool running;
+			bool job_running = false;
 			std::chrono::steady_clock::time_point job_start;	// For calculation of the passed time since the job was started
 			std::chrono::seconds slot;							// The elapsed time in the current time slot is this + (now-job_start)
+			bool waker_running = false;
+			bool destructor_called = false;
 		} times;
 
 
@@ -58,25 +62,6 @@ struct Job
 
 
 
-
-		//std::time_t total_time;
-
-
-		//std::deque < Timespan > times;
-		//std::mutex times_mutex;
-
-
-
-
-
-		bool running;
-		std::mutex running_mutex;
-		std::condition_variable running_cv;
-
-
-
-
-		//void save_times(std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds> when);
 		void save_times(void);
 		std::thread waker;
 
