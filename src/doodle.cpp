@@ -45,19 +45,6 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
 			{
 				error<<"Caught exception \""<<e.what()<<"\" while constructing job "<<f.path().filename()<<". ... removing that job from the job list."<<std::endl;
 			}
-
-
-
-			//std::ifstream jobfile(f.path());
-			//Json::Value job;
-			//if( !reader.parse(jobfile, job, false))
-			//{
-			//	error<<reader.getFormattedErrorMessages()<<std::endl;
-			//}
-			//else
-			//{
-			//	jobs.push_back(Job(f.path().filename(), job, f.path()));
-			//}
 		}
 	}
 

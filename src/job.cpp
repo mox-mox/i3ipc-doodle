@@ -99,80 +99,78 @@ Job::Job(const std::experimental::filesystem::path& jobfile) : jobname(jobfile.f
 //}}}
 
 //{{{
-static std::tuple < std::streampos, std::streampos, unsigned long long > find_total_time(const std::string&jobfile)
+static std::streampos find_total_time(std::fstream& jobfile)
 {
-	std::fstream jobfile_orig(jobfile, std::ifstream::in|std::ifstream::out|std::ifstream::binary);
-	if( !jobfile_orig.is_open())
-	{
-		std::cerr<<"Cannot open copy file for reading"<<std::endl;
-	}
+	//std::fstream jobfile_orig(jobfile, std::ifstream::in|std::ifstream::out|std::ifstream::binary);
+	//if( !jobfile_orig.is_open())
+	//{
+	//	throw std::runtime_error("Could not open jobfile for.");
+	//}
 
 	std::streampos pos_start(0);
-	std::streampos pos_end(0);
+	//std::streampos pos_end(0);
 
-	jobfile_orig.clear();
-	jobfile_orig.seekg(0, std::ios_base::beg);
+	jobfile.clear();
+	jobfile.seekg(0, std::ios_base::beg);
 	std::string line;
 	std::regex total_time_regex("\"total_time\"");
-	unsigned long long total_time;
-	while( std::getline(jobfile_orig, line))
+	//unsigned long long total_time;
+	while( std::getline(jobfile, line))
 	{
 		std::smatch match;
 		if( std::regex_search(line, match, total_time_regex))
 		{
-			jobfile_orig.seekg(pos_start+match.position(0)+std::streampos(12));
+			jobfile.seekg(pos_start+match.position(0)+std::streampos(12));
 
 			std::regex colon_regex(":");
 			do
 			{
-				pos_start = jobfile_orig.tellg();
-				if( !std::getline(jobfile_orig, line))
+				pos_start = jobfile.tellg();
+				if( !std::getline(jobfile, line))
 				{
 					throw std::runtime_error("Unexpected EOF");
 				}
 			} while( !std::regex_search(line, match, colon_regex));
 
-			jobfile_orig.seekg(pos_start+match.position(0));
+			jobfile.seekg(pos_start+match.position(0));
 
 			std::regex chipher_regex("[0-9]");
 			do
 			{
-				pos_start = jobfile_orig.tellg();
-				if( !std::getline(jobfile_orig, line))
+				pos_start = jobfile.tellg();
+				if( !std::getline(jobfile, line))
 				{
 					throw std::runtime_error("Unexpected EOF");
 				}
 			} while( !std::regex_search(line, match, chipher_regex));
 
-			jobfile_orig.seekg(pos_start+match.position(0));
-			pos_start = jobfile_orig.tellg();
+			jobfile.seekg(pos_start+match.position(0));
+			//pos_start = jobfile.tellg();
+			return jobfile.tellg();
 
-			pos_start = jobfile_orig.tellg();
-			if( !std::getline(jobfile_orig, line))
-			{
-				throw std::runtime_error("Unexpected EOF");
-			}
-			jobfile_orig.seekg(pos_start);
-			total_time = std::stoull(line);
+			//pos_start = jobfile.tellg();
+			//if( !std::getline(jobfile, line))
+			//{
+			//	throw std::runtime_error("Unexpected EOF");
+			//}
+			//jobfile.seekg(pos_start);
+			//total_time = std::stoull(line);
 
-			do
-			{
-				pos_end = jobfile_orig.tellg();
-				line = std::string(1, jobfile_orig.get());
-			} while( !jobfile_orig.eof() && std::regex_search(line, match, std::regex("[0-9]")));
+			//do
+			//{
+			//	pos_end = jobfile.tellg();
+			//	line = std::string(1, jobfile.get());
+			//} while( !jobfile.eof() && std::regex_search(line, match, std::regex("[0-9]")));
 
 
-			jobfile_orig.seekg(pos_end+match.position(0));
-			pos_end = jobfile_orig.tellg();
-			return {
-					   pos_start, pos_end, total_time
-			};
+			//jobfile.seekg(pos_end+match.position(0));
+			//pos_end = jobfile.tellg();
+			//return { pos_start, pos_end, total_time };
 		}
-		pos_start = jobfile_orig.tellg();
+		pos_start = jobfile.tellg();
 	}
-	return {
-			   0, 0, 0
-	};
+	return 0;
+	//return { 0, 0, 0 };
 }
 //}}}
 
@@ -186,39 +184,48 @@ void Job::sanitise_jobfile(const std::experimental::filesystem::path& jobfile)
 	std::fstream jobfile_orig(jobfile, std::ifstream::in|std::ifstream::out|std::ifstream::binary);
 	if( !jobfile_orig.is_open())
 	{
-		std::cerr<<"Cannot open copy file for reading"<<std::endl;
+		throw std::runtime_error("Could not open tempory jobfile for "+jobname+".");
 	}
 
-	//{{{ Make sure we deal with valid JSON first
+	//std::tuple < std::streampos, std::streampos, unsigned long long > total_time_pos = find_total_time(jobfile);
+	std::streampos pos_start = find_total_time(jobfile_orig);
+	std::streampos pos_end(0);
+	unsigned long long total_time;
+	std::string line;
+
+	//pos_start = jobfile_orig.tellg();
+	if( !std::getline(jobfile_orig, line))
 	{
-		Json::Value job;
-		Json::Reader reader;
-		if( !reader.parse(jobfile_orig, job, false))
-		{
-			std::cerr<<reader.getFormattedErrorMessages()<<std::endl;
-		}
-		jobfile_orig.clear();
-		jobfile_orig.seekg(0, std::ios_base::beg);
+		throw std::runtime_error("Unexpected EOF");
 	}
-	//}}}
+	jobfile_orig.seekg(pos_start);
+	total_time = std::stoull(line);
 
-
-
-	std::tuple < std::streampos, std::streampos, unsigned long long > total_time_pos = find_total_time(jobfile);
-
-
-
-
-	if( 21 != (std::get < 1 > (total_time_pos)-std::get < 0 > (total_time_pos)))
+	std::smatch match;
+	do
 	{
-		std::cout<<"LENGTH too short! ("<<(std::get < 1 > (total_time_pos)-std::get < 0 > (total_time_pos))<<")"<<std::endl;
+		pos_end = jobfile_orig.tellg();
+		line = std::string(1, jobfile_orig.get());
+	} while( !jobfile_orig.eof() && std::regex_search(line, match, std::regex("[0-9]")));
+
+
+	jobfile_orig.seekg(pos_end+match.position(0));
+	pos_end = jobfile_orig.tellg();
+
+			jobfile_orig.clear();
+			jobfile_orig.seekg(0, std::ios::beg);
+
+
+	if( 21 != (pos_end-pos_start))
+	{
+		std::cout<<"LENGTH too short! ("<<(pos_end-pos_start)<<")"<<std::endl;
 
 		//{{{ Copy the jobfile verbatim
 		{
 			std::ofstream jobfile_copy((jobfile.string()+"_backup"));
 			if( !jobfile_copy.is_open())
 			{
-				std::cerr<<"Cannot open copy file for writing"<<std::endl;
+				throw std::runtime_error("Could not open tempory jobfile for "+jobname+".");
 			}
 			jobfile_copy<<jobfile_orig.rdbuf();
 			jobfile_orig.clear();
@@ -230,22 +237,22 @@ void Job::sanitise_jobfile(const std::experimental::filesystem::path& jobfile)
 		std::ifstream jobfile_copy(jobfile.string()+"_backup", std::ifstream::in|std::ifstream::binary);
 		if( !jobfile_copy.is_open())
 		{
-			std::cerr<<"Cannot open copy file for reading"<<std::endl;
+			throw std::runtime_error("Could not open tempory jobfile for "+jobname+".");
 		}
 
 		jobfile_copy.clear();
 		jobfile_copy.seekg(0, std::ios_base::beg);
 
 		std::streampos one(1);
-		for( std::streampos index(0); index < std::get < 0 > (total_time_pos); index += one )
+		for( std::streampos index(0); index < pos_start; index += one )
 		{
 			jobfile_orig<<static_cast < char > (jobfile_copy.get());
 		}
 
 		std::stringstream ss;
-		ss<<std::setw(20)<<std::setfill('0')<<std::get < 2 > (total_time_pos);
+		ss<<std::setw(20)<<std::setfill('0')<<total_time;
 		jobfile_orig<<ss.str()<<",";
-		jobfile_copy.seekg(std::get < 1 > (total_time_pos), std::ios_base::beg);
+		jobfile_copy.seekg(pos_end, std::ios_base::beg);
 
 
 		char c;
@@ -388,27 +395,29 @@ void Job::save_times(void)	// !! ASYNCHRONOUS !!
 
 
 
-		//std::ofstream newFile(jobfile, std::ios_base::app);
-		std::fstream newFile(jobfile);
-		//std::string temp
+		std::fstream joblog(jobfile);
+		if(!joblog.is_open())
+		{
+			throw std::runtime_error("Could not open jobfile for "+jobname+".");
+		}
+		else
+		{
+			(void) find_total_time(joblog);
+			joblog<<ss.str();
+			joblog.seekg(0, std::ios_base::end);
+			joblog<<slot_start.time_since_epoch().count()<<" "<<times.slot.count()<<std::endl;
 
-		//if(newFile.is_open())
-		//{
-		//	newFile << "Ulrich" << " " << "lustich";
-		//}
-		//else
-		//{
-		//	error<<"Could not open jobfile for "<<jobname<<std::endl;
-		//}
+
+		}
 
 
-		newFile.close();
+		joblog.close();
 
-		std::cerr<<"	New total_time for job "<<jobname<<": "<<ss.str()<<std::endl;
-		std::cerr<<"	[ "<<slot_start.time_since_epoch().count()<<", "<<times.slot.count()<<" ]"<<std::endl;
-		times.slot = std::chrono::seconds(0);
-		std::cerr<<std::endl;
-		std::cerr<<std::endl;
+		//std::cerr<<"	New total_time for job "<<jobname<<": "<<ss.str()<<std::endl;
+		//std::cerr<<"	[ "<<slot_start.time_since_epoch().count()<<", "<<times.slot.count()<<" ]"<<std::endl;
+		//times.slot = std::chrono::seconds(0);
+		//std::cerr<<std::endl;
+		//std::cerr<<std::endl;
 	}
 }
 //}}}
