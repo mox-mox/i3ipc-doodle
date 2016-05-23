@@ -18,13 +18,6 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
 {
 	std::ifstream config_file(config_path+"/doodlerc");
 
-
-	//error<<"config file: "<<config_path+"/doodlerc"<<std::endl;
-	//std::cout<<config_file.rdbuf();
-	//config_file.clear();
-	//config_file.seekg(0, std::ios::beg);
-
-
 	Json::Value configuration_root;
 	Json::Reader reader;
 
@@ -42,19 +35,35 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
 	}
 	for( auto&f: std::experimental::filesystem::directory_iterator(config_path+"/jobs"))
 	{
-		if((f.path() != config_path+"/doodlerc") && std::experimental::filesystem::is_regular_file(f))
+		if((f.path() != config_path+"/doodlerc") && std::string::npos == f.path().string().find("_backup") && std::experimental::filesystem::is_regular_file(f))
 		{
-			std::ifstream jobfile(f.path());
-			Json::Value job;
-			if( !reader.parse(jobfile, job, false))
+			try
 			{
-				error<<reader.getFormattedErrorMessages()<<std::endl;
+				jobs.push_back(f.path());
 			}
-			else
+			catch(std::runtime_error& e)
 			{
-				jobs.push_back(Job(f.path().filename(), job, f.path()));
+				error<<"Caught exception \""<<e.what()<<"\" while constructing job "<<f.path().filename()<<". ... removing that job from the job list."<<std::endl;
 			}
+
+
+
+			//std::ifstream jobfile(f.path());
+			//Json::Value job;
+			//if( !reader.parse(jobfile, job, false))
+			//{
+			//	error<<reader.getFormattedErrorMessages()<<std::endl;
+			//}
+			//else
+			//{
+			//	jobs.push_back(Job(f.path().filename(), job, f.path()));
+			//}
 		}
+	}
+
+	for(auto& job : jobs)
+	{
+		job.start_saver_thread();
 	}
 
 	nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
@@ -84,9 +93,9 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
 void Doodle::read_config(Json::Value config)
 {
 	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
-	std::cout<<"	max_idle_time = "<<settings.max_idle_time<<std::endl;
+	//std::cout<<"	max_idle_time = "<<settings.max_idle_time<<std::endl;
 	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
-	std::cout<<"	detect_ambiguity = "<<settings.detect_ambiguity<<std::endl;
+	//std::cout<<"	detect_ambiguity = "<<settings.detect_ambiguity<<std::endl;
 }
 //}}}
 

@@ -14,10 +14,9 @@ struct Job
 {
 	//{{{ Constructors
 
-	Job(std::string jobname, Json::Value job, const std::experimental::filesystem::path& jobfile);
+	Job(const std::experimental::filesystem::path& jobfile);
 	Job(void);
-	//Job(Job&&) = default;
-    Job(Job&& o) noexcept;// : s(std::move(o.s)) { }
+    Job(Job&& o) noexcept;
 	~Job(void);
 	//}}}
 
@@ -30,30 +29,32 @@ struct Job
 
 	std::string get_jobname(void) {return jobname;}
 
+	void start_saver_thread(void);
 
 
 
 	private:
-	std::string jobname;
+		std::string jobname;
 
+		//{{{
 		struct settings
 		{
 			static constexpr unsigned int  GRANULARITY_DEFAULT_VALUE = 3600;
 			std::chrono::seconds granularity;
 		} settings;
-		std::experimental::filesystem::path jobfile;
+		//}}}
 
 
-		std::mutex times_mutex;
+		std::mutex times_mutex;									// Controls access to: timekeeping::times and the jobfile
 		std::condition_variable times_cv;
+		std::experimental::filesystem::path jobfile;
 		struct timekeeping
 		{
 			std::chrono::seconds total;							// The total elapsed time of the job
-
-			bool job_running = false;
 			std::chrono::steady_clock::time_point job_start;	// For calculation of the passed time since the job was started
 			std::chrono::seconds slot;							// The elapsed time in the current time slot is this + (now-job_start)
-			bool waker_running = false;
+			bool job_currently_running = false;
+			bool saver_thread_running = false;
 			bool destructor_called = false;
 		} times;
 
@@ -63,19 +64,23 @@ struct Job
 
 
 		void save_times(void);
-		std::thread waker;
+		std::thread saver_thread;
 
 
-		std::deque < std::string > win_names_include;
-		std::deque < std::string > win_names_exclude;
-		std::deque < std::string > ws_names_include;
-		std::deque < std::string > ws_names_exclude;
+		struct matchers
+		{
+			std::deque < std::string > win_names_include;
+			std::deque < std::string > win_names_exclude;
+			std::deque < std::string > ws_names_include;
+			std::deque < std::string > ws_names_exclude;
+		} matchers;
 
 		inline bool ws_excluded(const std::string& current_workspace) const;
 		inline bool ws_included(const std::string& current_workspace) const;
 
 		inline bool win_excluded(const std::string& window_title) const;
 		inline std::string win_included(const std::string& window_title) const;
+		void sanitise_jobfile(const std::experimental::filesystem::path& jobfile);
 };
 
 //{{{ Name matching functions ( inline )
@@ -83,7 +88,7 @@ struct Job
 //{{{
 bool Job::ws_excluded(const std::string& current_workspace) const
 {
-	for( std::string ws_name : ws_names_exclude )
+	for( std::string ws_name : matchers.ws_names_exclude )
 	{
 		if( std::regex_search(current_workspace, std::regex(ws_name)))
 		{
@@ -96,7 +101,7 @@ bool Job::ws_excluded(const std::string& current_workspace) const
 //{{{
 bool Job::ws_included(const std::string& current_workspace) const
 {
-	for( std::string ws_name : ws_names_include )
+	for( std::string ws_name : matchers.ws_names_include )
 	{
 		if( std::regex_search(current_workspace, std::regex(ws_name)))
 		{
@@ -110,7 +115,7 @@ bool Job::ws_included(const std::string& current_workspace) const
 //{{{
 bool Job::win_excluded(const std::string& window_title) const
 {
-	for( std::string win_name : win_names_exclude )
+	for( std::string win_name : matchers.win_names_exclude )
 	{
 		if( std::regex_search(window_title, std::regex(win_name)))
 		{
@@ -123,7 +128,7 @@ bool Job::win_excluded(const std::string& window_title) const
 //{{{
 std::string Job::win_included(const std::string& window_title) const
 {
-	for( std::string win_name : win_names_include )
+	for( std::string win_name : matchers.win_names_include )
 	{
 		if( std::regex_search(window_title, std::regex(win_name)))
 		{
@@ -136,7 +141,7 @@ std::string Job::win_included(const std::string& window_title) const
 //{{{
 std::string Job::match(const std::string& current_workspace, const std::string& window_title) const
 {
-	if( !ws_names_include.empty() || !ws_names_exclude.empty())					// If there are workspaces specified, then ...
+	if( !matchers.ws_names_include.empty() || !matchers.ws_names_exclude.empty())					// If there are workspaces specified, then ...
 	{
 		if( ws_excluded(current_workspace)) return "";	// ... the window may not be on an excluded workspace ...
 
