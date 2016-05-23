@@ -101,20 +101,12 @@ Job::Job(const std::experimental::filesystem::path& jobfile) : jobname(jobfile.f
 //{{{
 static std::streampos find_total_time(std::fstream& jobfile)
 {
-	//std::fstream jobfile_orig(jobfile, std::ifstream::in|std::ifstream::out|std::ifstream::binary);
-	//if( !jobfile_orig.is_open())
-	//{
-	//	throw std::runtime_error("Could not open jobfile for.");
-	//}
-
 	std::streampos pos_start(0);
-	//std::streampos pos_end(0);
 
 	jobfile.clear();
 	jobfile.seekg(0, std::ios_base::beg);
 	std::string line;
 	std::regex total_time_regex("\"total_time\"");
-	//unsigned long long total_time;
 	while( std::getline(jobfile, line))
 	{
 		std::smatch match;
@@ -145,32 +137,11 @@ static std::streampos find_total_time(std::fstream& jobfile)
 			} while( !std::regex_search(line, match, chipher_regex));
 
 			jobfile.seekg(pos_start+match.position(0));
-			//pos_start = jobfile.tellg();
 			return jobfile.tellg();
-
-			//pos_start = jobfile.tellg();
-			//if( !std::getline(jobfile, line))
-			//{
-			//	throw std::runtime_error("Unexpected EOF");
-			//}
-			//jobfile.seekg(pos_start);
-			//total_time = std::stoull(line);
-
-			//do
-			//{
-			//	pos_end = jobfile.tellg();
-			//	line = std::string(1, jobfile.get());
-			//} while( !jobfile.eof() && std::regex_search(line, match, std::regex("[0-9]")));
-
-
-			//jobfile.seekg(pos_end+match.position(0));
-			//pos_end = jobfile.tellg();
-			//return { pos_start, pos_end, total_time };
 		}
 		pos_start = jobfile.tellg();
 	}
 	return 0;
-	//return { 0, 0, 0 };
 }
 //}}}
 
@@ -187,13 +158,11 @@ void Job::sanitise_jobfile(const std::experimental::filesystem::path& jobfile)
 		throw std::runtime_error("Could not open tempory jobfile for "+jobname+".");
 	}
 
-	//std::tuple < std::streampos, std::streampos, unsigned long long > total_time_pos = find_total_time(jobfile);
 	std::streampos pos_start = find_total_time(jobfile_orig);
 	std::streampos pos_end(0);
 	unsigned long long total_time;
 	std::string line;
 
-	//pos_start = jobfile_orig.tellg();
 	if( !std::getline(jobfile_orig, line))
 	{
 		throw std::runtime_error("Unexpected EOF");
@@ -362,8 +331,8 @@ void Job::save_times(void)	// !! ASYNCHRONOUS !!
 		if( !times.job_currently_running )		// No need to wait, when the job is already running.
 		{
 			times.saver_thread_running = false;
-			times_cv.wait(lock, [this] { return times.job_currently_running || times.destructor_called;
-						  });																				// Wait until the job is started or destructor is called.
+			// Wait until the job is started or destructor is called.
+			times_cv.wait(lock, [this] { return times.job_currently_running || times.destructor_called; });
 		}
 
 		if( times.destructor_called ) { lock.unlock(); return; }
@@ -374,8 +343,7 @@ void Job::save_times(void)	// !! ASYNCHRONOUS !!
 		times.saver_thread_running = true;
 
 		// Wait until it is time to write the time slot to disk or the destructor has been called.
-		times_cv.wait_until(lock, std::chrono::steady_clock::now()+settings.granularity, [this](){ return times.destructor_called;
-							});
+		times_cv.wait_until(lock, std::chrono::steady_clock::now()+settings.granularity, [this](){ return times.destructor_called; });
 
 
 		std::cerr<<"TODO: Write the time of the last hour to file."<<std::endl;
@@ -410,14 +378,7 @@ void Job::save_times(void)	// !! ASYNCHRONOUS !!
 
 		}
 
-
 		joblog.close();
-
-		//std::cerr<<"	New total_time for job "<<jobname<<": "<<ss.str()<<std::endl;
-		//std::cerr<<"	[ "<<slot_start.time_since_epoch().count()<<", "<<times.slot.count()<<" ]"<<std::endl;
-		//times.slot = std::chrono::seconds(0);
-		//std::cerr<<std::endl;
-		//std::cerr<<std::endl;
 	}
 }
 //}}}
