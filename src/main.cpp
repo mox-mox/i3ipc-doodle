@@ -55,6 +55,19 @@ void signal_handler(int signum)
 			error<<"Doodle not initialised."<<std::endl;
 		}
 	}
+	if (signum == SIGTERM)
+	{
+		std::cout<<"Received SIGTERM!"<<std::endl;
+		if(doodle)
+		{
+			delete doodle;
+			throw std::exception();
+		}
+		else
+		{
+			error<<"Doodle not initialised."<<std::endl;
+		}
+	}
 }
 
 
@@ -120,6 +133,7 @@ int main(int argc, char* argv[])
 	doodle = new Doodle(conn);
 
 	signal(SIGUSR1, signal_handler);
+	signal(SIGTERM, signal_handler);
 	conn.prepare_to_event_handling();
 
 

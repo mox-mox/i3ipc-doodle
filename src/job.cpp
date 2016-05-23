@@ -285,7 +285,12 @@ void Job::start_saver_thread(void)
 //{{{
 Job::~Job(void)
 {
+	error<<"Destructor called for Job "<<jobname<<std::endl;
+	times.destructor_called = true;
+	times_cv.notify_one();
 	if( saver_thread.joinable()) saver_thread.join();
+	error<<"Joined thread for "<<jobname<<std::endl;
+
 }
 //}}}
 
@@ -345,6 +350,7 @@ void Job::save_times(void)	// !! ASYNCHRONOUS !!
 		// Wait until it is time to write the time slot to disk or the destructor has been called.
 		times_cv.wait_until(lock, std::chrono::steady_clock::now()+settings.granularity, [this](){ return times.destructor_called; });
 
+		if( times.destructor_called ) { logger<<"Writing last update for job "<<jobname<<"."<<std::endl; }
 
 		std::cerr<<"TODO: Write the time of the last hour to file."<<std::endl;
 

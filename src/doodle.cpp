@@ -195,7 +195,6 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 }
 //}}}
 
-
 //{{{
 std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
 {
