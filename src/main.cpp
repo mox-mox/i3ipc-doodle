@@ -7,6 +7,7 @@
 #include "getopt_pp.h"
 #include "doodle.hpp"
 #include "logstream.hpp"
+#include <cstdlib>
 
 #ifdef USE_NOTIFICATIONS
 	#include <libnotify/notify.h>
@@ -39,37 +40,39 @@ void version_message()
 //}}}
 
 //{{{
-void signal_handler(int signum)
+void SIGUSR1_handler(int signum)
 {
-	if (signum == SIGUSR1)
+	(void) signum;
+	std::cout<<"Received SIGUSR1!"<<std::endl;
+	if(doodle)
 	{
-		std::cout<<"Received SIGUSR1!"<<std::endl;
-		if(doodle)
-		{
-			std::cout<<*doodle<<std::endl;
-		}
-		else
-		{
-			error<<"Doodle not initialised."<<std::endl;
-		}
+		std::cout<<*doodle<<std::endl;
 	}
-	if (signum == SIGTERM)
+	else
 	{
-		std::cout<<"Received SIGTERM!"<<std::endl;
-		if(doodle)
-		{
-			delete doodle;
-			logger<<"shutting down"<<std::endl;
-			exit(0);
-		}
-		else
-		{
-			error<<"Doodle not initialised."<<std::endl;
-		}
+		error<<"Doodle not initialised."<<std::endl;
 	}
+}
+void SIGTERM_handler(int signum)
+{
+	(void) signum;
+	std::cout<<"Received SIGTERM!"<<std::endl;
+	logger<<"shutting down"<<std::endl;
+	exit(0);
 }
 //}}}
 
+
+void atexit_handler()
+{
+	delete doodle;
+	#ifdef USE_NOTIFICATIONS
+		notify_uninit();
+	#endif
+	#ifdef USE_SYSLOG
+		closelog();
+	#endif
+}
 
 
 
@@ -119,27 +122,33 @@ int main(int argc, char* argv[])
 
 	//}}}
 
+	const int atexit_registration_failed = std::atexit(atexit_handler);
+	if(atexit_registration_failed)
+	{
+		std::cerr<<"Could not register the atexit function. Aborting."<<std::endl;
+		return -1;
+	}
+
 #ifdef USE_NOTIFICATIONS
 	notify_init ("Hello world!");
 	NotifyNotification * Hello = notify_notification_new ("Hello world", "This is an example notification.", "dialog-information");
 	notify_notification_show (Hello, NULL);
 	g_object_unref(G_OBJECT(Hello));
-	notify_uninit();
 #endif
 
 #ifdef USE_SYSLOG
 	setlogmask (LOG_UPTO (LOG_NOTICE));
 	openlog ("DOODLE", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 	syslog(LOG_NOTICE, "Writing to my Syslog");
-	closelog();
 #endif
 
 	i3ipc::connection conn;
 
 	doodle = new Doodle(conn);
 
-	signal(SIGUSR1, signal_handler);
-	signal(SIGTERM, signal_handler);
+	signal(SIGUSR1, SIGUSR1_handler);
+	signal(SIGTERM, SIGTERM_handler);
+	signal(SIGINT, SIGTERM_handler);
 	conn.prepare_to_event_handling();
 
 
