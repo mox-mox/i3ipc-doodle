@@ -28,6 +28,7 @@ Job::Job(const std::experimental::filesystem::path& jobfile) : jobname(jobfile.f
 	//	error<<"total_time to short! ("<<job.get("total_time", 0).asString().length()<<")"<<std::endl;
 	//}
 
+
 	times.total = std::chrono::seconds(job.get("total_time", 0).asInt64());
 
 	settings.granularity = std::chrono::seconds(job.get("granularity", settings.GRANULARITY_DEFAULT_VALUE).asInt64());
@@ -232,11 +233,6 @@ void Job::sanitise_jobfile(const std::experimental::filesystem::path& jobfile)
 	}
 }
 //}}}
-
-
-
-
-
 
 
 //{{{

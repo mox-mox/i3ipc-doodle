@@ -8,3 +8,4 @@
 
 
 #cmakedefine USE_NOTIFICATIONS
+#cmakedefine USE_SYSLOG
