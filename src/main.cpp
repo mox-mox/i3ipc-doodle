@@ -39,7 +39,8 @@ void version_message()
 }
 //}}}
 
-//{{{
+//{{{ Signal handlers
+
 void SIGUSR1_handler(int signum)
 {
 	(void) signum;
@@ -60,8 +61,6 @@ void SIGTERM_handler(int signum)
 	logger<<"shutting down"<<std::endl;
 	exit(0);
 }
-//}}}
-
 
 void atexit_handler()
 {
@@ -73,6 +72,9 @@ void atexit_handler()
 		closelog();
 	#endif
 }
+//}}}
+
+
 
 
 
@@ -142,13 +144,19 @@ int main(int argc, char* argv[])
 	syslog(LOG_NOTICE, "Writing to my Syslog");
 #endif
 
-	i3ipc::connection conn;
-
-	doodle = new Doodle(conn);
 
 	signal(SIGUSR1, SIGUSR1_handler);
 	signal(SIGTERM, SIGTERM_handler);
 	signal(SIGINT, SIGTERM_handler);
+
+
+
+	i3ipc::connection conn;
+	doodle = new Doodle(conn);
+
+
+
+
 	conn.prepare_to_event_handling();
 
 

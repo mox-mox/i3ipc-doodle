@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <chrono>
 #include <ctime>
+#include "doodle_config.hpp"
 
 /**
  * \brief A stream class providing formatted output
@@ -32,45 +33,94 @@
  * The number in square brackets will be the current value of the milliseconds counter.
  *
  */
-class LogStream : public std::ostream
-{
-	private:
-		/**
-		 * A stream buffer that wraps each line within prefix and postfix.
-		 */
-		class LogStreamBuf : public std::stringbuf
-		{
-			std::string prefix;
-			std::ostream&   output;
-			std::string postfix;
-			public:
-				LogStreamBuf(std::string prefix_, std::ostream& str_, std::string postfix_) : prefix(prefix_), output(str_), postfix(postfix_)
-				{}
 
-				// When we sync the stream with the output.
-				// 1) Output prefix then the buffer then the postfix
-				// 2) Reset the buffer
-				// 3) flush the actual output stream we are using.
-				virtual int sync()
-				{
-					output << "[" << std::setw(10) <<
-						std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() <<
-						"] " << prefix << str() << postfix;
-					str("");
-					output.flush();
-					return 0;
-				}
-		};
+#ifndef USE_NOTIFICATIONS
+	class LogStream: public std::ostream
+	{
+		private:
+			/**
+			 * A stream buffer that wraps each line within prefix and postfix.
+			 */
+			class LogStreamBuf: public std::stringbuf
+			{
+				std::string prefix;
+				std::ostream&   output;
+				std::string postfix;
+				public:
+					LogStreamBuf(std::string prefix_, std::ostream&str_, std::string postfix_) : prefix(prefix_), output(str_), postfix(postfix_)
+					{}
 
-		// My Stream just uses a version of my special buffer
-		LogStreamBuf buffer;
-	public:
-		// \x1b[37m is an ANSI-escape sequence, see https://en.wikipedia.org/wiki/ANSI_escape_code
-		LogStream(std::string prefix_, std::ostream& str = std::cout, std::string postfix_ = "\x1b[37m") : std::ostream(&buffer), buffer(prefix_, str, postfix_)
-		{
-			//std::cout<<"LogStream(std::string prefix_="<<prefix_<<", ...)"<<std::endl;
-		}
-};
+					// When we sync the stream with the output.
+					// 1) Output prefix then the buffer then the postfix
+					// 2) Reset the buffer
+					// 3) flush the actual output stream we are using.
+					virtual int sync()
+					{
+						output<<"["<<std::setw(10)<<
+						    std::chrono::duration_cast < std::chrono::seconds > (std::chrono::high_resolution_clock::now().time_since_epoch()).count()<<
+						    "] "<<prefix<<str()<<postfix;
+						str("");
+						output.flush();
+						return 0;
+					}
+			};
+
+			// My Stream just uses a version of my special buffer
+			LogStreamBuf buffer;
+		public:
+			// \x1b[37m is an ANSI-escape sequence, see https://en.wikipedia.org/wiki/ANSI_escape_code
+			LogStream(std::string prefix_, std::ostream& str = std::cout, std::string postfix_ = "\x1b[37m") : std::ostream(&buffer), buffer(prefix_, str, postfix_)
+			{
+				//std::cout<<"LogStream(std::string prefix_="<<prefix_<<", ...)"<<std::endl;
+			}
+	};
+#else
+#include <libnotify/notify.h>
+	class LogStream: public std::ostream
+	{
+		private:
+			/**
+			 * A stream buffer that wraps each line within prefix and postfix.
+			 */
+			class LogStreamBuf: public std::stringbuf
+			{
+				std::string prefix;
+				//std::ostream&   output;
+				std::string postfix;
+				public:
+					//LogStreamBuf(std::string prefix_, std::ostream& str_, std::string postfix_) : prefix(prefix_), output(str_), postfix(postfix_) {}
+					LogStreamBuf(std::string prefix_, std::string postfix_) : prefix(prefix_), postfix(postfix_) {}
+
+					// When we sync the stream with the output.
+					// 1) Output prefix then the buffer then the postfix
+					// 2) Reset the buffer
+					// 3) flush the actual output stream we are using.
+					virtual int sync()
+					{
+						//output << "[" << std::setw(10) <<
+						//	std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() <<
+						//	"] " << prefix << str() << postfix;
+						NotifyNotification* notification = notify_notification_new(str().c_str(), "", "dialog-information");
+
+						str("");
+						//output.flush();
+						notify_notification_set_timeout(notification, 3000);
+						notify_notification_show(notification, NULL);
+						g_object_unref(G_OBJECT(notification));
+						return 0;
+					}
+			};
+
+			// My Stream just uses a version of my special buffer
+			LogStreamBuf buffer;
+		public:
+			// \x1b[37m is an ANSI-escape sequence, see https://en.wikipedia.org/wiki/ANSI_escape_code
+			LogStream(std::string prefix_, std::string postfix_ = "\x1b[37m") : std::ostream(&buffer), buffer(prefix_, postfix_)
+			{
+				//std::cout<<"LogStream(std::string prefix_="<<prefix_<<", ...)"<<std::endl;
+			}
+	};
+#endif
 
 
 /**
@@ -98,7 +148,7 @@ extern LogStream error;
 // dbgInC defined as null [1]
 	#define dbg
 // dbgInCpp defined as "if(0) cerr" or "if(1); else cerr"
-	#define dlog if(0) std::cerr
+	#define dlog if( 0 ) std::cerr
 #endif
 
 
