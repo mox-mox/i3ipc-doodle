@@ -73,42 +73,8 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path) : conn(c
 	//		logger<<"successfully subscribed"<<std::endl;
 	//	}
 	//#endif
-
-
-	//conn.prepare_to_event_handling();
-	//if( !event_listener_thread.joinable())
-	//{
-	//	event_listener_thread = std::thread(&Doodle::i3ipc_event_listener, this);
-	//}
-	//else
-	//{
-	//	throw "Trying to start already running i3ipc_event_listener_thread for Doodle class.";
-	//}
-
-
-
 }
 //}}}
-
-//{{{
-//void Doodle::i3ipc_event_listener(void)	// ASYNCHRONOUS
-//{
-//	while(!destructor_called)
-//	{
-//		conn.handle_event();
-//	}
-//}
-//}}}
-
-//{{{
-//Doodle::~Doodle(void)
-//{
-//	destructor_called = true;
-//	if( event_listener_thread.joinable()) event_listener_thread.join();
-//}
-//}}}
-
-
 
 //{{{
 void Doodle::read_config(Json::Value config)

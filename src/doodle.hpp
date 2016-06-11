@@ -13,8 +13,6 @@ class Doodle : public sigc::trackable
 		i3ipc::connection& conn;
 		const std::string config_path;
 		std::string current_workspace;
-		//std::thread event_listener_thread;
-		//volatile bool destructor_called = false;
 
 		//{{{ Nested classes
 
@@ -60,13 +58,11 @@ class Doodle : public sigc::trackable
 		Doodle(Doodle&&) = delete;
 		Doodle& operator=(const Doodle&) = delete;
 		Doodle& operator=(Doodle&&) = delete;
-		//~Doodle();
 		//}}}
 
 		void on_window_change(const i3ipc::window_event_t& evt);
 		void on_workspace_change(const i3ipc::workspace_event_t&  evt);
 
-		//void i3ipc_event_listener(void);	// ASYNCHRONOUS
 		friend std::ostream& operator<< (std::ostream& stream, Doodle const& doodle);
 };
 
