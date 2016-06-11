@@ -7,7 +7,7 @@
 //{{{
 Job::Job(const std::experimental::filesystem::path& jobfile) : jobname(jobfile.filename()), jobfile(jobfile)
 {
-	logger<<"Constructing job "<<jobname<<"."<<std::endl;
+	//logger<<"Constructing job "<<jobname<<"."<<std::endl;
 	std::ifstream file(jobfile);
 	Json::Value job;
 	Json::Reader reader;
@@ -281,11 +281,11 @@ void Job::start_saver_thread(void)
 //{{{
 Job::~Job(void)
 {
-	error<<"Destructor called for Job "<<jobname<<std::endl;
+	//error<<"Destructor called for Job "<<jobname<<std::endl;
 	times.destructor_called = true;
 	times_cv.notify_one();
 	if( saver_thread.joinable()) saver_thread.join();
-	error<<"Joined thread for "<<jobname<<std::endl;
+	//error<<"Joined thread for "<<jobname<<std::endl;
 
 }
 //}}}

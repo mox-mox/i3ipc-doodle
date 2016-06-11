@@ -13,8 +13,8 @@
 
 
 //{{{
-Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
-	: conn(conn), config_path(config_path), nojob()
+//Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), nojob()
+Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path) : conn(conn), config_path(config_path), nojob()
 {
 	std::ifstream config_file(config_path+"/doodlerc");
 
@@ -67,14 +67,48 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path)
 		error<<"could not connect"<<std::endl;
 		throw "Could not subscribe to the workspace- and window change events.";
 	}
-	#ifdef DEBUG
-		else
-		{
-			logger<<"successfully subscribed"<<std::endl;
-		}
-	#endif
+	//#ifdef DEBUG
+	//	else
+	//	{
+	//		logger<<"successfully subscribed"<<std::endl;
+	//	}
+	//#endif
+
+
+	//conn.prepare_to_event_handling();
+	//if( !event_listener_thread.joinable())
+	//{
+	//	event_listener_thread = std::thread(&Doodle::i3ipc_event_listener, this);
+	//}
+	//else
+	//{
+	//	throw "Trying to start already running i3ipc_event_listener_thread for Doodle class.";
+	//}
+
+
+
 }
 //}}}
+
+//{{{
+//void Doodle::i3ipc_event_listener(void)	// ASYNCHRONOUS
+//{
+//	while(!destructor_called)
+//	{
+//		conn.handle_event();
+//	}
+//}
+//}}}
+
+//{{{
+//Doodle::~Doodle(void)
+//{
+//	destructor_called = true;
+//	if( event_listener_thread.joinable()) event_listener_thread.join();
+//}
+//}}}
+
+
 
 //{{{
 void Doodle::read_config(Json::Value config)
@@ -126,18 +160,17 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 	//{{{ Print some information about the event
 
-	#ifdef DEBUG
-		logger<<"on_window_change() called "<<++win_evt_count<<"th time. Type: "<<static_cast < char > (evt.type)<<std::endl;
-		;
-		if( evt.container != nullptr )
-		{
-			//logger<<"	id = "<<evt.container->id<<std::endl;
-			logger<<"	name = "<<evt.container->name<<std::endl;
-			//logger<<"	type = "<<evt.container->type<<std::endl;
-			//logger<<"	urgent = "<<evt.container->urgent<<std::endl;
-			//logger<<"	focused = "<<evt.container->focused<<std::endl;
-		}
-	#endif
+	//#ifdef DEBUG
+	//	logger<<"on_window_change() called "<<++win_evt_count<<"th time. Type: "<<static_cast < char > (evt.type)<<std::endl;
+	//	if( evt.container != nullptr )
+	//	{
+	//		//logger<<"	id = "<<evt.container->id<<std::endl;
+	//		logger<<"	name = "<<evt.container->name<<std::endl;
+	//		//logger<<"	type = "<<evt.container->type<<std::endl;
+	//		//logger<<"	urgent = "<<evt.container->urgent<<std::endl;
+	//		//logger<<"	focused = "<<evt.container->focused<<std::endl;
+	//	}
+	//#endif
 	//}}}
 	if(((evt.type == i3ipc::WindowEventType::FOCUS) || (evt.type == i3ipc::WindowEventType::TITLE)) && (evt.container != nullptr))
 	{
@@ -149,12 +182,12 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 			//std::cout<<"Job not found in map."<<std::endl;
 			entry = find_job(evt.container->name);
 		}
-		#ifdef DEBUG
-			else
-			{
-				std::cout<<"Job found in map."<<std::endl;
-			}
-		#endif
+		//#ifdef DEBUG
+		//	else
+		//	{
+		//		std::cout<<"Job found in map."<<std::endl;
+		//	}
+		//#endif
 		current_job = entry.job;
 		if( old_job != current_job )
 		{
@@ -189,7 +222,7 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 #ifdef DEBUG
 	else
 	{
-		logger<<"Ignoring Workspace event"<<std::endl;
+		//logger<<"Ignoring Workspace event"<<std::endl;
 	}
 #endif
 }

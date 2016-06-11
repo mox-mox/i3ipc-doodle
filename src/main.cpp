@@ -18,7 +18,7 @@
 
 
 
-Doodle* doodle;
+Doodle* doodle=nullptr;
 
 //{{{ Help and version messages
 
@@ -26,9 +26,9 @@ std::string help_message(std::string progname)
 {
 	std::string message;
 	message+="Usage: "+progname+" [options]\nOptions:";
-	//std::cerr << "-s|--steps   <NUM>: Set the number of simulation steps."<<std::endl;
-	//std::cerr << "-r|--radius  <NUM>: Set the radius of the stimuli."<<std::endl;
-	//std::cerr << "-h|--heat    <NUM>: Set the heat of the stimuli."<<std::endl;
+	message+="	-h|--help    : Show this help and exit.\n";
+	message+="	-v|--version : Show version information and exit.\n";
+	message+="	-n|--nofork  : Do not fork off into the background.\n";
 	return message;
 }
 
@@ -75,28 +75,22 @@ void atexit_handler()
 //}}}
 
 
-
-
-
 int main(int argc, char* argv[])
 {
 	//{{{ Argument handling
 
 	bool show_help;
 	bool show_version;
-	//bool jason;
+	bool nofork;
 
 	GetOpt::GetOpt_pp ops(argc, argv);
 
 	ops.exceptions(std::ios::failbit|std::ios::eofbit);
 	try
 	{
-		//ops >> GetOpt::Option('s', "steps", steps, 100);
-		//ops >> GetOpt::Option('r', "radius", radius, 3);
-		//ops >> GetOpt::Option('h', "heat", heat, 127.0);
-		//ops>>GetOpt::OptionPresent('j', "jason", jason);
 		ops>>GetOpt::OptionPresent('h', "help", show_help);
 		ops>>GetOpt::OptionPresent('v', "version", show_version);
+		ops>>GetOpt::OptionPresent('n', "nofork", nofork);
 	}
 	catch(GetOpt::GetOptEx ex)
 	{
@@ -115,14 +109,24 @@ int main(int argc, char* argv[])
 		version_message();
 		return 0;
 	}
-
-	//if(jason)
-	//{
-	//	write_json();
-	//	return 0;
-	//}
-
 	//}}}
+
+	//{{{ Fork to the background
+
+	std::cout<<"Orig. PID is "<<getpid()<<"."<<std::endl;
+	if(!nofork)
+	{
+		if(daemon(1, 0))
+		{
+			std::cerr<<"Could not fork."<<std::endl;
+			return -1;
+		}
+	}
+	std::cout<<"New PID is "<<getpid()<<"."<<std::endl;
+	//}}}
+
+
+
 
 	const int atexit_registration_failed = std::atexit(atexit_handler);
 	if(atexit_registration_failed)
@@ -131,11 +135,12 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	//{{{
 #ifdef USE_NOTIFICATIONS
-	notify_init ("Hello world!");
-	NotifyNotification * Hello = notify_notification_new ("Hello world", "This is an example notification.", "dialog-information");
-	notify_notification_show (Hello, NULL);
-	g_object_unref(G_OBJECT(Hello));
+	notify_init ("Doodle");
+	//NotifyNotification * Hello = notify_notification_new ("Hello world", "This is an example notification.", "dialog-information");
+	//notify_notification_show (Hello, NULL);
+	//g_object_unref(G_OBJECT(Hello));
 #endif
 
 #ifdef USE_SYSLOG
@@ -143,6 +148,7 @@ int main(int argc, char* argv[])
 	openlog ("DOODLE", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 	syslog(LOG_NOTICE, "Writing to my Syslog");
 #endif
+	//}}}
 
 
 	signal(SIGUSR1, SIGUSR1_handler);
@@ -154,9 +160,6 @@ int main(int argc, char* argv[])
 	i3ipc::connection conn;
 	doodle = new Doodle(conn);
 
-
-
-
 	conn.prepare_to_event_handling();
 
 
@@ -164,6 +167,7 @@ int main(int argc, char* argv[])
 	{
 		conn.handle_event();
 	}
+
 
 
 	return 0;

@@ -55,7 +55,7 @@ struct Job
 			std::chrono::seconds slot;							// The elapsed time in the current time slot is this + (now-job_start)
 			bool job_currently_running = false;
 			bool saver_thread_running = false;
-			bool destructor_called = false;
+			volatile bool destructor_called = false;
 		} times;
 
 
