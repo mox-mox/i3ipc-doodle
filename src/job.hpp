@@ -10,31 +10,12 @@
 #include <condition_variable>
 
 
-struct Job
+class Job
 {
-	//{{{ Constructors
+		const std::string jobname;
+		const std::experimental::filesystem::path jobfile;
+		const std::streampos total_time_position;
 
-	Job(const std::experimental::filesystem::path& jobfile);
-	Job(void);
-    Job(Job&& o) noexcept;
-	~Job(void);
-	//}}}
-
-	void start(std::chrono::steady_clock::time_point now);
-	void stop(std::chrono::steady_clock::time_point now);
-
-	friend std::ostream& operator<<(std::ostream&stream, Job const&job);
-
-	inline std::string match(const std::string& current_workspace, const std::string& window_title) const;
-
-	std::string get_jobname(void) {return jobname;}
-
-	void start_saver_thread(void);
-
-
-
-	private:
-		std::string jobname;
 
 		//{{{
 		struct settings
@@ -45,28 +26,25 @@ struct Job
 		//}}}
 
 
-		std::mutex times_mutex;									// Controls access to: timekeeping::times and the jobfile
-		std::condition_variable times_cv;
-		std::experimental::filesystem::path jobfile;
 		struct timekeeping
 		{
 			std::chrono::seconds total;							// The total elapsed time of the job
 			std::chrono::steady_clock::time_point job_start;	// For calculation of the passed time since the job was started
+			bool running = false;
+
 			std::chrono::seconds slot;							// The elapsed time in the current time slot is this + (now-job_start)
-			bool job_currently_running = false;
-			bool saver_thread_running = false;
-			volatile bool destructor_called = false;
+			std::chrono::system_clock::time_point slot_start;// = std::chrono::system_clock::now();
+			bool timer_active = false;
 		} times;
 
+		void write_time(std::chrono::steady_clock::time_point now);
+		static void write_time_timer_callback(void* instance);
 
 
 
+		//{{{ Job matching
 
-
-		void save_times(void);
-		std::thread saver_thread;
-
-
+		//{{{
 		struct matchers
 		{
 			std::deque < std::string > win_names_include;
@@ -74,13 +52,33 @@ struct Job
 			std::deque < std::string > ws_names_include;
 			std::deque < std::string > ws_names_exclude;
 		} matchers;
+		//}}}
 
 		inline bool ws_excluded(const std::string& current_workspace) const;
 		inline bool ws_included(const std::string& current_workspace) const;
 
 		inline bool win_excluded(const std::string& window_title) const;
 		inline std::string win_included(const std::string& window_title) const;
+		//}}}
+
 		void sanitise_jobfile(const std::experimental::filesystem::path& jobfile);
+	public:
+	//{{{ Constructors
+
+	Job(const std::experimental::filesystem::path& jobfile);
+	Job(void);
+    Job(Job&& o) noexcept;
+	//~Job(void);
+	//}}}
+
+	void start(std::chrono::steady_clock::time_point now);
+	void stop(std::chrono::steady_clock::time_point now);
+
+	friend std::ostream& operator<<(std::ostream&stream, Job const&job);
+
+	inline std::string match(const std::string& current_workspace, const std::string& window_title) const;
+
+	std::string get_jobname(void) {return jobname;}
 };
 
 //{{{ Name matching functions ( inline )

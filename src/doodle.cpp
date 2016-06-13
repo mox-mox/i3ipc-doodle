@@ -13,8 +13,7 @@
 
 
 //{{{
-//Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), nojob()
-Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path) : conn(conn), config_path(config_path), nojob()
+Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), nojob()
 {
 	std::ifstream config_file(config_path+"/doodlerc");
 
@@ -48,10 +47,10 @@ Doodle::Doodle(i3ipc::connection& conn, const std::string& config_path) : conn(c
 		}
 	}
 
-	for(auto& job : jobs)
-	{
-		job.start_saver_thread();
-	}
+	//for(Job& job : jobs)
+	//{
+	//	job.start_saver_thread();
+	//}
 
 	nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
 	current_job = &nojob;
@@ -246,5 +245,61 @@ bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::contain
 		}
 	}
 	return false;	// Should never be reached
+}
+//}}}
+
+
+//{{{
+void Doodle::run(void)
+{
+	conn.prepare_to_event_handling();
+
+	std::cout<<"---------------Starting the event loop---------------"<<std::endl;
+	for( ; ; )
+	{
+		int s1, s2, n, rv;
+		s1 = conn.get_file_descriptor();
+		s2 = 1;	// Fileno 1 belongs to stdin. TODO: Replace this with a socket connection for user interaction.
+
+
+		fd_set readfds;
+		FD_ZERO(&readfds);
+		FD_SET(s1, &readfds);
+		FD_SET(s2, &readfds);
+
+		n = std::max(s1, s2)+1; // Has to be 1 plus the highest file desriptor in the FD_SET.
+
+
+
+		struct timeval tv;
+		tv.tv_sec = 10;
+		tv.tv_usec = 0;
+
+		rv = select(n, &readfds, nullptr, nullptr, &tv);
+		if( rv == -1 )
+		{
+			error<<"Select returned error."<<std::endl;
+		}
+		else if( rv == 0 )
+		{
+			logger<<"Timeout occurred! No data after 10 seconds."<<std::endl;
+		}
+		else
+		{
+			std::cout<<"---------------Data on one or more file descriptors---------------"<<std::endl;
+			if( FD_ISSET(s1, &readfds))
+			{
+				std::cout<<"---------------Data on i3 socket connection---------------"<<std::endl;
+				conn.handle_event();
+			}
+			if( FD_ISSET(s2, &readfds))
+			{	// Dummy for testing only
+				std::cout<<"---------------Data on stdin---------------"<<std::endl;
+				std::string temp;
+				std::cin>>temp;
+				std::cout<<"Received |"<<temp<<"| on stdin."<<std::endl;
+			}
+		}
+	}
 }
 //}}}

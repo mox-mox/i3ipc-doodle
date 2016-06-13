@@ -3,14 +3,17 @@
 #include <i3ipc++/ipc.hpp>
 #include <json/json.h>
 #include "job.hpp"
-//#include "timer.hpp"
+#include <event2/event.h>
+#if !defined(LIBEVENT_VERSION_NUMBER) || LIBEVENT_VERSION_NUMBER < 0x02000100
+#error "This version of Libevent is not supported; Get 2.0.1-alpha or later."
+#endif
 
 using window_id = uint64_t;
 
 class Doodle : public sigc::trackable
 {
 	private:
-		i3ipc::connection& conn;
+		i3ipc::connection conn;
 		const std::string config_path;
 		std::string current_workspace;
 
@@ -50,15 +53,17 @@ class Doodle : public sigc::trackable
 
 
 	public:
-		//{{{ Constructors
+		//{{{ Constructor
 
-		explicit Doodle(i3ipc::connection& conn, const std::string& config_path=".config/doodle"); // Todo: use xdg_config_path
-		Doodle() = delete;
+		explicit Doodle(const std::string& config_path=".config/doodle"); // Todo: use xdg_config_path
+		//Doodle() = delete;
 		Doodle(const Doodle&) = delete;
 		Doodle(Doodle&&) = delete;
 		Doodle& operator=(const Doodle&) = delete;
 		Doodle& operator=(Doodle&&) = delete;
 		//}}}
+
+		void run(void);
 
 		void on_window_change(const i3ipc::window_event_t& evt);
 		void on_workspace_change(const i3ipc::workspace_event_t&  evt);

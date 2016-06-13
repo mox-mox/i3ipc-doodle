@@ -73,6 +73,7 @@ void atexit_handler()
 	#ifdef USE_SYSLOG
 		closelog();
 	#endif
+	//libevent_global_shutdown();
 }
 //}}}
 
@@ -159,74 +160,8 @@ int main(int argc, char* argv[])
 
 
 
-	i3ipc::connection conn;
-	doodle = new Doodle(conn);
-
-	conn.prepare_to_event_handling();
-
-
-
-
-
-
-
-
-	for( ; ; )
-	{
-		std::cout<<"---------------Starting the event loop---------------"<<std::endl;
-		int s1, s2, n, rv;
-		fd_set readfds;
-		struct timeval tv;
-		s1 = 1;
-		s2 = conn.get_file_descriptor();
-
-
-		//// clear the set ahead of time
-		FD_ZERO(&readfds);
-
-		//// add our descriptors to the set
-		FD_SET(s1, &readfds);
-		FD_SET(s2, &readfds);
-
-		n = std::max(s1, s2)+1;
-
-
-
-		// wait until either socket has data ready to be recv()d (timeout 10.5 secs)
-		tv.tv_sec = 10;
-		tv.tv_usec = 500000;
-		rv = select(n, &readfds, NULL, NULL, &tv);
-		if( rv == -1 )
-		{
-			error<<"Select returned error."<<std::endl;
-		}
-		else if( rv == 0 )
-		{
-			logger<<"Timeout occurred! No data after 10.5 seconds."<<std::endl;
-		}
-		else
-		{
-			std::cout<<"---------------Data on one or more file descriptors---------------"<<std::endl;
-			if( FD_ISSET(s2, &readfds))
-			{
-				std::cout<<"---------------Data on i3 socket connection---------------"<<std::endl;
-				//recv(s2, buf2, sizeof buf2, 0);
-				conn.handle_event();
-			}
-			if( FD_ISSET(s1, &readfds))
-			{
-				std::cout<<"---------------Data on stdin---------------"<<std::endl;
-				//recv(s1, buf1, sizeof buf1, 0);
-				std::string temp;
-				std::cin>>temp;
-				std::cout<<"Received |"<<temp<<"| on stdin."<<std::endl;
-			}
-		}
-	}
-	//for(;;)
-	//{
-	//	conn.handle_event();
-	//}
+	doodle = new Doodle();
+	doodle->run();
 
 
 	return 0;
