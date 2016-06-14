@@ -42,15 +42,26 @@ class Doodle : public sigc::trackable
 		std::deque<Job> jobs;
 
 		std::map<window_id, win_id_lookup_entry> win_id_lookup;
-		inline win_id_lookup_entry find_job(const std::string& window_name);
 
+
+
+		struct event_base* events;//event_base_new(void);
+
+
+
+
+
+
+		void read_config(Json::Value config);
 
 
 		bool simulate_window_change(std::list< std::shared_ptr<i3ipc::container_t> > nodes);
 		bool simulate_workspace_change(std::vector< std::shared_ptr<i3ipc::workspace_t> > workspaces);
 
-		void read_config(Json::Value config);
+		void on_window_change(const i3ipc::window_event_t& evt);
+		void on_workspace_change(const i3ipc::workspace_event_t&  evt);
 
+		inline win_id_lookup_entry find_job(const std::string& window_name);
 
 	public:
 		//{{{ Constructor
@@ -61,12 +72,11 @@ class Doodle : public sigc::trackable
 		Doodle(Doodle&&) = delete;
 		Doodle& operator=(const Doodle&) = delete;
 		Doodle& operator=(Doodle&&) = delete;
+		~Doodle();
 		//}}}
 
 		void run(void);
 
-		void on_window_change(const i3ipc::window_event_t& evt);
-		void on_workspace_change(const i3ipc::workspace_event_t&  evt);
 
 		friend std::ostream& operator<< (std::ostream& stream, Doodle const& doodle);
 };

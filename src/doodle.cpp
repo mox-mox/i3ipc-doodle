@@ -13,7 +13,7 @@
 
 
 //{{{
-Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), nojob()
+Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), events(event_base_new())
 {
 	std::ifstream config_file(config_path+"/doodlerc");
 
@@ -32,6 +32,9 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 		std::cout<<"retrieving config"<<std::endl;
 		read_config(configuration_root.get("config", "no config"));
 	}
+
+	//{{{ Create the individual jobs
+
 	for( auto&f: std::experimental::filesystem::directory_iterator(config_path+"/jobs"))
 	{
 		if((f.path() != config_path+"/doodlerc") && std::string::npos == f.path().string().find("_backup") && std::experimental::filesystem::is_regular_file(f))
@@ -46,14 +49,9 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 			}
 		}
 	}
-
-	//for(Job& job : jobs)
-	//{
-	//	job.start_saver_thread();
-	//}
+	//}}}
 
 	nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
-	current_job = &nojob;
 
 	simulate_workspace_change(conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
 	//simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
@@ -66,14 +64,13 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 		error<<"could not connect"<<std::endl;
 		throw "Could not subscribe to the workspace- and window change events.";
 	}
-	//#ifdef DEBUG
-	//	else
-	//	{
-	//		logger<<"successfully subscribed"<<std::endl;
-	//	}
-	//#endif
 }
 //}}}
+
+Doodle::~Doodle()
+{
+	event_base_free(events);
+}
 
 //{{{
 void Doodle::read_config(Json::Value config)
