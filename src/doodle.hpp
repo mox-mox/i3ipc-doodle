@@ -62,6 +62,7 @@ class Doodle : public sigc::trackable
 		void on_workspace_change(const i3ipc::workspace_event_t&  evt);
 
 		inline win_id_lookup_entry find_job(const std::string& window_name);
+		static void handle_event_callback(evutil_socket_t fd, short what, void* instance);
 
 	public:
 		//{{{ Constructor

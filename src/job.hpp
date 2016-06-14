@@ -8,6 +8,7 @@
 #include <experimental/filesystem>
 #include <mutex>
 #include <condition_variable>
+#include <event2/event.h>
 
 
 class Job
@@ -21,7 +22,8 @@ class Job
 		struct settings
 		{
 			static constexpr unsigned int  GRANULARITY_DEFAULT_VALUE = 3600;
-			std::chrono::seconds granularity;
+			struct timeval granularity;
+			//std::chrono::seconds granularity;
 		} settings;
 		//}}}
 
@@ -37,8 +39,9 @@ class Job
 			bool timer_active = false;
 		} times;
 
+		struct event* write_timer;
 		void write_time(std::chrono::steady_clock::time_point now);
-		static void write_time_timer_callback(void* instance);
+		static void write_time_timer_callback(evutil_socket_t fd, short what, void* instance);
 
 
 
@@ -65,10 +68,10 @@ class Job
 	public:
 	//{{{ Constructors
 
-	Job(const std::experimental::filesystem::path& jobfile);
+	Job(const std::experimental::filesystem::path& jobfile, struct event_base* evt_base);
 	Job(void);
     Job(Job&& o) noexcept;
-	//~Job(void);
+	~Job(void);
 	//}}}
 
 	void start(std::chrono::steady_clock::time_point now);
