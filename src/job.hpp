@@ -2,13 +2,12 @@
 #include <string>
 #include <deque>
 #include <json/json.h>
-//#include "timespan.hpp"
 #include <regex>
 #include <thread>
 #include <experimental/filesystem>
 #include <mutex>
 #include <condition_variable>
-#include <event2/event.h>
+#include <ev++.h>
 
 
 class Job
@@ -16,14 +15,14 @@ class Job
 		const std::string jobname;
 		const std::experimental::filesystem::path jobfile;
 		const std::streampos total_time_position;
+		struct ev_loop* loop;
 
 
 		//{{{
 		struct settings
 		{
 			static constexpr unsigned int  GRANULARITY_DEFAULT_VALUE = 3600;
-			struct timeval granularity;
-			//std::chrono::seconds granularity;
+			std::chrono::seconds granularity;
 		} settings;
 		//}}}
 
@@ -39,9 +38,11 @@ class Job
 			bool timer_active = false;
 		} times;
 
-		struct event* write_timer;
-		void write_time(std::chrono::steady_clock::time_point now);
-		static void write_time_timer_callback(evutil_socket_t fd, short what, void* instance);
+		ev_timer write_time_timer;
+		static void write_time_cb(EV_P_ ev_timer* w, int revents);
+
+		//void write_time(std::chrono::steady_clock::time_point now);
+		//static void write_time_timer_callback(evutil_socket_t fd, short what, void* instance);
 
 
 
@@ -68,7 +69,7 @@ class Job
 	public:
 	//{{{ Constructors
 
-	Job(const std::experimental::filesystem::path& jobfile, struct event_base* evt_base);
+	Job(const std::experimental::filesystem::path& jobfile, struct ev_loop* loop);
 	Job(void);
     Job(Job&& o) noexcept;
 	~Job(void);

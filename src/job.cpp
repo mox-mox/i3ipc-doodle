@@ -3,12 +3,13 @@
 #include  <sstream>
 #include "logstream.hpp"
 #include <exception>
+#include <functional>
 
 
 static std::streampos find_total_time(std::experimental::filesystem::path jobfile_name);
 
 //{{{
-Job::Job(const std::experimental::filesystem::path& jobfile, struct event_base* evt_base) : jobname(jobfile.filename()), jobfile(jobfile), total_time_position(find_total_time(jobfile))
+Job::Job(const std::experimental::filesystem::path& jobfile, struct ev_loop* loop) : jobname(jobfile.filename()), jobfile(jobfile), total_time_position(find_total_time(jobfile)), loop(loop)
 {
 	//logger<<"Constructing job "<<jobname<<"."<<std::endl;
 	std::ifstream file(jobfile);
@@ -29,9 +30,9 @@ Job::Job(const std::experimental::filesystem::path& jobfile, struct event_base* 
 
 	times.total = std::chrono::seconds(job.get("total_time", 0).asInt64());
 
-	//settings.granularity = std::chrono::seconds(job.get("granularity", settings.GRANULARITY_DEFAULT_VALUE).asInt64());
-	settings.granularity.tv_sec = job.get("granularity", settings.GRANULARITY_DEFAULT_VALUE).asUInt64();
-	settings.granularity.tv_usec = 0;
+	settings.granularity = std::chrono::seconds(job.get("granularity", settings.GRANULARITY_DEFAULT_VALUE).asInt64());
+	//settings.granularity.tv_sec = job.get("granularity", settings.GRANULARITY_DEFAULT_VALUE).asUInt64();
+	//settings.granularity.tv_usec = 0;
 
 
 
@@ -100,8 +101,15 @@ Job::Job(const std::experimental::filesystem::path& jobfile, struct event_base* 
 
 
 
+   //std::function<void()> L3 = std::bind(&Job::write_time_cb, this);
+   //std::function<void(EV_P_ ev_timer* w, int revents)> L3 = std::bind(&Job::write_time_cb, this, std::placeholders::_1, std::placeholders::_2);
 
-	write_timer = evtimer_new(evt_base, write_time_timer_callback, this);
+	//ev_timer_init(&write_time_timer, std::bind(&Job::write_time_cb, this, std::placeholders::_1, std::placeholders::_2), 5.0, 0);
+	//ev_timer_init(&write_time_timer, Job::write_time_cb, 5.0, 0);
+	//write_time_timer.repeat = 1.0;
+	//ev_timer_start(loop, &write_time_timer);
+
+	//write_timer = evtimer_new(evt_base, write_time_timer_callback, this);
 
 	//std::cout<<"Job "<<jobname<<" is at "<<this<<std::endl;
 }
@@ -253,7 +261,7 @@ void Job::sanitise_jobfile(const std::experimental::filesystem::path& jobfile)
 //}}}
 
 //{{{
-Job::Job(Job && other) noexcept : jobname(other.jobname), jobfile(other.jobfile), total_time_position(std::move(other.total_time_position)), settings(std::move(other.settings)), write_timer(std::move(other.write_timer))
+Job::Job(Job && other) noexcept : jobname(other.jobname), jobfile(other.jobfile), total_time_position(std::move(other.total_time_position)), settings(std::move(other.settings)), write_time_timer(std::move(other.write_time_timer))
 {
 	matchers = std::move(other.matchers);
 	times = std::move(other.times);
@@ -288,7 +296,8 @@ void Job::start(std::chrono::steady_clock::time_point start_time)
 			times.slot_start = std::chrono::system_clock::now();
 			times.slot = std::chrono::seconds(0);
 			times.timer_active = true;
-			evtimer_add(write_timer, &settings.granularity);
+			//evtimer_add(write_timer, &settings.granularity);
+			//ev_timer_start(loop, &write_time_timer);
 	}
 }
 //}}}
@@ -305,47 +314,51 @@ void Job::stop(std::chrono::steady_clock::time_point now)
 //}}}
 
 //{{{
-void Job::write_time_timer_callback(evutil_socket_t fd, short what, void* instance)
-{
-	(void) fd;
-	(void) what;
-	(static_cast<Job*>(instance))->write_time(std::chrono::steady_clock::now());
-}
+//void Job::write_time_timer_callback(evutil_socket_t fd, short what, void* instance)
+//{
+//	(void) fd;
+//	(void) what;
+//	(static_cast<Job*>(instance))->write_time(std::chrono::steady_clock::now());
+//}
 //}}}
 
 
 //{{{
-void Job::write_time(std::chrono::steady_clock::time_point now)
+//void Job::write_time(std::chrono::steady_clock::time_point now)
+void write_time_cb(EV_P_ ev_timer* w, int revents)
 {
-	std::cout<<"Writing time for "<<jobname<<"to disk."<<std::endl;
+	(void) w;
+	(void) revents;
+	//std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	//std::cout<<"Writing time for "<<jobname<<"to disk."<<std::endl;
 
-	if( times.running )	// Account for a currently running job.
-	{
-		std::chrono::seconds elapsed = std::chrono::duration_cast < std::chrono::seconds > (now-times.job_start);
-		times.total     += elapsed;
-		times.slot      += elapsed;
-		times.job_start  = now;
-	}
+	//if( times.running )	// Account for a currently running job.
+	//{
+	//	std::chrono::seconds elapsed = std::chrono::duration_cast < std::chrono::seconds > (now-times.job_start);
+	//	times.total     += elapsed;
+	//	times.slot      += elapsed;
+	//	times.job_start  = now;
+	//}
 
-	std::fstream joblog(jobfile);
-	if(joblog.is_open())
-	{
-		joblog.seekg(total_time_position);		// Go to where total_time is stored
-		joblog<<std::setw(20)<<std::setfill('0')<<times.total.count();
+	//std::fstream joblog(jobfile);
+	//if(joblog.is_open())
+	//{
+	//	joblog.seekg(total_time_position);		// Go to where total_time is stored
+	//	joblog<<std::setw(20)<<std::setfill('0')<<times.total.count();
 
-		joblog.seekg(0, std::ios_base::end);	// Go to the end of the file
-		joblog<<times.slot_start.time_since_epoch().count()<<" "<<times.slot.count()<<std::endl;
-		joblog.close();
-	}
-	else
-	{
-		throw std::runtime_error("Could not open jobfile for "+jobname+".");
-	}
+	//	joblog.seekg(0, std::ios_base::end);	// Go to the end of the file
+	//	joblog<<times.slot_start.time_since_epoch().count()<<" "<<times.slot.count()<<std::endl;
+	//	joblog.close();
+	//}
+	//else
+	//{
+	//	throw std::runtime_error("Could not open jobfile for "+jobname+".");
+	//}
 
-	if( !times.running ) // If the job is currently not running
-	{
-		evtimer_del(write_timer);
-	}
+	//if( !times.running ) // If the job is currently not running
+	//{
+	//	evtimer_del(write_timer);
+	//}
 }
 //}}}
 

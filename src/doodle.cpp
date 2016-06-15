@@ -5,6 +5,7 @@
 #include <iostream>
 #include <experimental/filesystem>
 #include "logstream.hpp"
+#include <functional>
 
 
 
@@ -13,7 +14,7 @@
 
 
 //{{{
-Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), events(event_base_new())
+Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob)//,	loop(ev_default_loop(0))
 {
 	std::ifstream config_file(config_path+"/doodlerc");
 
@@ -33,6 +34,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 		read_config(configuration_root.get("config", "no config"));
 	}
 
+
 	//{{{ Create the individual jobs
 
 	for( auto&f: std::experimental::filesystem::directory_iterator(config_path+"/jobs"))
@@ -41,7 +43,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 		{
 			try
 			{
-				jobs.push_back({f.path(), events});
+				jobs.push_back({f.path(), loop});
 			}
 			catch(std::runtime_error& e)
 			{
@@ -66,11 +68,6 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 	}
 }
 //}}}
-
-Doodle::~Doodle()
-{
-	event_base_free(events);
-}
 
 //{{{
 void Doodle::read_config(Json::Value config)
@@ -245,14 +242,6 @@ bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::contain
 }
 //}}}
 
-//{{{
-void Doodle::handle_event_callback(evutil_socket_t fd, short what, void* instance)
-{
-	(void) fd;
-	(void) what;
-	(static_cast<i3ipc::connection*>(instance))->handle_event();
-}
-//}}}
 
 //{{{
 void Doodle::run(void)
@@ -262,65 +251,11 @@ void Doodle::run(void)
 	std::cout<<"---------------Starting the event loop---------------"<<std::endl;
 
 
-	//struct event *event_new(struct event_base *base, evutil_socket_t fd, short what, event_callback_fn cb, void *arg);
-	struct event* i3_event = event_new(events, conn.get_file_descriptor(), EV_READ|EV_PERSIST, handle_event_callback, &conn);
-	event_add(i3_event, nullptr);
 
-
-
-
-	event_base_dispatch(events);
-
-
-
-
-
-
-	//for( ; ; )
-	//{
-	//	int s1, s2, n, rv;
-	//	s1 = conn.get_file_descriptor();
-	//	s2 = 1;	// Fileno 1 belongs to stdin. TODO: Replace this with a socket connection for user interaction.
-
-
-	//	fd_set readfds;
-	//	FD_ZERO(&readfds);
-	//	FD_SET(s1, &readfds);
-	//	FD_SET(s2, &readfds);
-
-	//	n = std::max(s1, s2)+1; // Has to be 1 plus the highest file desriptor in the FD_SET.
-
-
-
-	//	struct timeval tv;
-	//	tv.tv_sec = 10;
-	//	tv.tv_usec = 0;
-
-	//	rv = select(n, &readfds, nullptr, nullptr, &tv);
-	//	if( rv == -1 )
-	//	{
-	//		error<<"Select returned error."<<std::endl;
-	//	}
-	//	else if( rv == 0 )
-	//	{
-	//		logger<<"Timeout occurred! No data after 10 seconds."<<std::endl;
-	//	}
-	//	else
-	//	{
-	//		std::cout<<"---------------Data on one or more file descriptors---------------"<<std::endl;
-	//		if( FD_ISSET(s1, &readfds))
-	//		{
-	//			std::cout<<"---------------Data on i3 socket connection---------------"<<std::endl;
-	//			conn.handle_event();
-	//		}
-	//		if( FD_ISSET(s2, &readfds))
-	//		{	// Dummy for testing only
-	//			std::cout<<"---------------Data on stdin---------------"<<std::endl;
-	//			std::string temp;
-	//			std::cin>>temp;
-	//			std::cout<<"Received |"<<temp<<"| on stdin."<<std::endl;
-	//		}
-	//	}
-	//}
+	ev::io ioWatcher;
+	ioWatcher.set < i3ipc::connection, &i3ipc::connection::handle_event > (&conn);
+	ioWatcher.set(conn.get_file_descriptor(), ev::READ);
+	ioWatcher.start();
+	loop.run();
 }
 //}}}

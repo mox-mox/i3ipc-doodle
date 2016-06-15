@@ -3,10 +3,7 @@
 #include <i3ipc++/ipc.hpp>
 #include <json/json.h>
 #include "job.hpp"
-#include <event2/event.h>
-#if !defined(LIBEVENT_VERSION_NUMBER) || LIBEVENT_VERSION_NUMBER < 0x02000100
-#error "This version of Libevent is not supported; Get 2.0.1-alpha or later."
-#endif
+#include <ev++.h>
 
 using window_id = uint64_t;
 
@@ -45,7 +42,9 @@ class Doodle : public sigc::trackable
 
 
 
-		struct event_base* events;//event_base_new(void);
+		//struct event_base* events;//event_base_new(void);
+		//struct ev_loop* loop;
+		ev::default_loop loop;
 
 
 
@@ -62,7 +61,6 @@ class Doodle : public sigc::trackable
 		void on_workspace_change(const i3ipc::workspace_event_t&  evt);
 
 		inline win_id_lookup_entry find_job(const std::string& window_name);
-		static void handle_event_callback(evutil_socket_t fd, short what, void* instance);
 
 	public:
 		//{{{ Constructor
@@ -73,7 +71,7 @@ class Doodle : public sigc::trackable
 		Doodle(Doodle&&) = delete;
 		Doodle& operator=(const Doodle&) = delete;
 		Doodle& operator=(Doodle&&) = delete;
-		~Doodle();
+		//~Doodle();
 		//}}}
 
 		void run(void);
