@@ -232,9 +232,25 @@ bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::contain
 }
 //}}}
 
-//{{{
-void Doodle::run(void)
+void Doodle::SIGUSR1_cb(void)
 {
+	std::cout<<"Received SIGUSR1!"<<std::endl;
+	std::cout<<*this<<std::endl;
+}
+
+void Doodle::SIGTERM_cb(void)
+{
+	logger<<"Shutting down doodle"<<std::endl;
+	std::cout<<"Shutting down doodle"<<std::endl;
+	loop.break_loop(ev::ALL);
+}
+
+
+
+//{{{
+int Doodle::operator()(void)
+{
+	int retval = 0;
 	conn.prepare_to_event_handling();
 
 	std::cout<<"---------------Starting the event loop---------------"<<std::endl;
@@ -247,6 +263,37 @@ void Doodle::run(void)
 	i3_watcher.start();
 	//}}}
 
+	//{{{ Watcher for the SIGUSR1 POSIX signal
+
+	ev::sig SIGUSR1_watcher;
+	SIGUSR1_watcher.set < Doodle, &Doodle::SIGUSR1_cb > (this);
+	SIGUSR1_watcher.set(SIGUSR1);
+	SIGUSR1_watcher.start();
+	//}}}
+
+	//{{{ Watcher for the SIGTERM POSIX signal
+
+	ev::sig SIGTERM_watcher;
+	SIGTERM_watcher.set < Doodle, &Doodle::SIGTERM_cb > (this);
+	SIGTERM_watcher.set(SIGTERM);
+	SIGTERM_watcher.start();
+	//}}}
+
+	//{{{ Watcher for the SIGINT POSIX signal
+
+	ev::sig SIGINT_watcher;
+	SIGINT_watcher.set < Doodle, &Doodle::SIGTERM_cb > (this);
+	SIGINT_watcher.set(SIGINT);
+	SIGINT_watcher.start();
+	//}}}
+
+
+
+
+
 	loop.run();
+	std::cout<<"Returning from event loop"<<std::endl;
+
+	return retval;
 }
 //}}}

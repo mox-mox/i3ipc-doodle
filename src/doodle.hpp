@@ -51,6 +51,9 @@ class Doodle : public sigc::trackable
 
 		inline win_id_lookup_entry find_job(const std::string& window_name);
 
+		void SIGUSR1_cb(void);
+		void SIGTERM_cb(void);
+
 	public:
 		//{{{ Constructor
 
@@ -61,7 +64,7 @@ class Doodle : public sigc::trackable
 		Doodle& operator=(Doodle&&) = delete;
 		//}}}
 
-		void run(void);
+		int operator()(void);
 		friend std::ostream& operator<< (std::ostream& stream, Doodle const& doodle);
 };
 
