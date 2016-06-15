@@ -3,12 +3,10 @@
 #include <signal.h>
 
 #include <i3ipc++/ipc.hpp>
-//#include "auss.hpp"
 #include "getopt_pp.h"
 #include "doodle.hpp"
 #include "logstream.hpp"
 #include <cstdlib>
-#include <algorithm>	// std::max
 
 #ifdef USE_NOTIFICATIONS
 	#include <libnotify/notify.h>
@@ -73,7 +71,6 @@ void atexit_handler()
 	#ifdef USE_SYSLOG
 		closelog();
 	#endif
-	//libevent_global_shutdown();
 }
 //}}}
 
@@ -158,11 +155,8 @@ int main(int argc, char* argv[])
 	signal(SIGTERM, SIGTERM_handler);
 	signal(SIGINT, SIGTERM_handler);
 
-
-
 	doodle = new Doodle();
 	doodle->run();
-
 
 	return 0;
 }

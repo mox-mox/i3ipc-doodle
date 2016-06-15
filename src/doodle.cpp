@@ -6,15 +6,10 @@
 #include <experimental/filesystem>
 #include "logstream.hpp"
 #include <functional>
-
-
-
-
-
-
+#include <json/json.h>
 
 //{{{
-Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob)//,	loop(ev_default_loop(0))
+Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob)
 {
 	std::ifstream config_file(config_path+"/doodlerc");
 
@@ -25,14 +20,19 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 	{
 		error<<reader.getFormattedErrorMessages()<<std::endl;
 	}
-	std::cout<<"retrieving config"<<std::endl;
-	read_config(configuration_root);
+
+	//{{{ Get the configuration options
 
 	if( configuration_root.isMember("config"))
 	{
 		std::cout<<"retrieving config"<<std::endl;
-		read_config(configuration_root.get("config", "no config"));
+		Json::Value config = configuration_root.get("config", "no config");
+		settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
+		//std::cout<<"	max_idle_time = "<<settings.max_idle_time<<std::endl;
+		settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
+		//std::cout<<"	detect_ambiguity = "<<settings.detect_ambiguity<<std::endl;
 	}
+	//}}}
 
 
 	//{{{ Create the individual jobs
@@ -66,16 +66,6 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 		error<<"could not connect"<<std::endl;
 		throw "Could not subscribe to the workspace- and window change events.";
 	}
-}
-//}}}
-
-//{{{
-void Doodle::read_config(Json::Value config)
-{
-	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
-	//std::cout<<"	max_idle_time = "<<settings.max_idle_time<<std::endl;
-	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
-	//std::cout<<"	detect_ambiguity = "<<settings.detect_ambiguity<<std::endl;
 }
 //}}}
 
@@ -242,7 +232,6 @@ bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::contain
 }
 //}}}
 
-
 //{{{
 void Doodle::run(void)
 {
@@ -250,12 +239,14 @@ void Doodle::run(void)
 
 	std::cout<<"---------------Starting the event loop---------------"<<std::endl;
 
+	//{{{ The watcher for i3 events
 
+	ev::io i3_watcher;
+	i3_watcher.set < i3ipc::connection, &i3ipc::connection::handle_event > (&conn);
+	i3_watcher.set(conn.get_file_descriptor(), ev::READ);
+	i3_watcher.start();
+	//}}}
 
-	ev::io ioWatcher;
-	ioWatcher.set < i3ipc::connection, &i3ipc::connection::handle_event > (&conn);
-	ioWatcher.set(conn.get_file_descriptor(), ev::READ);
-	ioWatcher.start();
 	loop.run();
 }
 //}}}

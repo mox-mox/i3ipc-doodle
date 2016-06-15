@@ -1,12 +1,8 @@
 #pragma once
 #include <string>
 #include <deque>
-#include <json/json.h>
 #include <regex>
-#include <thread>
 #include <experimental/filesystem>
-#include <mutex>
-#include <condition_variable>
 #include <ev++.h>
 
 
@@ -22,7 +18,7 @@ class Job
 		struct settings
 		{
 			static constexpr unsigned int  GRANULARITY_DEFAULT_VALUE = 3600;
-			std::chrono::seconds granularity;
+			unsigned int granularity;
 		} settings;
 		//}}}
 
@@ -38,11 +34,8 @@ class Job
 			bool timer_active = false;
 		} times;
 
-		ev_timer write_time_timer;
-		static void write_time_cb(EV_P_ ev_timer* w, int revents);
-
-		//void write_time(std::chrono::steady_clock::time_point now);
-		//static void write_time_timer_callback(evutil_socket_t fd, short what, void* instance);
+		ev::timer write_time_timer;
+		void write_time_cb(void);
 
 
 
@@ -69,10 +62,9 @@ class Job
 	public:
 	//{{{ Constructors
 
-	Job(const std::experimental::filesystem::path& jobfile, struct ev_loop* loop);
+	Job(const std::experimental::filesystem::path& jobfile, ev::loop_ref& loop);
 	Job(void);
     Job(Job&& o) noexcept;
-	~Job(void);
 	//}}}
 
 	void start(std::chrono::steady_clock::time_point now);

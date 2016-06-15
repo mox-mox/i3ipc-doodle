@@ -1,7 +1,6 @@
 #pragma once
 
 #include <i3ipc++/ipc.hpp>
-#include <json/json.h>
 #include "job.hpp"
 #include <ev++.h>
 
@@ -40,18 +39,8 @@ class Doodle : public sigc::trackable
 
 		std::map<window_id, win_id_lookup_entry> win_id_lookup;
 
-
-
-		//struct event_base* events;//event_base_new(void);
-		//struct ev_loop* loop;
 		ev::default_loop loop;
 
-
-
-
-
-
-		void read_config(Json::Value config);
 
 
 		bool simulate_window_change(std::list< std::shared_ptr<i3ipc::container_t> > nodes);
@@ -66,17 +55,13 @@ class Doodle : public sigc::trackable
 		//{{{ Constructor
 
 		explicit Doodle(const std::string& config_path=".config/doodle"); // Todo: use xdg_config_path
-		//Doodle() = delete;
 		Doodle(const Doodle&) = delete;
 		Doodle(Doodle&&) = delete;
 		Doodle& operator=(const Doodle&) = delete;
 		Doodle& operator=(Doodle&&) = delete;
-		//~Doodle();
 		//}}}
 
 		void run(void);
-
-
 		friend std::ostream& operator<< (std::ostream& stream, Doodle const& doodle);
 };
 
