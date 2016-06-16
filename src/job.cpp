@@ -312,6 +312,7 @@ void Job::write_time_cb(void)
 		joblog.seekg(0, std::ios_base::end);	// Go to the end of the file
 		joblog<<times.slot_start.time_since_epoch().count()<<" "<<times.slot.count()<<std::endl;
 		joblog.close();
+		times.slot = std::chrono::seconds(0);
 	}
 	else
 	{

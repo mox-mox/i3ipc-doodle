@@ -6,6 +6,7 @@
 #include <functional>
 #include <json/json.h>
 
+
 //{{{
 Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), idle(false), connection(xcb_connect (NULL, NULL)), screen(xcb_setup_roots_iterator (xcb_get_setup (connection)).data)
 {
@@ -147,7 +148,7 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 			{
 				old_job->stop(now);
 			}
-			if( current_job )
+			if( current_job && !idle )
 			{
 				current_job->start(now);
 			}
@@ -263,17 +264,22 @@ void Doodle::idle_watcher(ev::timer& timer, int revents)
     uint32_t idle_time = info->ms_since_user_input;
     free (info);
 
+	std::chrono::steady_clock::time_point now;	// Only get the time if we need it
+	if(((idle_time > settings.max_idle_time) && !idle) || ((idle_time < settings.max_idle_time) && idle))
+	{
+		now = std::chrono::steady_clock::now();
+	}
 	if((idle_time > settings.max_idle_time) && !idle)
 	{
 		idle = true;
 		logger<<"Going idle"<<std::endl;
-		// TODO: Stop currently active job
+		current_job->stop(now);
 	}
 	else if((idle_time < settings.max_idle_time) && idle)
 	{
 		idle = false;
 		logger<<"Going busy again"<<std::endl;
-		// TODO: (Re-)Start currently active job
+		current_job->start(now);
 	}
 	timer.again();
 }
