@@ -55,7 +55,7 @@ endif (USE_SYSLOG)
 option (USE_NOTIFICATIONS "Print debugging information to notification popup instead of console." ON)
 # The popup notification will always be visible and will not be detected by IPC_DOODLE so viewing it does not create more output.
 if (USE_NOTIFICATIONS)
-	find_package(Libnotify REQUIRED)
+	find_package(LIBNOTIFY REQUIRED)
 	find_package(GLIB2 REQUIRED)
 	find_package(GDK_PIXBUF2 REQUIRED)
 
@@ -70,6 +70,14 @@ find_package(LIBEV REQUIRED)
 
 set(LIBS ${LIBS} ${LIBEV_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEV_INCLUDE_DIRS})
+#}}}
+
+#{{{XCB
+
+find_package(XCB REQUIRED)
+
+set(LIBS ${LIBS} ${XCB_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
 #}}}
 
 

@@ -1,8 +1,6 @@
 #include "job.hpp"
 #include <fstream>
-#include  <sstream>
 #include "logstream.hpp"
-#include <exception>
 #include <functional>
 #include <json/json.h>
 
@@ -264,7 +262,6 @@ Job::Job(void) :
 { }
 //}}}
 
-
 //{{{
 void Job::start(std::chrono::steady_clock::time_point start_time)
 {
@@ -332,7 +329,6 @@ void Job::write_time_cb(void)
 }
 //}}}
 
-
 //{{{
 std::ostream& operator<<(std::ostream&stream, Job const&job)
 {
@@ -358,5 +354,12 @@ std::ostream& operator<<(std::ostream&stream, Job const&job)
 	}
 	stream<<std::endl;
 	return stream;
+}
+//}}}
+
+//{{{
+std::string Job::get_jobname(void)
+{
+	return jobname;
 }
 //}}}

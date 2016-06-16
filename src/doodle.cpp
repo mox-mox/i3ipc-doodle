@@ -1,6 +1,4 @@
 #include "doodle.hpp"
-#include <ios>
-#include <regex>
 #include <fstream>
 #include <iostream>
 #include <experimental/filesystem>
@@ -9,7 +7,7 @@
 #include <json/json.h>
 
 //{{{
-Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob)
+Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), idle(false), connection(xcb_connect (NULL, NULL)), screen(xcb_setup_roots_iterator (xcb_get_setup (connection)).data)
 {
 	std::ifstream config_file(config_path+"/doodlerc");
 
@@ -23,17 +21,21 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 
 	//{{{ Get the configuration options
 
+	std::cout<<"retrieving config"<<std::endl;
+	Json::Value config;
 	if( configuration_root.isMember("config"))
 	{
-		std::cout<<"retrieving config"<<std::endl;
-		Json::Value config = configuration_root.get("config", "no config");
-		settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
-		//std::cout<<"	max_idle_time = "<<settings.max_idle_time<<std::endl;
-		settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
-		//std::cout<<"	detect_ambiguity = "<<settings.detect_ambiguity<<std::endl;
+		config = configuration_root.get("config", "no config");
 	}
+	else
+	{
+		config = configuration_root;
+	}
+	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
+	//std::cout<<"	max_idle_time = "<<settings.max_idle_time<<std::endl;
+	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
+	//std::cout<<"	detect_ambiguity = "<<settings.detect_ambiguity<<std::endl;
 	//}}}
-
 
 	//{{{ Create the individual jobs
 
@@ -70,13 +72,21 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 //}}}
 
 //{{{
+Doodle::~Doodle(void)
+{
+	xcb_disconnect(connection);
+}
+//}}}
+
+
+//{{{
 inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_name)
 {
 	win_id_lookup_entry retval {
 		&nojob, ""
 	};
 
-	for( Job& j : jobs )									// Search all the jobs to see, if one matches the newly focused window
+	for( Job& j : jobs )					// Search all the jobs to see, if one matches the newly focused window
 	{
 		if((retval.matching_name = j.match(current_workspace, window_name)) != "" )
 		{
@@ -85,7 +95,7 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_na
 				retval.job = &j;
 				return retval;
 			}
-			else	// To detect ambiguity, continue searching to see if there are other matches
+			else							// To detect ambiguity, continue searching to see if there are other matches
 			{
 				if( retval.job != &nojob )
 				{
@@ -128,15 +138,8 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 
 		if( !entry.job || (entry.matching_name == "") || !std::regex_search(evt.container->name, std::regex(entry.matching_name)))
 		{
-			//std::cout<<"Job not found in map."<<std::endl;
 			entry = find_job(evt.container->name);
 		}
-		//#ifdef DEBUG
-		//	else
-		//	{
-		//		std::cout<<"Job found in map."<<std::endl;
-		//	}
-		//#endif
 		current_job = entry.job;
 		if( old_job != current_job )
 		{
@@ -232,20 +235,49 @@ bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::contain
 }
 //}}}
 
+//{{{
 void Doodle::SIGUSR1_cb(void)
 {
 	std::cout<<"Received SIGUSR1!"<<std::endl;
 	std::cout<<*this<<std::endl;
 }
+//}}}
 
+//{{{
 void Doodle::SIGTERM_cb(void)
 {
 	logger<<"Shutting down doodle"<<std::endl;
 	std::cout<<"Shutting down doodle"<<std::endl;
 	loop.break_loop(ev::ALL);
 }
+//}}}
 
+//{{{
+void Doodle::idle_watcher(ev::timer& timer, int revents)
+{
+	(void) revents;
+	std::cout<<"Checking idle time"<<std::endl;
+    xcb_screensaver_query_info_cookie_t cookie = xcb_screensaver_query_info (connection, screen->root);
+    xcb_screensaver_query_info_reply_t *info = xcb_screensaver_query_info_reply (connection, cookie, NULL);
 
+    uint32_t idle_time = info->ms_since_user_input;
+    free (info);
+
+	if((idle_time > settings.max_idle_time) && !idle)
+	{
+		idle = true;
+		logger<<"Going idle"<<std::endl;
+		// TODO: Stop currently active job
+	}
+	else if((idle_time < settings.max_idle_time) && idle)
+	{
+		idle = false;
+		logger<<"Going busy again"<<std::endl;
+		// TODO: (Re-)Start currently active job
+	}
+	timer.again();
+}
+//}}}
 
 //{{{
 int Doodle::operator()(void)
@@ -255,12 +287,20 @@ int Doodle::operator()(void)
 
 	std::cout<<"---------------Starting the event loop---------------"<<std::endl;
 
-	//{{{ The watcher for i3 events
+	//{{{ Watcher for i3 events
 
 	ev::io i3_watcher;
 	i3_watcher.set < i3ipc::connection, &i3ipc::connection::handle_event > (&conn);
 	i3_watcher.set(conn.get_file_descriptor(), ev::READ);
 	i3_watcher.start();
+	//}}}
+
+	//{{{ Watcher for idle time
+
+	ev::timer idle_watcher_timer;
+	idle_watcher_timer.set < Doodle, &Doodle::idle_watcher > (this);
+	idle_watcher_timer.set(settings.max_idle_time/1000, settings.max_idle_time/1000);
+	idle_watcher_timer.start();
 	//}}}
 
 	//{{{ Watcher for the SIGUSR1 POSIX signal
@@ -287,11 +327,10 @@ int Doodle::operator()(void)
 	SIGINT_watcher.start();
 	//}}}
 
-
-
-
-
 	loop.run();
+
+
+
 	std::cout<<"Returning from event loop"<<std::endl;
 
 	return retval;

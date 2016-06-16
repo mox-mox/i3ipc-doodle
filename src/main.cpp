@@ -1,12 +1,7 @@
 #include <iostream>
 #include "doodle_config.hpp"
-#include <signal.h>
-
-#include <i3ipc++/ipc.hpp>
-#include "getopt_pp.h"
 #include "doodle.hpp"
-#include "logstream.hpp"
-#include <cstdlib>
+#include "getopt_pp.h"
 
 #ifdef USE_NOTIFICATIONS
 	#include <libnotify/notify.h>
