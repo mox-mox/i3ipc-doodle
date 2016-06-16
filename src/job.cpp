@@ -295,7 +295,7 @@ void Job::write_time_cb(void)
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 	std::cout<<"Writing time for "<<jobname<<"to disk."<<std::endl;
 
-	if( times.running )	// Account for a currently running job.
+	if( times.running )							// Account for a currently running job.
 	{
 		std::chrono::seconds elapsed = std::chrono::duration_cast < std::chrono::seconds > (now-times.job_start);
 		times.total     += elapsed;

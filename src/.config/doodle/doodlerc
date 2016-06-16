@@ -1,5 +1,5 @@
 {
-	"max_idle_time": 120,		// Seconds the user may be idle before the timeer for the current job is halted.
+	"max_idle_time": 10,		// Seconds the user may be idle before the timeer for the current job is halted. A value of zero means to omit idle time detection.
 	"detect_ambiguity" : false	// Detect ambigous job definitions at runtime, e.g. if more than one job matches
 	                            // the current workspace/window title combination
 }

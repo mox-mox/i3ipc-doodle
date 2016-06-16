@@ -21,6 +21,7 @@ std::string help_message(std::string progname)
 	message += "	-h|--help           : Show this help and exit.\n";
 	message += "	-v|--version        : Show version information and exit.\n";
 	message += "	-n|--nofork         : Do not fork off into the background.\n";
+	//message += "	-a|--allow_idle     : Disable idle time checking.\n";
 	message += "	-c|--config  <path> : The path to the config file. Default: \"" DOODLE_CONFIG_PATH "\".\n";
 	message += "	-s|--socket  <path> : Where to store the socket for user communication. Default: \"" DOODLE_SOCKET_PATH "\".\n";
 	return message;
@@ -43,6 +44,7 @@ int main(int argc, char* argv[])
 	bool show_help;
 	bool show_version;
 	bool nofork;
+	//bool allow_idle;
 	std::string config;
 	std::string socket;
 
@@ -55,6 +57,7 @@ int main(int argc, char* argv[])
 		ops>>GetOpt::OptionPresent('h', "help", show_help);
 		ops>>GetOpt::OptionPresent('v', "version", show_version);
 		ops>>GetOpt::OptionPresent('n', "nofork", nofork);
+		//ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
 		ops>>GetOpt::Option('c', "config", config, DOODLE_CONFIG_PATH);
 		ops>>GetOpt::Option('s', "socket", config, DOODLE_CONFIG_PATH);
 	}

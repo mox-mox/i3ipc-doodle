@@ -36,16 +36,20 @@ class Doodle: public sigc::trackable
 
 	Job nojob;												// Special job that will not match any job. Used to keep track of unaccounted time.
 	Job* current_job;
-	std::deque < Job > jobs;
+	std::deque<Job> jobs;
 
-	std::map < window_id, win_id_lookup_entry > win_id_lookup;
+	std::map<window_id, win_id_lookup_entry> win_id_lookup;
 
 	ev::default_loop loop;
+
+	//{{{ Idle time detection
 
 	bool idle;
 	xcb_connection_t * connection;
 	xcb_screen_t * screen;
-	void idle_watcher(ev::timer& io_watcher, int revents);
+	ev::timer idle_watcher_timer;
+	void idle_watcher_cb(ev::timer& io_watcher, int revents);
+	//}}}
 
 
 

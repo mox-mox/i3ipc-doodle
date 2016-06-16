@@ -5,11 +5,14 @@
 #include "logstream.hpp"
 #include <functional>
 #include <json/json.h>
+#include <ev.h>
 
 
 //{{{
-Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), idle(false), connection(xcb_connect (NULL, NULL)), screen(xcb_setup_roots_iterator (xcb_get_setup (connection)).data)
+Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect (NULL, NULL)), screen(xcb_setup_roots_iterator (xcb_get_setup (connection)).data), idle_watcher_timer(loop)
 {
+	//{{{ Construct all members
+
 	std::ifstream config_file(config_path+"/doodlerc");
 
 	Json::Value configuration_root;
@@ -57,9 +60,32 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 	//}}}
 
 	nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
+	//}}}
+
+	//{{{ Prepare for operation
+
+	//{{{ Idle time detection
+
+	if(settings.max_idle_time)
+	{
+	//{{{ Watcher for idle time
+
+	idle_watcher_timer.set < Doodle, &Doodle::idle_watcher_cb > (this);
+	idle_watcher_timer.set(settings.max_idle_time, settings.max_idle_time);
+	idle_watcher_timer.start();
+	//}}}
+	}
+	else
+	{
+		idle = false;
+	}
+	//}}}
 
 	simulate_workspace_change(conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
 	//simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+
+
+	//{{{ i3 event subscriptions
 
 	conn.signal_window_event.connect(sigc::mem_fun(*this, &Doodle::on_window_change));
 	conn.signal_workspace_event.connect(sigc::mem_fun(*this, &Doodle::on_workspace_change));
@@ -69,6 +95,9 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 		error<<"could not connect"<<std::endl;
 		throw "Could not subscribe to the workspace- and window change events.";
 	}
+	//}}}
+
+	//}}}
 }
 //}}}
 
@@ -78,7 +107,6 @@ Doodle::~Doodle(void)
 	xcb_disconnect(connection);
 }
 //}}}
-
 
 //{{{
 inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_name)
@@ -148,9 +176,15 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 			{
 				old_job->stop(now);
 			}
-			if( current_job && !idle )
+			if( current_job )
 			{
-				current_job->start(now);
+				// A window change may imply user activity, so if the user is considered idle, update that status
+				if( idle ) idle_watcher_cb(idle_watcher_timer, 2);
+
+				if( !idle )
+				{
+					current_job->start(now);
+				}
 			}
 		}
 		logger<<"New current_job: "<<current_job->get_jobname()<<std::endl;
@@ -236,11 +270,14 @@ bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::contain
 }
 //}}}
 
+//{{{Callbacks
+
 //{{{
 void Doodle::SIGUSR1_cb(void)
 {
 	std::cout<<"Received SIGUSR1!"<<std::endl;
-	std::cout<<*this<<std::endl;
+	//std::cout<<*this<<std::endl;
+	std::cout<<"Pending count: "<<ev_pending_count (loop)<<"."<<std::endl;
 }
 //}}}
 
@@ -254,35 +291,42 @@ void Doodle::SIGTERM_cb(void)
 //}}}
 
 //{{{
-void Doodle::idle_watcher(ev::timer& timer, int revents)
+void Doodle::idle_watcher_cb(ev::timer& timer, int revents)
 {
-	(void) revents;
-	std::cout<<"Checking idle time"<<std::endl;
     xcb_screensaver_query_info_cookie_t cookie = xcb_screensaver_query_info (connection, screen->root);
     xcb_screensaver_query_info_reply_t *info = xcb_screensaver_query_info_reply (connection, cookie, NULL);
 
-    uint32_t idle_time = info->ms_since_user_input;
+    uint32_t idle_time = info->ms_since_user_input/1000;	// use seconds
+	std::cout<<"Checking idle time("<<revents<<"): "<<idle_time<<"."<<std::endl;
     free (info);
 
-	std::chrono::steady_clock::time_point now;	// Only get the time if we need it
-	if(((idle_time > settings.max_idle_time) && !idle) || ((idle_time < settings.max_idle_time) && idle))
+	uint32_t repeat_value = 1;
+	if(!idle)
 	{
-		now = std::chrono::steady_clock::now();
+		// Restart the watcher to trigger when idle_time might reach max_idle_time for the first time.
+		// See solution 2 of http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Be_smart_about_timeouts
+		uint32_t repeat_value = settings.max_idle_time - idle_time;
+		// If the value was allowed to become zero (because of truncation), the watcher would never be started again
+		repeat_value = repeat_value ? repeat_value : 1;
 	}
-	if((idle_time > settings.max_idle_time) && !idle)
+	timer.repeat = repeat_value;
+	timer.again();
+
+	if((idle_time >= settings.max_idle_time) && !idle)
 	{
 		idle = true;
 		logger<<"Going idle"<<std::endl;
-		current_job->stop(now);
+		current_job->stop(std::chrono::steady_clock::now());
 	}
 	else if((idle_time < settings.max_idle_time) && idle)
 	{
 		idle = false;
 		logger<<"Going busy again"<<std::endl;
-		current_job->start(now);
+		current_job->start(std::chrono::steady_clock::now());
 	}
-	timer.again();
+
 }
+//}}}
 //}}}
 
 //{{{
@@ -301,13 +345,18 @@ int Doodle::operator()(void)
 	i3_watcher.start();
 	//}}}
 
-	//{{{ Watcher for idle time
+//
+//	//{{{ Watcher for idle time
+//
+//	ev::timer idle_watcher_timer;
+//	idle_watcher_timer_p = &idle_watcher_timer;
+//	idle_watcher_timer.set < Doodle, &Doodle::idle_watcher_cb > (this);
+//	idle_watcher_timer.set(settings.max_idle_time, settings.max_idle_time);
+//	idle_watcher_timer.start();
+//	//}}}
+//
 
-	ev::timer idle_watcher_timer;
-	idle_watcher_timer.set < Doodle, &Doodle::idle_watcher > (this);
-	idle_watcher_timer.set(settings.max_idle_time/1000, settings.max_idle_time/1000);
-	idle_watcher_timer.start();
-	//}}}
+	//{{{ Watchers for POSIX signals
 
 	//{{{ Watcher for the SIGUSR1 POSIX signal
 
@@ -332,12 +381,14 @@ int Doodle::operator()(void)
 	SIGINT_watcher.set(SIGINT);
 	SIGINT_watcher.start();
 	//}}}
+	//}}}
 
 	loop.run();
 
 
 
 	std::cout<<"Returning from event loop"<<std::endl;
+
 
 	return retval;
 }
