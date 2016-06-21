@@ -5,11 +5,15 @@
 #include "logstream.hpp"
 #include <functional>
 #include <json/json.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
 #include <ev.h>
+#include <cstring>
 
 
 //{{{
-Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect (NULL, NULL)), screen(xcb_setup_roots_iterator (xcb_get_setup (connection)).data), idle_watcher_timer(loop)
+Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop)
 {
 	//{{{ Construct all members
 
@@ -39,19 +43,21 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 	//std::cout<<"	max_idle_time = "<<settings.max_idle_time<<std::endl;
 	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
 	//std::cout<<"	detect_ambiguity = "<<settings.detect_ambiguity<<std::endl;
+	settings.socket_path = config.get("socket_path", settings.SOCKET_PATH_DEFAULT_VALUE).asString();
+	//std::cout<<"	socket_path = "<<settings.socket_path<<std::endl;
 	//}}}
 
 	//{{{ Create the individual jobs
 
 	for( auto&f: std::experimental::filesystem::directory_iterator(config_path+"/jobs"))
 	{
-		if((f.path() != config_path+"/doodlerc") && std::string::npos == f.path().string().find("_backup") && std::experimental::filesystem::is_regular_file(f))
+		if((f.path() != config_path+"/doodlerc") && (std::string::npos == f.path().string().find("_backup")) && std::experimental::filesystem::is_regular_file(f))
 		{
 			try
 			{
-				jobs.push_back({f.path(), loop});
+				jobs.push_back({ f.path(), loop });
 			}
-			catch(std::runtime_error& e)
+			catch(std::runtime_error&e)
 			{
 				error<<"Caught exception \""<<e.what()<<"\" while constructing job "<<f.path().filename()<<". ... removing that job from the job list."<<std::endl;
 			}
@@ -66,14 +72,14 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 
 	//{{{ Idle time detection
 
-	if(settings.max_idle_time)
+	if( settings.max_idle_time )
 	{
-	//{{{ Watcher for idle time
+		//{{{ Watcher for idle time
 
-	idle_watcher_timer.set < Doodle, &Doodle::idle_watcher_cb > (this);
-	idle_watcher_timer.set(settings.max_idle_time, settings.max_idle_time);
-	idle_watcher_timer.start();
-	//}}}
+		idle_watcher_timer.set < Doodle, &Doodle::idle_watcher_cb > (this);
+		idle_watcher_timer.set(settings.max_idle_time, settings.max_idle_time);
+		idle_watcher_timer.start();
+		//}}}
 	}
 	else
 	{
@@ -277,7 +283,7 @@ void Doodle::SIGUSR1_cb(void)
 {
 	std::cout<<"Received SIGUSR1!"<<std::endl;
 	//std::cout<<*this<<std::endl;
-	std::cout<<"Pending count: "<<ev_pending_count (loop)<<"."<<std::endl;
+	std::cout<<"Pending count: "<<ev_pending_count(loop)<<"."<<std::endl;
 }
 //}}}
 
@@ -293,38 +299,38 @@ void Doodle::SIGTERM_cb(void)
 //{{{
 void Doodle::idle_watcher_cb(ev::timer& timer, int revents)
 {
-    xcb_screensaver_query_info_cookie_t cookie = xcb_screensaver_query_info (connection, screen->root);
-    xcb_screensaver_query_info_reply_t *info = xcb_screensaver_query_info_reply (connection, cookie, NULL);
+	xcb_screensaver_query_info_cookie_t cookie = xcb_screensaver_query_info(connection, screen->root);
+	xcb_screensaver_query_info_reply_t* info = xcb_screensaver_query_info_reply(connection, cookie, NULL);
 
-    uint32_t idle_time = info->ms_since_user_input/1000;	// use seconds
+	uint32_t idle_time = info->ms_since_user_input/1000;// use seconds
+
 	std::cout<<"Checking idle time("<<revents<<"): "<<idle_time<<"."<<std::endl;
-    free (info);
+	free(info);
 
 	uint32_t repeat_value = 1;
-	if(!idle)
+	if( !idle )
 	{
 		// Restart the watcher to trigger when idle_time might reach max_idle_time for the first time.
 		// See solution 2 of http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Be_smart_about_timeouts
-		uint32_t repeat_value = settings.max_idle_time - idle_time;
+		uint32_t repeat_value = settings.max_idle_time-idle_time;
 		// If the value was allowed to become zero (because of truncation), the watcher would never be started again
 		repeat_value = repeat_value ? repeat_value : 1;
 	}
 	timer.repeat = repeat_value;
 	timer.again();
 
-	if((idle_time >= settings.max_idle_time) && !idle)
+	if((idle_time >= settings.max_idle_time) && !idle )
 	{
 		idle = true;
 		logger<<"Going idle"<<std::endl;
 		current_job->stop(std::chrono::steady_clock::now());
 	}
-	else if((idle_time < settings.max_idle_time) && idle)
+	else if((idle_time < settings.max_idle_time) && idle )
 	{
 		idle = false;
 		logger<<"Going busy again"<<std::endl;
 		current_job->start(std::chrono::steady_clock::now());
 	}
-
 }
 //}}}
 //}}}
@@ -333,6 +339,7 @@ void Doodle::idle_watcher_cb(ev::timer& timer, int revents)
 int Doodle::operator()(void)
 {
 	int retval = 0;
+
 	conn.prepare_to_event_handling();
 
 	std::cout<<"---------------Starting the event loop---------------"<<std::endl;
@@ -344,17 +351,6 @@ int Doodle::operator()(void)
 	i3_watcher.set(conn.get_file_descriptor(), ev::READ);
 	i3_watcher.start();
 	//}}}
-
-//
-//	//{{{ Watcher for idle time
-//
-//	ev::timer idle_watcher_timer;
-//	idle_watcher_timer_p = &idle_watcher_timer;
-//	idle_watcher_timer.set < Doodle, &Doodle::idle_watcher_cb > (this);
-//	idle_watcher_timer.set(settings.max_idle_time, settings.max_idle_time);
-//	idle_watcher_timer.start();
-//	//}}}
-//
 
 	//{{{ Watchers for POSIX signals
 
@@ -382,6 +378,123 @@ int Doodle::operator()(void)
 	SIGINT_watcher.start();
 	//}}}
 	//}}}
+
+	//
+	//	//{{{ Listen to a posix socket
+	//
+	//	int max_queue = 128;
+	//	struct sock_ev_serv server;
+	//	struct ev_periodic every_few_seconds;
+	//	std::string sock_path = "/tmp/libev-ipc-daemon.sock";
+	//
+	//	unlink(sock_path);
+	//
+	//	// Setup a unix socket listener.
+	//	int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+	//	if( -1 == fd )
+	//	{
+	//		perror("echo server socket");
+	//		exit(EXIT_FAILURE);
+	//	}
+	//
+	//	// Set it non-blocking
+	//	int flags = fcntl(fd, F_GETFL);
+	//	flags |= O_NONBLOCK;
+	//	if( -1 == fcntl(fd, F_SETFL, flags))
+	//	{
+	//		perror("echo server socket nonblock");
+	//		exit(EXIT_FAILURE);
+	//	}
+	//
+	//	// Set it as unix socket
+	//	server.socket.sun_family = AF_UNIX;
+	//	server.socket.sun_path = sock_path
+	//	//strcpy(socket_un->sun_path, sock_path);
+	//
+	//	server.fd = fd
+	//	server.socket_len = sizeof(server->socket.sun_family)+strlen(server->socket.sun_path);
+	//
+	//	array_init(&(server.clients), 128);
+	//
+	//	if( -1 == bind(server.fd, (struct sockaddr*) &(server.socket), server.socket_len))
+	//	{
+	//		perror("echo server bind");
+	//		exit(EXIT_FAILURE);
+	//	}
+	//
+	//	if( -1 == listen(server.fd, max_queue))
+	//	{
+	//		perror("listen");
+	//		exit(EXIT_FAILURE);
+	//	}
+	//
+	//
+	//
+	//
+	//	//}}}
+	//
+
+
+	//{{{ Listen to a posix socket
+
+	char buf[100];
+
+	//if( argc > 1 ) socket_path = argv[1];
+
+
+	struct sockaddr_un addr;
+	addr.sun_family = AF_UNIX;
+	if(sizeof(addr.sun_path)-1 <= settings.socket_path.size()) { std::cerr<<"Socket path too long"<<std::endl; return -1; }
+	std::strncpy(addr.sun_path, settings.socket_path, sizeof(addr.sun_path)-1);
+
+	unlink(settings.socket_path);
+
+	int fd;
+	if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1 ) { std::cerr<<"socket error"<<std::endl; return -1; }
+
+	if( bind(fd, (struct sockaddr*) &addr, sizeof(addr)) == -1 ) { std::cerr<<"bind error"<<std::endl; return -1; }
+
+	if( listen(fd, 5) == -1 ) { std::cerr<<"listen error"<<std::endl; return -1; }
+
+	while( 1 )
+	{
+		int cl;
+		if((cl = accept(fd, NULL, NULL)) == -1 ) { std::cerr<<"accept error"<<std::endl; continue; }
+
+		int rc;
+		while((rc = read(cl, buf, sizeof(buf))) > 0 )
+		{
+			printf("read %u bytes: %.*s\n", rc, rc, buf);
+		}
+		if( rc == -1 )
+		{
+			std::cerr<<"read"<<std::endl;
+			exit(-1);
+		}
+		else if( rc == 0 )
+		{
+			printf("EOF\n");
+			close(cl);
+		}
+	}
+
+
+
+
+	//}}}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	loop.run();
 

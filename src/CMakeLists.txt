@@ -4,12 +4,7 @@ project(i3ipc-doodle)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(DOODLE_CONFIG_PATH ".config/doodle")
-set(DOODLE_SOCKET_PATH ".config/doodle")
-
-
-
-
-
+set(DOODLE_SOCKET_PATH "\\0hidden")
 
 
 ## Where to install the compiled package to. TODO: Remove this to install to the standard locations

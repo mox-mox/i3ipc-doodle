@@ -5,6 +5,7 @@
 #include "job.hpp"
 #include <xcb/xcb.h>
 #include <xcb/screensaver.h>
+#include "doodle_config.hpp"
 
 using window_id = uint64_t;
 
@@ -22,6 +23,8 @@ class Doodle: public sigc::trackable
 		unsigned int max_idle_time = MAX_IDLE_TIME_DEFAULT_VALUE;
 		static constexpr bool DETECT_AMBIGUITY_DEFAULT_VALUE = false;
 		bool detect_ambiguity = DETECT_AMBIGUITY_DEFAULT_VALUE;
+		static constexpr auto SOCKET_PATH_DEFAULT_VALUE = "\0hidden";
+		std::string socket_path = SOCKET_PATH_DEFAULT_VALUE;
 	} settings;
 
 	//{{{
