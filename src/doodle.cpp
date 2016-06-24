@@ -11,6 +11,186 @@
 #include <ev.h>
 #include <cstring>
 
+#include "doodle.hpp"
+#include <unistd.h>
+#include <iostream>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <cstring>
+#include <functional>
+#include <cstdio>
+
+
+
+
+
+
+
+//{{{
+struct Doodle::client_watcher : ev::io
+{
+	client_watcher* prev;
+	client_watcher* next;
+
+	ev::io write_watcher;
+	std::deque<std::string> write_data;
+
+	//{{{
+	client_watcher(int main_fd, client_watcher* next, ev::loop_ref loop) : ev::io(loop), write_watcher(loop)
+	{
+		if( -1 == main_fd )   throw std::runtime_error("Passed invalid Unix socket");
+		int client_fd = accept(main_fd, NULL, NULL);
+		if( -1 == client_fd ) throw std::runtime_error("Received invalid Unix socket");
+		ev::io::set(client_fd, ev::READ);
+		if(!next)
+		{
+			prev = next = this;
+		}
+		else // if next is valid
+		{
+			this->next = next;
+			this->prev = next->prev;
+			next->prev = this;
+			prev->next = this;
+		}
+
+		set<client_watcher, reinterpret_cast<void (client_watcher::*)(ev::io& socket_watcher, int revents)>( &client_watcher::client_watcher_cb) >(nullptr);
+
+		start();
+
+		write_watcher.set < client_watcher, &client_watcher::write_cb > (this);
+		write_watcher.set(client_fd, ev::WRITE);
+		write_watcher.start();
+	}
+	//}}}
+
+	//{{{
+	~client_watcher(void)
+	{
+		//std::cout<<"~client_watcher()"<<std::endl;
+		close(fd);
+		write_watcher.stop();
+		stop();
+		if(this != next && this != prev)
+		{
+			next->prev = this->prev;
+			prev->next = this->next;
+		}
+	}
+	//}}}
+
+
+	//{{{
+	void write_cb(ev::io& w, int revent)
+	{
+		(void) revent;
+		std::deque<std::string>& write_data = static_cast<client_watcher*>(w.data)->write_data;
+		if(write_data.empty())
+		{
+			w.stop();
+		}
+		else while(!write_data.empty())
+		{
+			int write_count = 0;
+			int write_size = write_data.front().length();
+			while(write_count < write_size)
+			{
+				int n;
+				switch((n=write(w.fd, &write_data.front()[write_count], write_size-write_count)))
+				{
+					case -1:
+						throw std::runtime_error("Write error on the connection using fd." + std::to_string(w.fd) + ".");
+					case  0:
+						std::cout<<"Received EOF (Client has closed the connection)."<<std::endl;
+						delete &w;
+						//throw std::runtime_error("Write error on the connection using fd." + std::to_string(w.fd) + ".");
+						return;
+					default:
+						write_count+=n;
+				}
+			}
+			write_data.pop_front();
+		}
+	}
+	//}}}
+
+	//{{{
+	friend client_watcher& operator<<(client_watcher& lhs, const std::string& data)
+	{
+		lhs.write_data.push_back(data);
+		if(!lhs.write_watcher.is_active()) lhs.write_watcher.start();
+
+		return lhs;
+	}
+	//}}}
+
+	//{{{
+	bool read_n(int fd, char buffer[], int size, client_watcher& watcher)	// Read exactly size bytes
+	{
+		int read_count = 0;
+		while(read_count < size)
+		{
+			int n;
+			switch((n=read(fd, &buffer[read_count], size-read_count)))
+			{
+				case -1:
+					throw std::runtime_error("Read error on the connection using fd." + std::to_string(fd) + ".");
+				case  0:
+					std::cout<<"Received EOF (Client has closed the connection)."<<std::endl;
+					delete &watcher;
+					return true;
+				default:
+					read_count+=n;
+			}
+		}
+		return false;
+	}
+	//}}}
+
+	//{{{
+	void client_watcher_cb(client_watcher& watcher, int revents)
+	{
+		//std::cout<<"client_watcher_cb("<<revents<<") called for fd "<<watcher.fd<<"."<<std::endl;
+		(void) revents;
+
+		struct header_t header;
+
+		if(read_n(watcher.fd, static_cast<char*>(static_cast<void*>(&header)), sizeof(header), watcher))
+		{
+			return;
+		}
+		std::cout<<header.doodleversion<<", length: "<<header.length<<": ";
+
+		std::string buffer(header.length, '\0');
+		if(read_n(watcher.fd, &buffer[0], header.length, watcher))
+		{
+			return;
+		}
+
+		std::cout<<"\""<<buffer<<"\""<<std::endl;
+
+		////////////////////////////////////////
+		watcher<<buffer;	// Do something with the received data
+		////////////////////////////////////////
+
+
+		if(buffer=="kill")
+		{
+			std::cout<<"Shutting down"<<std::endl;
+			//todo: delete all stuff
+			watcher.loop.break_loop(ev::ALL);
+		}
+	}
+	//}}}
+};
+//}}}
+
+
+
+
+
+
+
 
 //{{{
 Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop)
@@ -40,11 +220,9 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 		config = configuration_root;
 	}
 	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
-	//std::cout<<"	max_idle_time = "<<settings.max_idle_time<<std::endl;
 	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
-	//std::cout<<"	detect_ambiguity = "<<settings.detect_ambiguity<<std::endl;
-	settings.socket_path = config.get("socket_path", settings.SOCKET_PATH_DEFAULT_VALUE).asString();
-	//std::cout<<"	socket_path = "<<settings.socket_path<<std::endl;
+	settings.socket_path = config.get("socket_path", DOODLE_SOCKET_PATH_DEFAULT).asString();
+	if(settings.socket_path[0] == '@') settings.socket_path[0] = '\0';
 	//}}}
 
 	//{{{ Create the individual jobs
@@ -76,7 +254,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 	{
 		//{{{ Watcher for idle time
 
-		idle_watcher_timer.set < Doodle, &Doodle::idle_watcher_cb > (this);
+		idle_watcher_timer.set < Doodle, &Doodle::idle_time_watcher_cb > (this);
 		idle_watcher_timer.set(settings.max_idle_time, settings.max_idle_time);
 		idle_watcher_timer.start();
 		//}}}
@@ -104,6 +282,63 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 	//}}}
 
 	//}}}
+
+
+	//{{{ Initialise socket communication
+
+
+
+	//{{{
+	for(unsigned int i = 0; i<=settings.socket_path.length(); i++)
+	{
+		std::cout<<"|"<<settings.socket_path[i];
+	}
+	std::cout<<"|"<<std::endl;
+	for(unsigned int i = 0; i<=settings.socket_path.length(); i++)
+	{
+		std::cout<<"|"<<static_cast<int>(settings.socket_path[i]);
+	}
+	std::cout<<"|"<<std::endl;
+	//}}}
+
+
+	std::cout<<"Socket path: "<<settings.socket_path<<std::endl;
+
+	int fd;
+	if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1 )
+	{
+		throw std::runtime_error("Could not create a Unix socket.");
+	}
+
+	socket_watcher.set(fd, ev::READ);
+	struct sockaddr_un addr;
+	addr.sun_family = AF_UNIX;
+
+	if(settings.socket_path.length() >= sizeof(addr.sun_path)-1)
+	{
+		throw std::runtime_error("Unix socket path \"" + settings.socket_path + "\" is too long. "
+		                         "Maximum allowed size is " + std::to_string(sizeof(addr.sun_path)) + "." );
+	}
+
+	settings.socket_path.copy(addr.sun_path, settings.socket_path.length());
+
+	unlink(&settings.socket_path[0]);
+
+	if( bind(fd, static_cast<struct sockaddr*>(static_cast<void*>(&addr)), settings.socket_path.length()+1) == -1 )
+	{
+		throw std::runtime_error("Could not bind to socket " + settings.socket_path + ".");
+	}
+
+	if( listen(fd, 5) == -1 )
+	{
+		throw std::runtime_error("Could not listen() to socket " + settings.socket_path + ".");
+	}
+	socket_watcher.set<Doodle, &Doodle::socket_watcher_cb>(nullptr);
+	socket_watcher.start();
+	//}}}
+
+
+
 }
 //}}}
 
@@ -111,6 +346,23 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 Doodle::~Doodle(void)
 {
 	xcb_disconnect(connection);
+
+	//{{{
+
+	client_watcher* head = static_cast<client_watcher*>(socket_watcher.data);
+	if(head)
+	{
+		client_watcher* w = head->next;
+		while(w && w != head)
+		{
+			client_watcher* current = w;
+			w = w->next;
+			delete current;
+		}
+		delete head;
+	}
+	unlink(&settings.socket_path[0]);
+	//}}}
 }
 //}}}
 
@@ -185,7 +437,7 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 			if( current_job )
 			{
 				// A window change may imply user activity, so if the user is considered idle, update that status
-				if( idle ) idle_watcher_cb(idle_watcher_timer, 2);
+				if( idle ) idle_time_watcher_cb(idle_watcher_timer, 2);
 
 				if( !idle )
 				{
@@ -297,7 +549,7 @@ void Doodle::SIGTERM_cb(void)
 //}}}
 
 //{{{
-void Doodle::idle_watcher_cb(ev::timer& timer, int revents)
+void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
 {
 	xcb_screensaver_query_info_cookie_t cookie = xcb_screensaver_query_info(connection, screen->root);
 	xcb_screensaver_query_info_reply_t* info = xcb_screensaver_query_info_reply(connection, cookie, NULL);
@@ -334,6 +586,24 @@ void Doodle::idle_watcher_cb(ev::timer& timer, int revents)
 }
 //}}}
 //}}}
+
+
+
+
+
+
+//{{{
+void Doodle::socket_watcher_cb(ev::io& socket_watcher, int revents)
+{
+	std::cout<<"socket_watcher_cb called"<<std::endl;
+	(void) revents;
+	client_watcher* head = static_cast<client_watcher*>(socket_watcher.data);
+	head = new client_watcher(socket_watcher.fd, head, socket_watcher.loop);
+	socket_watcher.data = static_cast<void*>(head);
+}
+//}}}
+
+
 
 //{{{
 int Doodle::operator()(void)
@@ -433,58 +703,6 @@ int Doodle::operator()(void)
 	//
 	//	//}}}
 	//
-
-
-	//{{{ Listen to a posix socket
-
-	char buf[100];
-
-	//if( argc > 1 ) socket_path = argv[1];
-
-
-	struct sockaddr_un addr;
-	addr.sun_family = AF_UNIX;
-	if(sizeof(addr.sun_path)-1 <= settings.socket_path.size()) { std::cerr<<"Socket path too long"<<std::endl; return -1; }
-	std::strncpy(addr.sun_path, settings.socket_path, sizeof(addr.sun_path)-1);
-
-	unlink(settings.socket_path);
-
-	int fd;
-	if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1 ) { std::cerr<<"socket error"<<std::endl; return -1; }
-
-	if( bind(fd, (struct sockaddr*) &addr, sizeof(addr)) == -1 ) { std::cerr<<"bind error"<<std::endl; return -1; }
-
-	if( listen(fd, 5) == -1 ) { std::cerr<<"listen error"<<std::endl; return -1; }
-
-	while( 1 )
-	{
-		int cl;
-		if((cl = accept(fd, NULL, NULL)) == -1 ) { std::cerr<<"accept error"<<std::endl; continue; }
-
-		int rc;
-		while((rc = read(cl, buf, sizeof(buf))) > 0 )
-		{
-			printf("read %u bytes: %.*s\n", rc, rc, buf);
-		}
-		if( rc == -1 )
-		{
-			std::cerr<<"read"<<std::endl;
-			exit(-1);
-		}
-		else if( rc == 0 )
-		{
-			printf("EOF\n");
-			close(cl);
-		}
-	}
-
-
-
-
-	//}}}
-
-
-
 
 
 

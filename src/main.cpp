@@ -23,7 +23,7 @@ std::string help_message(std::string progname)
 	message += "	-n|--nofork         : Do not fork off into the background.\n";
 	//message += "	-a|--allow_idle     : Disable idle time checking.\n";
 	message += "	-c|--config  <path> : The path to the config file. Default: \"" DOODLE_CONFIG_PATH "\".\n";
-	message += "	-s|--socket  <path> : Where to store the socket for user communication. Default: \"" DOODLE_SOCKET_PATH "\".\n";
+	message += "	-s|--socket  <path> : Where to store the socket for user communication. Default: \"" + DOODLE_SOCKET_PATH_DEFAULT + "\".\n";
 	return message;
 }
 
@@ -37,6 +37,18 @@ void version_message()
 
 int main(int argc, char* argv[])
 {
+
+
+	//{{{
+	for(unsigned int i = 0; i<=DOODLE_SOCKET_PATH_DEFAULT.length(); i++)
+	{
+		std::cout<<"|"<<DOODLE_SOCKET_PATH_DEFAULT[i];
+	}
+	std::cout<<"|"<<std::endl;
+	//}}}
+
+
+
 	int retval = -1;
 
 	//{{{ Argument handling

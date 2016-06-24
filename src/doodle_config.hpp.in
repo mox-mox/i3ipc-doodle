@@ -8,7 +8,13 @@
 #define GIT_BRANCH "@GIT_BRANCH@"
 #define GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
 #define DOODLE_CONFIG_PATH "@DOODLE_CONFIG_PATH@"
-#define DOODLE_SOCKET_PATH "@DOODLE_SOCKET_PATH@"
+//#define DOODLE_SOCKET_PATH "@DOODLE_SOCKET_PATH@"
+
+
+
+#include <string>
+//constexpr char doodle_socket_path[] = "@DOODLE_SOCKET_PATH@";
+const std::string DOODLE_SOCKET_PATH_DEFAULT("@DOODLE_SOCKET_PATH@", sizeof("@DOODLE_SOCKET_PATH@")-1); //-1 to strip the terminating null
 
 
 #cmakedefine USE_NOTIFICATIONS

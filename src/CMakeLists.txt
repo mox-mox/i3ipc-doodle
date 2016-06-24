@@ -4,7 +4,9 @@ project(i3ipc-doodle)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(DOODLE_CONFIG_PATH ".config/doodle")
-set(DOODLE_SOCKET_PATH "\\0hidden")
+#set(DOODLE_SOCKET_PATH "\\0doodle_user_communication")
+set(DOODLE_SOCKET_PATH "@doodle_user_communication")
+#set(DOODLE_SOCKET_PATH "./doodle_user_communication")
 
 
 ## Where to install the compiled package to. TODO: Remove this to install to the standard locations
@@ -13,7 +15,10 @@ set(DOODLE_SOCKET_PATH "\\0hidden")
 
 #{{{Variables: SRCS INCDIRS LINKDIRS LIBS
 
-file(GLOB SRCS ../src/*.cpp getoptpp/src/getopt_pp.cpp)
+#file(GLOB SRCS ../src/*.cpp getoptpp/src/getopt_pp.cpp)
+file(GLOB SRCS ../i3ipc-doodle/*.cpp getoptpp/src/getopt_pp.cpp)
+MESSAGE( STATUS "SRCS: " ${SRCS} )
+
 set(INCDIRS "${PROJECT_BINARY_DIR}")
 set(INCDIRS_SYS "getoptpp/getoptpp")
 set(LIBS -lpthread -lstdc++fs)

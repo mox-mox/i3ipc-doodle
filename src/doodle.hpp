@@ -23,8 +23,7 @@ class Doodle: public sigc::trackable
 		unsigned int max_idle_time = MAX_IDLE_TIME_DEFAULT_VALUE;
 		static constexpr bool DETECT_AMBIGUITY_DEFAULT_VALUE = false;
 		bool detect_ambiguity = DETECT_AMBIGUITY_DEFAULT_VALUE;
-		static constexpr auto SOCKET_PATH_DEFAULT_VALUE = "\0hidden";
-		std::string socket_path = SOCKET_PATH_DEFAULT_VALUE;
+		std::string socket_path = DOODLE_SOCKET_PATH_DEFAULT;
 	} settings;
 
 	//{{{
@@ -51,7 +50,7 @@ class Doodle: public sigc::trackable
 	xcb_connection_t * connection;
 	xcb_screen_t * screen;
 	ev::timer idle_watcher_timer;
-	void idle_watcher_cb(ev::timer& io_watcher, int revents);
+	void idle_time_watcher_cb(ev::timer& io_watcher, int revents);
 	//}}}
 
 
@@ -64,8 +63,26 @@ class Doodle: public sigc::trackable
 
 	inline win_id_lookup_entry find_job(const std::string& window_name);
 
+
+
+
+	struct client_watcher;
 	void SIGUSR1_cb(void);
 	void SIGTERM_cb(void);
+	void socket_watcher_cb(ev::io& socket_watcher, int revents);
+
+
+	const std::string socket_path;
+	ev::io socket_watcher;
+
+	struct header_t
+	{
+		char doodleversion[8];
+		uint16_t length;
+	}  __attribute__ ((packed));
+
+
+
 
 	public:
 		//{{{ Constructor
