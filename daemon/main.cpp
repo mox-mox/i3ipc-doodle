@@ -2,6 +2,7 @@
 #include "doodle_config.hpp"
 #include "doodle.hpp"
 #include "getopt_pp.h"
+#include <unistd.h>
 
 #ifdef USE_NOTIFICATIONS
 	#include <libnotify/notify.h>

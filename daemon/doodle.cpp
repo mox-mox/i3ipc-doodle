@@ -191,7 +191,6 @@ struct Doodle::client_watcher : ev::io
 
 
 
-
 //{{{
 Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop)
 {
