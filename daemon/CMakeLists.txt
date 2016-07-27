@@ -3,11 +3,9 @@
 #{{{Variables: SRCS INCDIRS LINKDIRS LIBS CMAKE_MODULE_PATH
 
 file(GLOB SRCS *.cpp ../libs/getoptpp/src/getopt_pp.cpp)
-MESSAGE( STATUS "SRCS: " ${SRCS} )
-
 set(INCDIRS "${PROJECT_BINARY_DIR}")
 set(INCDIRS_SYS "getoptpp/getoptpp")
-set(LIBS -lpthread -lstdc++fs)
+set(LIBS -lstdc++fs)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 #}}}
 

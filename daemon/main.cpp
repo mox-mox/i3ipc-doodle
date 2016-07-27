@@ -40,13 +40,13 @@ int main(int argc, char* argv[])
 {
 
 
-	//{{{
-	for(unsigned int i = 0; i<=DOODLE_SOCKET_PATH_DEFAULT.length(); i++)
-	{
-		std::cout<<"|"<<DOODLE_SOCKET_PATH_DEFAULT[i];
-	}
-	std::cout<<"|"<<std::endl;
-	//}}}
+	////{{{
+	//for(unsigned int i = 0; i<=DOODLE_SOCKET_PATH_DEFAULT.length(); i++)
+	//{
+	//	std::cout<<"|"<<DOODLE_SOCKET_PATH_DEFAULT[i];
+	//}
+	//std::cout<<"|"<<std::endl;
+	////}}}
 
 
 
