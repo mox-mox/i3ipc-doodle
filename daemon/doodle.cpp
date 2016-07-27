@@ -40,6 +40,8 @@ struct Doodle::client_watcher : ev::io
 	client_watcher(int main_fd, client_watcher** head, ev::loop_ref loop) : ev::io(loop), write_watcher(loop)
 	{
 		this->head = head;
+		*this->head = this;
+
 		//this->data = static_cast<void*>(head);
 		client_watcher* next_watcher = *head;
 
@@ -156,9 +158,6 @@ struct Doodle::client_watcher : ev::io
 	//{{{
 	void client_watcher_cb(client_watcher& watcher, int revents)
 	{
-		//std::cout<<"client_watcher_cb(): this = "<<&watcher<<std::endl;
-		//std::cout<<"client_watcher_cb(): next = "<<watcher.next<<std::endl;
-		//std::cout<<"client_watcher_cb("<<revents<<") called for fd "<<watcher.fd<<"."<<std::endl;
 		(void) revents;
 
 		struct header_t header;
@@ -578,9 +577,7 @@ void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
 void Doodle::socket_watcher_cb(ev::io& socket_watcher, int revents)
 {
 	(void) revents;
-	client_watcher* head = static_cast<client_watcher*>(socket_watcher.data);
-	head = new client_watcher(socket_watcher.fd, reinterpret_cast<client_watcher**>(&socket_watcher.data), socket_watcher.loop);
-	socket_watcher.data = static_cast<void*>(head);
+	new client_watcher(socket_watcher.fd, reinterpret_cast<client_watcher**>(&socket_watcher.data), socket_watcher.loop);
 }
 //}}}
 
