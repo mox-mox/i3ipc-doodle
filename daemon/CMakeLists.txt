@@ -79,11 +79,11 @@ set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -std=c++17 -lstdc++fs -W
 #}}}
 
 
-add_executable(doodle ${SRCS})
-target_link_libraries(doodle ${LIBS} )
-target_include_directories(doodle PUBLIC ${INCDIRS})
-target_include_directories(doodle SYSTEM PUBLIC ${INCDIRS_SYS})
+add_executable(doodle_daemon ${SRCS})
+target_link_libraries(doodle_daemon ${LIBS} )
+target_include_directories(doodle_daemon PUBLIC ${INCDIRS})
+target_include_directories(doodle_daemon SYSTEM PUBLIC ${INCDIRS_SYS})
 
-add_custom_command(TARGET doodle POST_BUILD
+add_custom_command(TARGET doodle_daemon POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                   ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle>/.config)
+                   ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle_daemon>/.config)

@@ -38,18 +38,6 @@ void version_message()
 
 int main(int argc, char* argv[])
 {
-
-
-	////{{{
-	//for(unsigned int i = 0; i<=DOODLE_SOCKET_PATH_DEFAULT.length(); i++)
-	//{
-	//	std::cout<<"|"<<DOODLE_SOCKET_PATH_DEFAULT[i];
-	//}
-	//std::cout<<"|"<<std::endl;
-	////}}}
-
-
-
 	int retval = -1;
 
 	//{{{ Argument handling
@@ -127,12 +115,17 @@ int main(int argc, char* argv[])
 	Doodle doodle(config);
 	retval = doodle();
 
+	//{{{
 	#ifdef USE_NOTIFICATIONS
 		notify_uninit();
 	#endif
+	//}}}
+
+	//{{{
 	#ifdef USE_SYSLOG
 		closelog();
 	#endif
+	//}}}
 
 	return retval;
 }

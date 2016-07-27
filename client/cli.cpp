@@ -10,16 +10,12 @@
 #include <cstring>
 #include <bitset>
 #include "doodle_config.hpp"
-//#include "socketpath.hpp"
 
-
-//const std::string socket_path(doodle_socket_path, sizeof(doodle_socket_path));
 
 std::string socket_path = DOODLE_SOCKET_PATH_DEFAULT;
 
-
-
 //{{{ Extend an IO watcher with a wrtie-queue
+
 namespace ev
 {
 	struct socket : ev::io
@@ -73,20 +69,20 @@ namespace ev
 		//}}}
 
 		//}}}
-	};
 
-	socket& operator<<(socket& lhs, const std::string& data)
+
+	friend socket& operator<<(socket& lhs, const std::string& data)
 	{
 		lhs.write_data.push_back(data);
 		if(!lhs.is_active()) lhs.start();
 
 		return lhs;
 	}
+
+	};
+
 }
 //}}}
-
-
-
 
 //{{{
 void stdin_cb(ev::io& w, int revent)
@@ -105,9 +101,7 @@ void stdin_cb(ev::io& w, int revent)
 }
 //}}}
 
-
-
-
+//{{{
 void write_n(int fd, char buffer[], int size)	// Write exactly size bytes
 {
 	int write_count = 0;
@@ -127,9 +121,7 @@ void write_n(int fd, char buffer[], int size)	// Write exactly size bytes
 		}
 	}
 }
-
-
-
+//}}}
 
 //{{{
 void socket_write_cb(ev::socket& w, int revent)
@@ -146,8 +138,6 @@ void socket_write_cb(ev::socket& w, int revent)
 	}
 }
 //}}}
-
-
 
 //{{{
 constexpr unsigned int bufferlength = 50;
@@ -175,23 +165,6 @@ void socket_read_cb(ev::socket& w, int revent)
 
 int main(void)
 {
-
-	if(socket_path[0] == '@') socket_path[0] = '\0';
-
-
-
-
-
-
-
-
-	std::cout<<"sizeof(socket_path): "<<sizeof(socket_path)<<std::endl;
-	std::cout<<"length of the socket path: "<<socket_path.length()<<std::endl;
-
-
-//constexpr char socket_path[] = "\0hidden";
-
-
 	ev::default_loop loop;
 
 	//{{{ Standard Unix socket creation
@@ -205,45 +178,20 @@ int main(void)
 	struct sockaddr_un addr;
 	addr.sun_family = AF_UNIX;
 
-//	//{{{
-//	for(unsigned int i = 0; i<=socket_path.length(); i++)
-//=======
-//	for(unsigned int i = 0; i<sizeof(socket_path)-1; i++)
-//>>>>>>> 12eec0e40063c0decb5faa26544399636c7f6c2d
-//	{
-//		std::cout<<"|"<<socket_path[i];
-//	}
-//	std::cout<<"|"<<std::endl;
-//<<<<<<< HEAD
-//	//}}}
+	// Unix sockets beginning with a null character map to the invisible unix socket space.
+	// Since Strings that begin with a null character a difficult to handle, use @ instead
+	// and translate @ to the null character here.
+	if(socket_path[0] == '@') socket_path[0] = '\0';
 
 
 
 	if(socket_path.length() >= sizeof(addr.sun_path)-1)
 	{
-		//throw std::runtime_error("Unix socket path \"" + socket_path + "\" is too long. "
-		//                         "Maximum allowed size is " + std::to_string(sizeof(addr.sun_path)) + "." );
-		throw std::runtime_error("Unix socket path \""  "\" is too long. "
+		throw std::runtime_error("Unix socket path \"" + socket_path + "\" is too long. "
 		                         "Maximum allowed size is " + std::to_string(sizeof(addr.sun_path)) + "." );
 	}
 
-	//{{{
-	for(unsigned int i = 0; i<=sizeof(socket_path); i++)
-	{
-		addr.sun_path[i] = socket_path[i]; // Need to do this in a loop, because the usual string copying functions break when there is a '\0' character in the string.
-	}
-	//}}}
-
-
-
-	//{{{
-	std::cout<<"SOCKET: ";
-	for(unsigned int i = 0; i<=socket_path.length(); i++)
-	{
-		std::cout<<"|"<<addr.sun_path[i];
-	}
-	std::cout<<"|"<<std::endl;
-	//}}}
+	socket_path.copy(addr.sun_path, socket_path.length());
 
 
 	if( connect(socket_watcher_write.fd, static_cast<struct sockaddr*>(static_cast<void*>(&addr)), socket_path.length()+1) == -1 )
@@ -268,3 +216,4 @@ int main(void)
 
 	return 0;
 }
+

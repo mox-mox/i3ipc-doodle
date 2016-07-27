@@ -31,27 +31,33 @@ struct Doodle::client_watcher : ev::io
 {
 	client_watcher* prev;
 	client_watcher* next;
+	client_watcher** head;
 
 	ev::io write_watcher;
 	std::deque<std::string> write_data;
 
 	//{{{
-	client_watcher(int main_fd, client_watcher* next, ev::loop_ref loop) : ev::io(loop), write_watcher(loop)
+	client_watcher(int main_fd, client_watcher** head, ev::loop_ref loop) : ev::io(loop), write_watcher(loop)
 	{
+		this->head = head;
+		//this->data = static_cast<void*>(head);
+		client_watcher* next_watcher = *head;
+
 		if( -1 == main_fd )   throw std::runtime_error("Passed invalid Unix socket");
 		int client_fd = accept(main_fd, NULL, NULL);
 		if( -1 == client_fd ) throw std::runtime_error("Received invalid Unix socket");
 		ev::io::set(client_fd, ev::READ);
-		if(!next)
+		if(!next_watcher)
 		{
-			prev = next = this;
+			this->prev = this;
+			this->next = this;
 		}
 		else // if next is valid
 		{
-			this->next = next;
-			this->prev = next->prev;
-			next->prev = this;
-			prev->next = this;
+			this->next = next_watcher;
+			this->prev = next_watcher->prev;
+			this->next->prev = this;
+			this->prev->next = this;
 		}
 
 		set<client_watcher, reinterpret_cast<void (client_watcher::*)(ev::io& socket_watcher, int revents)>( &client_watcher::client_watcher_cb) >(nullptr);
@@ -67,18 +73,21 @@ struct Doodle::client_watcher : ev::io
 	//{{{
 	~client_watcher(void)
 	{
-		//std::cout<<"~client_watcher()"<<std::endl;
 		close(fd);
 		write_watcher.stop();
 		stop();
 		if(this != next && this != prev)
 		{
+			*head = this->next;
 			next->prev = this->prev;
 			prev->next = this->next;
 		}
+		else
+		{
+			*head = nullptr;
+		}
 	}
 	//}}}
-
 
 	//{{{
 	void write_cb(ev::io& w, int revent)
@@ -101,9 +110,7 @@ struct Doodle::client_watcher : ev::io
 					case -1:
 						throw std::runtime_error("Write error on the connection using fd." + std::to_string(w.fd) + ".");
 					case  0:
-						std::cout<<"Received EOF (Client has closed the connection)."<<std::endl;
 						delete &w;
-						//throw std::runtime_error("Write error on the connection using fd." + std::to_string(w.fd) + ".");
 						return;
 					default:
 						write_count+=n;
@@ -136,7 +143,6 @@ struct Doodle::client_watcher : ev::io
 				case -1:
 					throw std::runtime_error("Read error on the connection using fd." + std::to_string(fd) + ".");
 				case  0:
-					std::cout<<"Received EOF (Client has closed the connection)."<<std::endl;
 					delete &watcher;
 					return true;
 				default:
@@ -150,6 +156,8 @@ struct Doodle::client_watcher : ev::io
 	//{{{
 	void client_watcher_cb(client_watcher& watcher, int revents)
 	{
+		//std::cout<<"client_watcher_cb(): this = "<<&watcher<<std::endl;
+		//std::cout<<"client_watcher_cb(): next = "<<watcher.next<<std::endl;
 		//std::cout<<"client_watcher_cb("<<revents<<") called for fd "<<watcher.fd<<"."<<std::endl;
 		(void) revents;
 
@@ -280,22 +288,6 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 
 	//{{{ Initialise socket communication
 
-
-
-	////{{{
-	//for(unsigned int i = 0; i<=settings.socket_path.length(); i++)
-	//{
-	//	std::cout<<"|"<<settings.socket_path[i];
-	//}
-	//std::cout<<"|"<<std::endl;
-	//for(unsigned int i = 0; i<=settings.socket_path.length(); i++)
-	//{
-	//	std::cout<<"|"<<static_cast<int>(settings.socket_path[i]);
-	//}
-	//std::cout<<"|"<<std::endl;
-	////}}}
-
-
 	std::cout<<"Socket path: "<<settings.socket_path<<std::endl;
 
 	int fd;
@@ -347,6 +339,7 @@ Doodle::~Doodle(void)
 	if(head)
 	{
 		client_watcher* w = head->next;
+
 		while(w && w != head)
 		{
 			client_watcher* current = w;
@@ -545,6 +538,7 @@ void Doodle::SIGTERM_cb(void)
 //{{{
 void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
 {
+	(void) revents;
 	xcb_screensaver_query_info_cookie_t cookie = xcb_screensaver_query_info(connection, screen->root);
 	xcb_screensaver_query_info_reply_t* info = xcb_screensaver_query_info_reply(connection, cookie, NULL);
 
@@ -579,23 +573,24 @@ void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
 	}
 }
 //}}}
-//}}}
-
-
-
-
-
 
 //{{{
 void Doodle::socket_watcher_cb(ev::io& socket_watcher, int revents)
 {
-	std::cout<<"socket_watcher_cb called"<<std::endl;
 	(void) revents;
 	client_watcher* head = static_cast<client_watcher*>(socket_watcher.data);
-	head = new client_watcher(socket_watcher.fd, head, socket_watcher.loop);
+	head = new client_watcher(socket_watcher.fd, reinterpret_cast<client_watcher**>(&socket_watcher.data), socket_watcher.loop);
 	socket_watcher.data = static_cast<void*>(head);
 }
 //}}}
+
+//}}}
+
+
+
+
+
+
 
 
 
@@ -643,77 +638,9 @@ int Doodle::operator()(void)
 	//}}}
 	//}}}
 
-	//
-	//	//{{{ Listen to a posix socket
-	//
-	//	int max_queue = 128;
-	//	struct sock_ev_serv server;
-	//	struct ev_periodic every_few_seconds;
-	//	std::string sock_path = "/tmp/libev-ipc-daemon.sock";
-	//
-	//	unlink(sock_path);
-	//
-	//	// Setup a unix socket listener.
-	//	int fd = socket(AF_UNIX, SOCK_STREAM, 0);
-	//	if( -1 == fd )
-	//	{
-	//		perror("echo server socket");
-	//		exit(EXIT_FAILURE);
-	//	}
-	//
-	//	// Set it non-blocking
-	//	int flags = fcntl(fd, F_GETFL);
-	//	flags |= O_NONBLOCK;
-	//	if( -1 == fcntl(fd, F_SETFL, flags))
-	//	{
-	//		perror("echo server socket nonblock");
-	//		exit(EXIT_FAILURE);
-	//	}
-	//
-	//	// Set it as unix socket
-	//	server.socket.sun_family = AF_UNIX;
-	//	server.socket.sun_path = sock_path
-	//	//strcpy(socket_un->sun_path, sock_path);
-	//
-	//	server.fd = fd
-	//	server.socket_len = sizeof(server->socket.sun_family)+strlen(server->socket.sun_path);
-	//
-	//	array_init(&(server.clients), 128);
-	//
-	//	if( -1 == bind(server.fd, (struct sockaddr*) &(server.socket), server.socket_len))
-	//	{
-	//		perror("echo server bind");
-	//		exit(EXIT_FAILURE);
-	//	}
-	//
-	//	if( -1 == listen(server.fd, max_queue))
-	//	{
-	//		perror("listen");
-	//		exit(EXIT_FAILURE);
-	//	}
-	//
-	//
-	//
-	//
-	//	//}}}
-	//
-
-
-
-
-
-
-
-
-
-
-
 	loop.run();
 
-
-
 	std::cout<<"Returning from event loop"<<std::endl;
-
 
 	return retval;
 }
