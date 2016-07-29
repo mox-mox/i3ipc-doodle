@@ -21,7 +21,7 @@ struct terminal_t
 	Json::Value help(Json::Value);
 
 
-		Json::Value (terminal_t::* func)(Json::Value) = &terminal_t::suspend;
+		//Json::Value (terminal_t::* func)(Json::Value) = &terminal_t::suspend;
 
 
 	struct command_t

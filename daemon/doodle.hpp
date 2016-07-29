@@ -1,10 +1,10 @@
 #pragma once
 
-#include <i3ipc++/ipc.hpp>
+#include "doodle_config.hpp"
 #include <ev++.h>
+#include <i3ipc++/ipc.hpp>
 #include "job.hpp"
 #include <xcb/screensaver.h>
-#include "doodle_config.hpp"
 #include <json/json.h>
 
 using window_id = uint64_t;
@@ -67,14 +67,17 @@ class Doodle: public sigc::trackable
 
 
 
-	#include "doodle_client_watcher.hpp" //struct client_watcher;
+	#include "doodle_client_watcher.hpp" //struct Client_watcher;
+
 	void SIGUSR1_cb(void);
 	void SIGTERM_cb(void);
-	void socket_watcher_cb(ev::io& socket_watcher, int revents);
+	//void socket_watcher_cb(ev::io& socket_watcher, int revents);
 
 
-	const std::string socket_path;
-	ev::io socket_watcher;
+	#include "doodle_socket_watcher.hpp" //struct socket_watcher;
+	Socket_watcher socket_watcher;
+	//const std::string socket_path;
+	//ev::io socket_watcher;
 
 
 

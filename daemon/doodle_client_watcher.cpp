@@ -8,10 +8,10 @@
 
 
 	//{{{
-Doodle::client_watcher::client_watcher(int main_fd, client_watcher** head, Doodle* doodle, ev::loop_ref loop) : ev::io(loop), doodle(doodle), head(head), write_watcher(loop)
+Doodle::Client_watcher::Client_watcher(int main_fd, Client_watcher** head, Doodle* doodle, ev::loop_ref loop) : ev::io(loop), doodle(doodle), head(head), write_watcher(loop)
 	{
 		*this->head = this;
-		client_watcher* next_watcher = *head;
+		Client_watcher* next_watcher = *head;
 
 		if( -1 == main_fd )   throw std::runtime_error("Passed invalid Unix socket");
 		int client_fd = accept(main_fd, NULL, NULL);
@@ -30,18 +30,18 @@ Doodle::client_watcher::client_watcher(int main_fd, client_watcher** head, Doodl
 			this->prev->next = this;
 		}
 
-		set<client_watcher, reinterpret_cast<void (client_watcher::*)(ev::io& socket_watcher, int revents)>( &client_watcher::client_watcher_cb) >(this);
+		set<Client_watcher, reinterpret_cast<void (Client_watcher::*)(ev::io& socket_watcher, int revents)>( &Client_watcher::Client_watcher_cb) >(this);
 
 		start();
 
-		write_watcher.set < client_watcher, &client_watcher::write_cb > (this);
+		write_watcher.set < Client_watcher, &Client_watcher::write_cb > (this);
 		write_watcher.set(client_fd, ev::WRITE);
 		write_watcher.start();
 	}
 	//}}}
 
 	//{{{
-	Doodle::client_watcher::~client_watcher(void)
+	Doodle::Client_watcher::~Client_watcher(void)
 	{
 		close(fd);
 		write_watcher.stop();
@@ -60,10 +60,10 @@ Doodle::client_watcher::client_watcher(int main_fd, client_watcher** head, Doodl
 	//}}}
 
 	//{{{
-	void Doodle::client_watcher::write_cb(ev::io& w, int revent)
+	void Doodle::Client_watcher::write_cb(ev::io& w, int revent)
 	{
 		(void) revent;
-		std::deque<std::string>& write_data = static_cast<client_watcher*>(w.data)->write_data;
+		std::deque<std::string>& write_data = static_cast<Client_watcher*>(w.data)->write_data;
 		if(write_data.empty())
 		{
 			w.stop();
@@ -93,7 +93,7 @@ Doodle::client_watcher::client_watcher(int main_fd, client_watcher** head, Doodl
 
 //
 //	//{{{
-//	Doodle::client_watcher& operator<<(Doodle::client_watcher& lhs, const std::string& data)
+//	Doodle::Client_watcher& operator<<(Doodle::Client_watcher& lhs, const std::string& data)
 //	{
 //		uint16_t length = data.length();
 //		std::string credential(DOODLE_PROTOCOL_VERSION, 0, sizeof(DOODLE_PROTOCOL_VERSION)-1);
@@ -109,7 +109,7 @@ Doodle::client_watcher::client_watcher(int main_fd, client_watcher** head, Doodl
 //
 
 	//{{{
-	bool Doodle::client_watcher::read_n(int fd, char buffer[], int size, client_watcher& watcher)	// Read exactly size bytes
+	bool Doodle::Client_watcher::read_n(int fd, char buffer[], int size, Client_watcher& watcher)	// Read exactly size bytes
 	{
 		int read_count = 0;
 		while(read_count < size)
@@ -131,7 +131,7 @@ Doodle::client_watcher::client_watcher(int main_fd, client_watcher** head, Doodl
 	//}}}
 
 	//{{{
-	void Doodle::client_watcher::client_watcher_cb(client_watcher& watcher, int revents)
+	void Doodle::Client_watcher::Client_watcher_cb(Client_watcher& watcher, int revents)
 	{
 		(void) revents;
 
@@ -155,20 +155,13 @@ Doodle::client_watcher::client_watcher(int main_fd, client_watcher** head, Doodl
 
 		std::cout<<"\""<<buffer<<"\""<<std::endl;
 
-		////////////////////////////////////////
-		//watcher<<buffer;	// Do something with the received data
-		////////////////////////////////////////
-
-
-		//std::cout<<"starting terminal"<<std::endl;
 		watcher<<this->doodle->terminal(buffer);
 
-
-		if(buffer=="kill")
-		{
-			std::cout<<"Shutting down"<<std::endl;
-			//todo: delete all stuff
-			watcher.loop.break_loop(ev::ALL);
-		}
+		//if(buffer=="kill")
+		//{
+		//	std::cout<<"Shutting down"<<std::endl;
+		//	//todo: delete all stuff
+		//	watcher.loop.break_loop(ev::ALL);
+		//}
 	}
 	//}}}

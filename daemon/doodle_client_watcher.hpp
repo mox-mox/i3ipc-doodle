@@ -1,29 +1,30 @@
+#include "doodle_config.hpp"
 #include <ev++.h>
 
 //{{{
-struct client_watcher : ev::io
+struct Client_watcher : ev::io
 {
 	Doodle* const doodle;
-	client_watcher* prev;
-	client_watcher* next;
-	client_watcher** head;
+	Client_watcher* prev;
+	Client_watcher* next;
+	Client_watcher** head;
 
 	ev::io write_watcher;
 	std::deque<std::string> write_data;
 
-	client_watcher(int main_fd, client_watcher** head, Doodle* doodle, ev::loop_ref loop);
-	client_watcher() = delete;
-	client_watcher(const client_watcher&) = delete;
-	client_watcher(client_watcher&&) = delete;
-	client_watcher& operator=(const client_watcher&) = delete;
-	client_watcher& operator=(client_watcher&&) = delete;
+	Client_watcher(int main_fd, Client_watcher** head, Doodle* doodle, ev::loop_ref loop);
+	Client_watcher() = delete;
+	Client_watcher(const Client_watcher&) = delete;
+	Client_watcher(Client_watcher&&) = delete;
+	Client_watcher& operator=(const Client_watcher&) = delete;
+	Client_watcher& operator=(Client_watcher&&) = delete;
 
 
-	~client_watcher(void);
+	~Client_watcher(void);
 
 	void write_cb(ev::io& w, int revent);
 
-	friend client_watcher& operator<<(client_watcher& lhs, const std::string& data)
+	friend Client_watcher& operator<<(Client_watcher& lhs, const std::string& data)
 	{
 		uint16_t length = data.length();
 		std::string credential(DOODLE_PROTOCOL_VERSION, 0, sizeof(DOODLE_PROTOCOL_VERSION)-1);
@@ -36,9 +37,9 @@ struct client_watcher : ev::io
 		return lhs;
 	}
 
-	bool read_n(int fd, char buffer[], int size, client_watcher& watcher);	// Read exactly size bytes
+	bool read_n(int fd, char buffer[], int size, Client_watcher& watcher);	// Read exactly size bytes
 
-	void client_watcher_cb(client_watcher& watcher, int revents);
+	void Client_watcher_cb(Client_watcher& watcher, int revents);
 };
 //}}}
 

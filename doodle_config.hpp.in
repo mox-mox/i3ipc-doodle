@@ -30,7 +30,9 @@ const std::string DOODLE_SOCKET_PATH_DEFAULT("@DOODLE_SOCKET_PATH@", sizeof("@DO
 // Settings for libev
 #define EV_NO_SMP 1
 #define EV_NO_THREADS 1
-//#define EV_MULTIPLICITY 0
+//#define EV_MULTIPLICITY 1
+//#define EV_COMMON 
+//#define EV_COMMON void *data;
 
 
 

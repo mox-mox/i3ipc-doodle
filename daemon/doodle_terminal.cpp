@@ -3,14 +3,14 @@
 
 Doodle::terminal_t::terminal_t(Doodle* doodle) : doodle(doodle)
 {
-	std::cout<<"terminal at "<<this<<" ++>>"<<std::endl;
-	std::cout<<"<<++ doodle = "<<doodle<<std::endl;
+	//std::cout<<"terminal at "<<this<<" ++>>"<<std::endl;
+	//std::cout<<"<<++ doodle = "<<doodle<<std::endl;
 }
 
 std::string Doodle::terminal_t::operator()(std::string command_line_input)
 {
-	std::cout<<"terminal_t::operator() at"<<this<<" ++>>"<<std::endl;
-	std::cout<<"<<++ doodle = "<<doodle<<std::endl;
+	//std::cout<<"terminal_t::operator() at"<<this<<" ++>>"<<std::endl;
+	//std::cout<<"<<++ doodle = "<<doodle<<std::endl;
 
 		Json::Value cmd;
 		Json::Reader reader;
@@ -22,16 +22,19 @@ std::string Doodle::terminal_t::operator()(std::string command_line_input)
 		}
 		else
 		{
-			std::cout<<"starting the terminal evaluation"<<std::endl;
-			std::cout<<"this: "<<this<<std::endl;
+			//std::cout<<"starting the terminal evaluation"<<std::endl;
+			//std::cout<<"this: "<<this<<std::endl;
 			//return "{\"command\":\"suspend\",\"response\":\"suspended successfully\"}";
 			//return suspend(cmd).toStyledString();
 			//return (this->*func)(cmd).toStyledString();
 			if( cmd.isMember("command"))
 			{
 				try{
+					std::string command = cmd.get("command", "no command").asString();
+					Json::Value (terminal_t::* func)(Json::Value) = commands.at(command).func;
 
-				return (this->*func)(cmd).toStyledString();
+
+					return (this->*func)(cmd["args"]).toStyledString();
 				}
 				catch (std::out_of_range)
 				{
@@ -43,14 +46,12 @@ std::string Doodle::terminal_t::operator()(std::string command_line_input)
 		}
 }
 
-Json::Value Doodle::terminal_t::suspend(Json::Value)
+Json::Value Doodle::terminal_t::suspend(Json::Value args)
 {
-	std::cout<<"SUSPENDING"<<std::endl;
 	logger<<"Suspending"<<std::endl;
-	std::cout<<"doodle = "<<doodle<<std::endl;
+	logger<<"Args: "<<args.toStyledString()<<std::endl;
 	doodle->suspended = true;
-	std::cout<<"doodle = "<<doodle<<std::endl;
-	//doodle->current_job->stop(std::chrono::steady_clock::now());
+	doodle->current_job->stop(std::chrono::steady_clock::now());
 
 	return "{\"command\":\"suspend\",\"response\":\"suspended successfully\"}";
 }
@@ -59,6 +60,7 @@ Json::Value Doodle::terminal_t::resume(Json::Value)
 	logger<<"Resuming"<<std::endl;
 	doodle->suspended = false;
 	doodle->current_job->start(std::chrono::steady_clock::now());
+
 	return "{\"command\":\"resume\",\"response\":\"resumed successfully\"}";
 }
 
