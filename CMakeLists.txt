@@ -9,6 +9,9 @@ set(DOODLE_SOCKET_PATH "@doodle_user_communication")
 #set(DOODLE_SOCKET_PATH "./doodle_user_communication")
 
 
+set(DOODLE_PROTOCL_VERSION "Doodle01")
+
+
 ## Where to install the compiled package to. TODO: Remove this to install to the standard locations
 #SET(CMAKE_INSTALL_PREFIX /home/mox/projects/software/install)
 

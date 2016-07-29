@@ -1,7 +1,6 @@
 #include "job.hpp"
 #include <fstream>
 #include "logstream.hpp"
-#include <functional>
 #include <json/json.h>
 
 

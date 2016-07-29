@@ -73,8 +73,18 @@ namespace ev
 
 	friend socket& operator<<(socket& lhs, const std::string& data)
 	{
+
+
+		uint16_t length = data.length();
+		std::string credential(DOODLE_PROTOCOL_VERSION, 0, sizeof(DOODLE_PROTOCOL_VERSION)-1);
+		credential.append(static_cast<char*>(static_cast<void*>(&length)), 2);
+
+		lhs.write_data.push_back(credential);
 		lhs.write_data.push_back(data);
+		std::cout<<"Writing credential: "<<credential<<std::endl;
+		std::cout<<"Writing data: "<<data<<std::endl;
 		if(!lhs.is_active()) lhs.start();
+		std::cout<<"...done"<<std::endl;
 
 		return lhs;
 	}
@@ -91,13 +101,8 @@ void stdin_cb(ev::io& w, int revent)
 
 	std::string buf;
 	std::cin>>buf;
-	std::cout<<"Writing \""<<buf<<"\"."<<std::endl;
-	static constexpr auto magic("Doodle01");
-	uint16_t length = buf.length();
-	std::string credential(magic, 0, sizeof(magic+2));
-	credential.append(static_cast<char*>(static_cast<void*>(&length)), 2);
 
-	(*reinterpret_cast<ev::socket*>(w.data))<<credential<<buf;
+	(*static_cast<ev::socket*>(w.data))<<buf;
 }
 //}}}
 
@@ -140,25 +145,50 @@ void socket_write_cb(ev::socket& w, int revent)
 //}}}
 
 //{{{
-constexpr unsigned int bufferlength = 50;
-void socket_read_cb(ev::socket& w, int revent)
+bool read_n(int fd, char buffer[], int size, ev::socket& watcher)	// Read exactly size bytes
 {
-	(void) revent;
-	std::string buffer(bufferlength, '\0');
-
+	int read_count = 0;
+	while(read_count < size)
+	{
 		int n;
-		switch((n=read(w.fd, &buffer[0], bufferlength)))
+		switch((n=read(fd, &buffer[read_count], size-read_count)))
 		{
 			case -1:
-				throw std::runtime_error("Read error on the connection using fd." + std::to_string(w.fd) + ".");
+				throw std::runtime_error("Read error on the connection using fd." + std::to_string(fd) + ".");
 			case  0:
 				std::cout<<"Received EOF (Client has closed the connection)."<<std::endl;
-				w.stop();
-				w.loop.break_loop(ev::ALL);
-				return;
+				watcher.stop();
+				watcher.loop.break_loop(ev::ALL);
+				return true;
 			default:
-				std::cout<<"Received: |"<<buffer<<"|"<<std::endl;
+				read_count+=n;
 		}
+	}
+	return false;
+}
+//}}}
+
+//{{{
+void socket_read_cb(ev::socket& watcher, int revents)
+{
+	(void) revents;
+	struct
+	{
+		char doodleversion[sizeof(DOODLE_PROTOCOL_VERSION)-1];
+		uint16_t length;
+	}  __attribute__ ((packed)) header;
+
+	if(read_n(watcher.fd, static_cast<char*>(static_cast<void*>(&header)), sizeof(header), watcher))
+	{
+		return;
+	}
+
+	std::string buffer(header.length, '\0');
+	if(read_n(watcher.fd, &buffer[0], header.length, watcher)) { return; }
+
+	////////////////////////////////////////
+	std::cout<<"	Received: |"<<buffer<<"|"<<std::endl;	// Do something with the received data
+	////////////////////////////////////////
 }
 //}}}
 

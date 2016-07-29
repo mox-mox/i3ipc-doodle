@@ -3,7 +3,6 @@
 #include <i3ipc++/ipc.hpp>
 #include <ev++.h>
 #include "job.hpp"
-#include <xcb/xcb.h>
 #include <xcb/screensaver.h>
 #include "doodle_config.hpp"
 
@@ -47,6 +46,7 @@ class Doodle: public sigc::trackable
 	//{{{ Idle time detection
 
 	bool idle;
+	bool suspended;
 	xcb_connection_t * connection;
 	xcb_screen_t * screen;
 	ev::timer idle_watcher_timer;
@@ -75,12 +75,10 @@ class Doodle: public sigc::trackable
 	const std::string socket_path;
 	ev::io socket_watcher;
 
-	struct header_t
-	{
-		char doodleversion[8];
-		uint16_t length;
-	}  __attribute__ ((packed));
 
+
+
+	struct terminal;
 
 
 
