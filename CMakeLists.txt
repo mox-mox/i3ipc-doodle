@@ -17,6 +17,12 @@ set(DOODLE_PROTOCL_VERSION "Doodle01")
 
 
 
+option (USE_NOTIFICATIONS "Print debugging information to notification popup instead of console." ON)
+option (USE_SYSLOG "Enable logging to syslog." ON)
+
+
+
+
 #{{{
 # Version number and git information
 # will be #define'ed in doodle_config.h.in

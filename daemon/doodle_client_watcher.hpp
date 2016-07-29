@@ -1,17 +1,9 @@
-#include "doodle.hpp"
-#include <fstream>
-#include <experimental/filesystem>
-#include "logstream.hpp"
-#include <functional>
-#include <json/json.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
-#include <map>
+#include <ev++.h>
 
 //{{{
-struct Doodle::client_watcher : ev::io
+struct client_watcher : ev::io
 {
+	Doodle* const doodle;
 	client_watcher* prev;
 	client_watcher* next;
 	client_watcher** head;
@@ -20,6 +12,12 @@ struct Doodle::client_watcher : ev::io
 	std::deque<std::string> write_data;
 
 	client_watcher(int main_fd, client_watcher** head, Doodle* doodle, ev::loop_ref loop);
+	client_watcher() = delete;
+	client_watcher(const client_watcher&) = delete;
+	client_watcher(client_watcher&&) = delete;
+	client_watcher& operator=(const client_watcher&) = delete;
+	client_watcher& operator=(client_watcher&&) = delete;
+
 
 	~client_watcher(void);
 

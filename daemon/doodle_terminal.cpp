@@ -1,33 +1,74 @@
-#include "doodle_terminal.hpp"
+#include "doodle.hpp"
+#include "logstream.hpp"
 
-Doodle::terminal::terminal(Doodle& doodle) : doodle(doodle)
+Doodle::terminal_t::terminal_t(Doodle* doodle) : doodle(doodle)
 {
+	std::cout<<"terminal at "<<this<<" ++>>"<<std::endl;
+	std::cout<<"<<++ doodle = "<<doodle<<std::endl;
 }
 
-//Json::Value Doodle::terminal::operator()(Json::Value command_line_input);
-
-std::string Doodle::terminal::suspend(Json::Value)
+std::string Doodle::terminal_t::operator()(std::string command_line_input)
 {
-	doodle.suspended = true;
+	std::cout<<"terminal_t::operator() at"<<this<<" ++>>"<<std::endl;
+	std::cout<<"<<++ doodle = "<<doodle<<std::endl;
+
+		Json::Value cmd;
+		Json::Reader reader;
+
+		if( !reader.parse(command_line_input, cmd, false))
+		{
+			error<<reader.getFormattedErrorMessages()<<std::endl;
+			return "{\"response\":\"invalid format\"}";
+		}
+		else
+		{
+			std::cout<<"starting the terminal evaluation"<<std::endl;
+			std::cout<<"this: "<<this<<std::endl;
+			//return "{\"command\":\"suspend\",\"response\":\"suspended successfully\"}";
+			//return suspend(cmd).toStyledString();
+			//return (this->*func)(cmd).toStyledString();
+			if( cmd.isMember("command"))
+			{
+				try{
+
+				return (this->*func)(cmd).toStyledString();
+				}
+				catch (std::out_of_range)
+				{
+					return "{\"response\":\"Unknown command\"}";
+				}
+			}
+			return "{\"response\":\"No command specified\"}";
+
+		}
+}
+
+Json::Value Doodle::terminal_t::suspend(Json::Value)
+{
+	std::cout<<"SUSPENDING"<<std::endl;
 	logger<<"Suspending"<<std::endl;
-	doodle.current_job->stop(std::chrono::steady_clock::now());
-	return "success";
+	std::cout<<"doodle = "<<doodle<<std::endl;
+	doodle->suspended = true;
+	std::cout<<"doodle = "<<doodle<<std::endl;
+	//doodle->current_job->stop(std::chrono::steady_clock::now());
+
+	return "{\"command\":\"suspend\",\"response\":\"suspended successfully\"}";
 }
-std::string Doodle::terminal::resume(Json::Value)
+Json::Value Doodle::terminal_t::resume(Json::Value)
 {
-	doodle.suspended = false;
 	logger<<"Resuming"<<std::endl;
-	doodle.current_job->start(std::chrono::steady_clock::now());
-	return "success";
+	doodle->suspended = false;
+	doodle->current_job->start(std::chrono::steady_clock::now());
+	return "{\"command\":\"resume\",\"response\":\"resumed successfully\"}";
 }
 
-//std::string Doodle::terminal::list_jobs(Json::Value);
-//std::string Doodle::terminal::get_times(Json::Value args);
-//std::string Doodle::terminal::get_win_names(Json::Value args);
-//std::string Doodle::terminal::get_ws_names(Json::Value args);
-//std::string Doodle::terminal::detect_idle(Json::Value args);
-//std::string Doodle::terminal::detect_ambiguity(Json::Value args);
-//std::string Doodle::terminal::restart(Json::Value);
-//std::string Doodle::terminal::kill(Json::Value);
-//std::string Doodle::terminal::help(Json::Value);
+//Json::Value Doodle::terminal_t::list_jobs(Json::Value);
+//Json::Value Doodle::terminal_t::get_times(Json::Value args);
+//Json::Value Doodle::terminal_t::get_win_names(Json::Value args);
+//Json::Value Doodle::terminal_t::get_ws_names(Json::Value args);
+//Json::Value Doodle::terminal_t::detect_idle(Json::Value args);
+//Json::Value Doodle::terminal_t::detect_ambiguity(Json::Value args);
+//Json::Value Doodle::terminal_t::restart(Json::Value);
+//Json::Value Doodle::terminal_t::kill(Json::Value);
+//Json::Value Doodle::terminal_t::help(Json::Value);
 

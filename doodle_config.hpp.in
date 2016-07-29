@@ -25,6 +25,19 @@ const std::string DOODLE_SOCKET_PATH_DEFAULT("@DOODLE_SOCKET_PATH@", sizeof("@DO
 
 #define DOODLE_PROTOCOL_VERSION "@DOODLE_PROTOCL_VERSION@"
 
+
+
+// Settings for libev
+#define EV_NO_SMP 1
+#define EV_NO_THREADS 1
+//#define EV_MULTIPLICITY 0
+
+
+
+
+
+
+
 //"Doodle01"81
 //{"serial":123,"command":"get_times","args":["project","21.01.2014","23.02.2015"]}
 

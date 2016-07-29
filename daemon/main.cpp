@@ -1,5 +1,5 @@
-#include <iostream>
 #include "doodle_config.hpp"
+#include <iostream>
 #include "doodle.hpp"
 #include "getopt_pp.h"
 #include <unistd.h>
@@ -97,10 +97,11 @@ int main(int argc, char* argv[])
 
 	//{{{
 #ifdef USE_NOTIFICATIONS
+	std::cout<<"printing notification"<<std::endl;
 		notify_init("Doodle");
-		//NotifyNotification * Hello = notify_notification_new ("Hello world", "This is an example notification.", "dialog-information");
-		//notify_notification_show (Hello, NULL);
-		//g_object_unref(G_OBJECT(Hello));
+		NotifyNotification * Hello = notify_notification_new ("Hello world", "This is an example notification.", "dialog-information");
+		notify_notification_show (Hello, NULL);
+		g_object_unref(G_OBJECT(Hello));
 #endif
 	//}}}
 
@@ -108,7 +109,7 @@ int main(int argc, char* argv[])
 #ifdef USE_SYSLOG
 		setlogmask(LOG_UPTO(LOG_NOTICE));
 		openlog("DOODLE", LOG_CONS|LOG_PID|LOG_NDELAY, LOG_LOCAL1);
-		//syslog(LOG_NOTICE, "Writing to my Syslog");
+		syslog(LOG_NOTICE, "Writing to my Syslog");
 #endif
 	//}}}
 

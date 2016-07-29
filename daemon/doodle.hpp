@@ -5,6 +5,7 @@
 #include "job.hpp"
 #include <xcb/screensaver.h>
 #include "doodle_config.hpp"
+#include <json/json.h>
 
 using window_id = uint64_t;
 
@@ -66,7 +67,7 @@ class Doodle: public sigc::trackable
 
 
 
-	struct client_watcher;
+	#include "doodle_client_watcher.hpp" //struct client_watcher;
 	void SIGUSR1_cb(void);
 	void SIGTERM_cb(void);
 	void socket_watcher_cb(ev::io& socket_watcher, int revents);
@@ -78,7 +79,8 @@ class Doodle: public sigc::trackable
 
 
 
-	struct terminal;
+	#include "doodle_terminal.hpp" //struct terminal_t;
+	terminal_t terminal;
 
 
 

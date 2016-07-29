@@ -1,17 +1,16 @@
-#include "doodle_client_watcher.hpp"
+#include "doodle.hpp"
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include "logstream.hpp"
 
 
 
 
 	//{{{
-Doodle::client_watcher::client_watcher(int main_fd, client_watcher** head, Doodle* doodle, ev::loop_ref loop) : ev::io(loop), write_watcher(loop)
+Doodle::client_watcher::client_watcher(int main_fd, client_watcher** head, Doodle* doodle, ev::loop_ref loop) : ev::io(loop), doodle(doodle), head(head), write_watcher(loop)
 	{
-		this->head = head;
 		*this->head = this;
-
-		this->data = static_cast<void*>(doodle);
-
-		//this->data = static_cast<void*>(head);
 		client_watcher* next_watcher = *head;
 
 		if( -1 == main_fd )   throw std::runtime_error("Passed invalid Unix socket");
@@ -31,7 +30,7 @@ Doodle::client_watcher::client_watcher(int main_fd, client_watcher** head, Doodl
 			this->prev->next = this;
 		}
 
-		set<client_watcher, reinterpret_cast<void (client_watcher::*)(ev::io& socket_watcher, int revents)>( &client_watcher::client_watcher_cb) >(nullptr);
+		set<client_watcher, reinterpret_cast<void (client_watcher::*)(ev::io& socket_watcher, int revents)>( &client_watcher::client_watcher_cb) >(this);
 
 		start();
 
@@ -157,8 +156,12 @@ Doodle::client_watcher::client_watcher(int main_fd, client_watcher** head, Doodl
 		std::cout<<"\""<<buffer<<"\""<<std::endl;
 
 		////////////////////////////////////////
-		watcher<<buffer;	// Do something with the received data
+		//watcher<<buffer;	// Do something with the received data
 		////////////////////////////////////////
+
+
+		//std::cout<<"starting terminal"<<std::endl;
+		watcher<<this->doodle->terminal(buffer);
 
 
 		if(buffer=="kill")

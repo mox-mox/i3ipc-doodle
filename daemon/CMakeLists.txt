@@ -31,7 +31,6 @@ set(INCDIRS_SYS ${INCDIRS_SYS} ${SIGCPP_INCLUDE_DIRS})
 
 #{{{SYSLOG
 
-option (USE_SYSLOG "Enable logging to syslog." ON)
 if (USE_SYSLOG)
 	find_package(SYSLOG REQUIRED)
 
@@ -42,7 +41,6 @@ endif (USE_SYSLOG)
 
 #{{{LIBNOTIFY
 
-option (USE_NOTIFICATIONS "Print debugging information to notification popup instead of console." ON)
 # The popup notification will always be visible and will not be detected by IPC_DOODLE so viewing it does not create more output.
 if (USE_NOTIFICATIONS)
 	find_package(LIBNOTIFY REQUIRED)
