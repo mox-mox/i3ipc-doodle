@@ -7,16 +7,17 @@ struct Socket_watcher : ev::io
 {
 	Doodle* const doodle;
 	Client_watcher* head;
+	std::string socket_path;
 
 
-	Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string socket_path);
-	Socket_watcher(void);
-	Socket_watcher(const Socket_watcher&) = delete;
-	Socket_watcher(Socket_watcher&&) = delete;
-	Socket_watcher& operator=(const Socket_watcher&) = delete;
-	Socket_watcher& operator=(Socket_watcher&&) = delete;
+	Socket_watcher(ev::loop_ref loop, Doodle* doodle);
+	void init(std::string& socket_path);
 
-	//virtual void operator()(int events = EV_UNDEF);
+	//Socket_watcher(void) = delete;
+	//Socket_watcher(const Socket_watcher&) = delete;
+	//Socket_watcher(Socket_watcher&&) = delete;
+	//Socket_watcher& operator=(const Socket_watcher&) = delete;
+	//Socket_watcher& operator=(Socket_watcher&&) = delete;
 
 	void socket_watcher_cb(Socket_watcher& socket_watcher, int revents);
 

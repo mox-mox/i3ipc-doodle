@@ -15,10 +15,10 @@ std::string Doodle::terminal_t::operator()(std::string command_line_input)
 	//std::cout<<"terminal_t::operator() at"<<this<<" ++>>"<<std::endl;
 	//std::cout<<"<<++ doodle = "<<doodle<<std::endl;
 
-		Json::Value cmd;
+		Json::Value command;
 		Json::Reader reader;
 
-		if( !reader.parse(command_line_input, cmd, false))
+		if( !reader.parse(command_line_input, command, false))
 		{
 			error<<reader.getFormattedErrorMessages()<<std::endl;
 			return "{\"response\":\"invalid format\"}";
@@ -30,14 +30,14 @@ std::string Doodle::terminal_t::operator()(std::string command_line_input)
 			//return "{\"command\":\"suspend\",\"response\":\"suspended successfully\"}";
 			//return suspend(cmd).toStyledString();
 			//return (this->*func)(cmd).toStyledString();
-			if( cmd.isMember("command"))
+			if( command.isMember("cmd"))
 			{
 				try{
-					std::string command = cmd.get("command", "no command").asString();
-					Json::Value (terminal_t::* func)(Json::Value) = commands.at(command).func;
+					std::string cmd = command.get("cmd", "no cmd").asString();
+					Json::Value (terminal_t::* command_handler)(Json::Value) = commands.at(cmd).func;
 
 
-					return (this->*func)(cmd["args"]).toStyledString();
+					return (this->*command_handler)(command["args"]).toStyledString();
 				}
 				catch (std::out_of_range)
 				{

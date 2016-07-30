@@ -64,33 +64,37 @@ namespace ev
 	friend socket& operator<<(socket& lhs, std::string& data)
 	{
 
-		std::stringstream ss(data);
-		std::string token;
-		ss >> token;
+		std::stringstream ss(data); std::string token;
 
-		std::string cmd = "{\"cmd\":\""+token+"\",\"args\":\"[";
 		ss >> token;
-		cmd += "\""+token+"\"";
+		std::string cmd = "{\"cmd\":\"" + token + "\",\"args\":[";
 
-		std::cout<<">>token |"<<token<<"|"<<std::endl;
-		while (ss >> token)
+		//for(bool first=true, token = ""; ss>>token; first=false)
+		bool first = true;
+		token = "";
+		while(ss >> token)
 		{
-			std::cout<<"token |"<<token<<"|"<<std::endl;
-			cmd += ",\""+token+"\"";
+			if(!first)
+			{
+				cmd += ',';
+			}
+			first = false;
+			cmd += "\"";
+			cmd += token;
+			cmd += "\"";
+		token = "";
 			usleep(100000);
 		}
 		cmd += "]}";
 
-
-		uint16_t length = data.length();
+		uint16_t length = cmd.length();
 		std::string credential(DOODLE_PROTOCOL_VERSION, 0, sizeof(DOODLE_PROTOCOL_VERSION)-1);
 		credential.append(static_cast<char*>(static_cast<void*>(&length)), 2);
 
-		lhs.write_data.push_back(credential);
-		lhs.write_data.push_back(cmd);
 		std::cout<<"Writing credential: "<<credential<<std::endl;
-		//std::cout<<"Writing data: "<<data<<std::endl;
+		lhs.write_data.push_back(credential);
 		std::cout<<"Writing cmd: "<<cmd<<std::endl;
+		lhs.write_data.push_back(cmd);
 		if(!lhs.is_active()) lhs.start();
 		std::cout<<"...done"<<std::endl;
 

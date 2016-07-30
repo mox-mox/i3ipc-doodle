@@ -16,7 +16,7 @@
 
 
 //{{{
-Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop), terminal(this)
+Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop), socket_watcher(loop, this), terminal(this)
 {
 	std::cout<<"THIS = "<<this<<std::endl;
 	//{{{ Construct all members
@@ -107,50 +107,8 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 
 	//}}}
 
-
-	new(&socket_watcher) Socket_watcher(loop, this, settings.socket_path);
-
-
-//
-//	//{{{ Initialise socket communication
-//
-//	std::cout<<"Socket path: "<<settings.socket_path<<std::endl;
-//
-//	int fd;
-//	if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1 )
-//	{
-//		throw std::runtime_error("Could not create a Unix socket.");
-//	}
-//
-//	socket_watcher.set(fd, ev::READ);
-//	struct sockaddr_un addr;
-//	addr.sun_family = AF_UNIX;
-//
-//	if(settings.socket_path.length() >= sizeof(addr.sun_path)-1)
-//	{
-//		throw std::runtime_error("Unix socket path \"" + settings.socket_path + "\" is too long. "
-//		                         "Maximum allowed size is " + std::to_string(sizeof(addr.sun_path)) + "." );
-//	}
-//
-//	settings.socket_path.copy(addr.sun_path, settings.socket_path.length());
-//
-//	unlink(&settings.socket_path[0]);
-//
-//	if( bind(fd, static_cast<struct sockaddr*>(static_cast<void*>(&addr)), settings.socket_path.length()+1) == -1 )
-//	{
-//		throw std::runtime_error("Could not bind to socket " + settings.socket_path + ".");
-//	}
-//
-//	if( listen(fd, 5) == -1 )
-//	{
-//		throw std::runtime_error("Could not listen() to socket " + settings.socket_path + ".");
-//	}
-//	socket_watcher.set<Doodle, &Doodle::socket_watcher_cb>(this);
-//	socket_watcher.start();
-//	//}}}
-//
-
-
+	//new(&socket_watcher) Socket_watcher(loop, this, settings.socket_path);
+	socket_watcher.init(settings.socket_path);
 }
 //}}}
 
@@ -159,23 +117,23 @@ Doodle::~Doodle(void)
 {
 	xcb_disconnect(connection);
 
-	//{{{
+	////{{{
 
-	Client_watcher* head = static_cast<Client_watcher*>(socket_watcher.data);
-	if(head)
-	{
-		Client_watcher* w = head->next;
+	//Client_watcher* head = static_cast<Client_watcher*>(socket_watcher.data);
+	//if(head)
+	//{
+	//	Client_watcher* w = head->next;
 
-		while(w && w != head)
-		{
-			Client_watcher* current = w;
-			w = w->next;
-			delete current;
-		}
-		delete head;
-	}
-	unlink(&settings.socket_path[0]);
-	//}}}
+	//	while(w && w != head)
+	//	{
+	//		Client_watcher* current = w;
+	//		w = w->next;
+	//		delete current;
+	//	}
+	//	delete head;
+	//}
+	//unlink(&settings.socket_path[0]);
+	////}}}
 }
 //}}}
 

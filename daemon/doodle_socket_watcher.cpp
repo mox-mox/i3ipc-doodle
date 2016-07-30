@@ -8,9 +8,17 @@
 
 
 	//{{{
-Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string socket_path) : ev::io(loop), doodle(doodle), head(nullptr)
+Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle) : ev::io(loop), doodle(doodle), head(nullptr)
 {
 	std::cout<<"Doodle::Socket_watcher::Socket_watcher() at "<<this<<std::endl;
+}
+//}}}
+
+	//{{{
+void Doodle::Socket_watcher::init(std::string& sock_path)
+{
+	socket_path=sock_path;
+	std::cout<<"void Doodle::Socket_watcher::init() at "<<this<<std::endl;
 	std::cout<<"Socket path: "<<socket_path<<std::endl;
 
 	int fd;
@@ -42,50 +50,35 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 	{
 		throw std::runtime_error("Could not listen() to socket " + socket_path + ".");
 	}
-	//set<Socket_watcher, &Socket_watcher::socket_watcher_cb>(this);
 	set<Socket_watcher, reinterpret_cast<void (Socket_watcher::*)(ev::io& socket_watcher, int revents)>( &Socket_watcher::socket_watcher_cb) >(this);
 	//start();
-}
-//}}}
-
-	//{{{
-Doodle::Socket_watcher::Socket_watcher() : doodle(nullptr)
-{
-	std::cout<<"Doodle::Socket_watcher::Socket_watcher() at "<<this<<std::endl;
 }
 //}}}
 
 //{{{
 Doodle::Socket_watcher::~Socket_watcher(void)
 {
-	std::cout<<"deleting the socket_watcher"<<std::endl;
+	std::cout<<"Doodle::Socket_watcher::~Socket_watcher() at "<<this<<std::endl;
+
+	if(head)
+	{
+		Client_watcher* w = head->next;
+
+		while(w && w != head)
+		{
+			Client_watcher* current = w;
+			w = w->next;
+			delete current;
+		}
+		delete head;
+	}
 	close(fd);
+	unlink(&socket_path[0]);
 }
 //}}}
 
-//void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher& socket_watcher, int revents)
-void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher&, int)
+void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher& w, int)
 {
-	//new Client_watcher(fd, head, this, socket_watcher.loop);
+	std::cout<<"void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher& w at "<<&w<<") at "<<this<<std::endl;
 	new Client_watcher(fd, &head, doodle, loop);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//void Doodle::Socket_watcher::operator()(int events)
-//{
-//	std::cout<<"Doodle::Socket_watcher::operator()() called."<<std::endl;
-//}
