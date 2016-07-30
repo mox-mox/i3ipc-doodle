@@ -3,7 +3,8 @@
 #include <deque>
 #include <regex>
 #include <experimental/filesystem>
-#include <ev++.h>
+#include "doodle_config.hpp"
+//#include <ev++.h>
 
 
 class Job

@@ -22,6 +22,12 @@ set(LIBS ${LIBS} getoptpp)
 set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/getoptpp/getoptpp)
 #}}}
 
+#{{{STREAMLIB
+
+#set(LIBS ${LIBS} getoptpp)
+set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/streamlib)
+#}}}
+
 #{{{SIGCPP
 
 find_package(SIGCPP REQUIRED)

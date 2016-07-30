@@ -1,7 +1,7 @@
 #include "doodle.hpp"
 #include <fstream>
 #include <experimental/filesystem>
-#include "logstream.hpp"
+//#include "console_stream.hpp"
 #include <functional>
 #include <json/json.h>
 #include <sys/socket.h>
@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 
+#include "console_stream.hpp"
 
 
 

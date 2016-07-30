@@ -1,1 +1,1 @@
-subdirs(getoptpp)
+subdirs(getoptpp streamlib)

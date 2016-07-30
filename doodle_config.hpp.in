@@ -8,15 +8,10 @@
 #define GIT_BRANCH "@GIT_BRANCH@"
 #define GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
 #define DOODLE_CONFIG_PATH "@DOODLE_CONFIG_PATH@"
-//#define DOODLE_SOCKET_PATH "@DOODLE_SOCKET_PATH@"
 
-
-
+#include <iostream>
 #include <string>
-//constexpr char doodle_socket_path[] = "@DOODLE_SOCKET_PATH@";
 const std::string DOODLE_SOCKET_PATH_DEFAULT("@DOODLE_SOCKET_PATH@", sizeof("@DOODLE_SOCKET_PATH@")-1); //-1 to strip the terminating null
-
-
 
 
 #cmakedefine USE_NOTIFICATIONS
@@ -25,52 +20,14 @@ const std::string DOODLE_SOCKET_PATH_DEFAULT("@DOODLE_SOCKET_PATH@", sizeof("@DO
 
 #define DOODLE_PROTOCOL_VERSION "@DOODLE_PROTOCL_VERSION@"
 
-
-
 // Settings for libev
 #define EV_NO_SMP 1
 #define EV_NO_THREADS 1
-//#define EV_MULTIPLICITY 1
-//#define EV_COMMON 
-//#define EV_COMMON void *data;
 
 
 
-
-
-
-
-//"Doodle01"81
-//{"command":"get_times","args":["project","21.01.2014","23.02.2015"]}
-
-
-//"Doodle01"81
-//{"command":"get_times","response":["project","21.01.2014","23.02.2015"]}
-
-//{
-//	"serial"   : 123,
-//	"command"  : "get_times",
-//	"response" :
-//	[
-//		{1466065772670247509,  5},
-//		{1466065772670247509, 10},
-//		{1466065772670247509, 10},
-//		{1466065772670247509, 10}
-//	]
-//}
-
-
-
-
-//{
-//	"serial"  : 123,
-//	"command" : "get_times",
-//	"args"    :
-//	[
-//		"project",
-//		"21.01.2014",
-//		"23.02.2015"
-//	]
-//}
-
+//#include "console_stream.hpp"
+//#include "notify_stream.hpp"
+//#include "log_stream.hpp"
+#include <ev++.h>
 

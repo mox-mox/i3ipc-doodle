@@ -2,7 +2,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-#include "logstream.hpp"
+//#include "console_stream.hpp"
 
 
 

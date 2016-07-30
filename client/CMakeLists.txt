@@ -16,6 +16,24 @@ set(LIBS ${LIBS} getoptpp)
 set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/getoptpp/getoptpp)
 #}}}
 
+#{{{STREAMLIB
+
+#set(LIBS ${LIBS} getoptpp)
+set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/streamlib)
+#}}}
+
+#{{{LIBNOTIFY
+
+# The popup notification will always be visible and will not be detected by IPC_DOODLE so viewing it does not create more output.
+if (USE_NOTIFICATIONS)
+	find_package(LIBNOTIFY REQUIRED)
+	find_package(GLIB2 REQUIRED)
+	find_package(GDK_PIXBUF2 REQUIRED)
+
+	set(LIBS ${LIBS} ${GDK_PIXBUF2_LIBRARIES} ${GLIB2_LIBRARIES} ${NOTIFY_LIBRARIES})
+	set(INCDIRS_SYS ${INCDIRS_SYS} ${NOTIFY_INCLUDE_DIRS} ${GLIB2_INCLUDE_DIRS} ${GDK_PIXBUF2_INCLUDE_DIRS})
+endif (USE_NOTIFICATIONS)
+#}}}
 
 #{{{LIBEV
 
@@ -24,6 +42,12 @@ find_package(LIBEV REQUIRED)
 set(LIBS ${LIBS} ${LIBEV_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEV_INCLUDE_DIRS})
 #}}}
+
+
+
+
+
+
 
 
 #{{{CXXFLAGS

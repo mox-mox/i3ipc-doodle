@@ -1,7 +1,8 @@
 #include "doodle.hpp"
-#include "logstream.hpp"
-#include "doodle_config.hpp"
-#include <ev++.h>
+//#include "console_stream.hpp"
+//#include "doodle_config.hpp"
+//#include <ev++.h>
+#include "console_stream.hpp"
 
 
 Doodle::terminal_t::terminal_t(Doodle* doodle) : doodle(doodle)
