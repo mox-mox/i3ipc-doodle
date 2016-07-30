@@ -1,5 +1,5 @@
-#include <json/json.h>
 // This class is a nested class of doodle. This file may only be included _in_the_body_of_class_Doodle_!
+#include <json/json.h>
 
 
 //{{{
@@ -41,7 +41,7 @@ struct terminal_t
 		//{"detect_idle",      {&terminal_t::detect_idle,      "true|fale|time",        "Set whether to watch for idle time. If set to true, uses value set in config file."}},
 		//{"detect_ambiguity", {&terminal_t::detect_ambiguity, "true|false",            "Whether to check for ambiguous matching rules. Costs a bit of performance."}},
 		//{"restart",          {&terminal_t::restart,          "none",                  "Restart the program to re-read the configuration."}},
-		//{"kill",             {&terminal_t::kill,             "none",                  "Stop the program."}},
+		{"kill",             {&terminal_t::kill,             "none",                  "Stop the program."}},
 		//{"help",             {&terminal_t::help,             "none",                  "Show this help."}},
 	};
 

@@ -1,5 +1,8 @@
 #include "doodle.hpp"
 #include "logstream.hpp"
+#include "doodle_config.hpp"
+#include <ev++.h>
+
 
 Doodle::terminal_t::terminal_t(Doodle* doodle) : doodle(doodle)
 {
@@ -71,6 +74,13 @@ Json::Value Doodle::terminal_t::resume(Json::Value)
 //Json::Value Doodle::terminal_t::detect_idle(Json::Value args);
 //Json::Value Doodle::terminal_t::detect_ambiguity(Json::Value args);
 //Json::Value Doodle::terminal_t::restart(Json::Value);
-//Json::Value Doodle::terminal_t::kill(Json::Value);
+Json::Value Doodle::terminal_t::kill(Json::Value)
+{
+	std::cout<<"Shutting down..."<<std::endl;
+	doodle->loop.break_loop(ev::ALL);
+
+	return "{\"command\":\"kill\",\"response\":\"Apoptosis started\"}";
+
+}
 //Json::Value Doodle::terminal_t::help(Json::Value);
 

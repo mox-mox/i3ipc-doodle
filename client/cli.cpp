@@ -1,16 +1,6 @@
-// compile with g++ timer.cpp -lev
-#include <ev++.h>
-#include <iostream>
-#include <queue>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <ev++.h>
+#include "cli.hpp"
+#include <sstream>
 #include <unistd.h>
-#include <iostream>
-#include <cstring>
-#include <bitset>
-#include "doodle_config.hpp"
-
 
 std::string socket_path = DOODLE_SOCKET_PATH_DEFAULT;
 
@@ -71,8 +61,25 @@ namespace ev
 		//}}}
 
 
-	friend socket& operator<<(socket& lhs, const std::string& data)
+	friend socket& operator<<(socket& lhs, std::string& data)
 	{
+
+		std::stringstream ss(data);
+		std::string token;
+		ss >> token;
+
+		std::string cmd = "{\"cmd\":\""+token+"\",\"args\":\"[";
+		ss >> token;
+		cmd += "\""+token+"\"";
+
+		std::cout<<">>token |"<<token<<"|"<<std::endl;
+		while (ss >> token)
+		{
+			std::cout<<"token |"<<token<<"|"<<std::endl;
+			cmd += ",\""+token+"\"";
+			usleep(100000);
+		}
+		cmd += "]}";
 
 
 		uint16_t length = data.length();
@@ -80,9 +87,10 @@ namespace ev
 		credential.append(static_cast<char*>(static_cast<void*>(&length)), 2);
 
 		lhs.write_data.push_back(credential);
-		lhs.write_data.push_back(data);
+		lhs.write_data.push_back(cmd);
 		std::cout<<"Writing credential: "<<credential<<std::endl;
-		std::cout<<"Writing data: "<<data<<std::endl;
+		//std::cout<<"Writing data: "<<data<<std::endl;
+		std::cout<<"Writing cmd: "<<cmd<<std::endl;
 		if(!lhs.is_active()) lhs.start();
 		std::cout<<"...done"<<std::endl;
 
@@ -100,7 +108,10 @@ void stdin_cb(ev::io& w, int revent)
 	(void) revent;
 
 	std::string buf;
-	std::cin>>buf;
+	std::getline(std::cin, buf);
+	//std::cin>>buf;
+
+	std::cout<<"|"<<buf<<"|"<<std::endl;
 
 	(*static_cast<ev::socket*>(w.data))<<buf;
 }
@@ -192,9 +203,30 @@ void socket_read_cb(ev::socket& watcher, int revents)
 }
 //}}}
 
+//{{{ Help and version messages
+
+std::string help_message(std::string progname)
+{
+	std::string message;
+	message += "Usage: "+progname+" [commands]\nOptions:\n";
+	//message += "	-h|--help           : Show this help and exit.\n";
+	message += "	-v|--version        : Show version information and exit.\n";
+	message += "	-s|--socket  <path> : Where to store the socket for user communication. Default: \"" + DOODLE_SOCKET_PATH_DEFAULT + "\".\n";
+	message += "Commands:\n";
+	
+	return message;
+}
+
+void version_message()
+{
+	std::cout<<DOODLE_PROGRAM_NAME<<":"<<std::endl;
+	std::cout<<"Git branch: "<<GIT_BRANCH<<", git commit hash: "<<GIT_COMMIT_HASH<<", Version: "<<DOODLE_VERSION_MAJOR<<":"<<DOODLE_VERSION_MINOR<<"."<<std::endl<<std::endl;
+}
+//}}}
 
 int main(void)
 {
+
 	ev::default_loop loop;
 
 	//{{{ Standard Unix socket creation
@@ -234,13 +266,13 @@ int main(void)
 
 	//}}}
 
-	//////{{{ Create a libev io watcher to respond to terminal input
+	//{{{ Create a libev io watcher to respond to terminal input
 
 	ev::io stdin_watcher(loop);
 	stdin_watcher.set<stdin_cb>(static_cast<void*>(&socket_watcher_write));
 	stdin_watcher.set(STDIN_FILENO, ev::READ);
 	stdin_watcher.start();
-	//////}}}
+	//}}}
 
 	loop.run();
 

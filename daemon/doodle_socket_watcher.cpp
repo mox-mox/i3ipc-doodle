@@ -63,11 +63,11 @@ Doodle::Socket_watcher::~Socket_watcher(void)
 }
 //}}}
 
-void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher& socket_watcher, int revents)
+//void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher& socket_watcher, int revents)
+void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher&, int)
 {
-	(void) revents;
 	//new Client_watcher(fd, head, this, socket_watcher.loop);
-	new Client_watcher(fd, head, doodle, loop);
+	new Client_watcher(fd, &head, doodle, loop);
 }
 
 

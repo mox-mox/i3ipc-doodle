@@ -1,3 +1,4 @@
+// This class is a nested class of doodle. This file may only be included _in_the_body_of_class_Doodle_!
 #include "doodle_config.hpp"
 #include <ev++.h>
 
@@ -5,7 +6,7 @@
 struct Socket_watcher : ev::io
 {
 	Doodle* const doodle;
-	Client_watcher** head;
+	Client_watcher* head;
 
 
 	Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string socket_path);

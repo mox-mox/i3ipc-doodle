@@ -12,6 +12,7 @@ Doodle::Client_watcher::Client_watcher(int main_fd, Client_watcher** head, Doodl
 	{
 		*this->head = this;
 		Client_watcher* next_watcher = *head;
+		std::cout<<"Doodle::Client_watcher::Client_watcher(int main_fd, Client_watcher** head, Doodle* doodle, ev::loop_ref loop) : ev::io(loop), doodle(doodle), head(head), write_watcher(loop)"<<std::endl;
 
 		if( -1 == main_fd )   throw std::runtime_error("Passed invalid Unix socket");
 		int client_fd = accept(main_fd, NULL, NULL);

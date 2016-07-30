@@ -1,3 +1,4 @@
+// This class is a nested class of doodle. This file may only be included _in_the_body_of_class_Doodle_!
 #include "doodle_config.hpp"
 #include <ev++.h>
 

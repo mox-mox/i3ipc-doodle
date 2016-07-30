@@ -41,11 +41,11 @@ const std::string DOODLE_SOCKET_PATH_DEFAULT("@DOODLE_SOCKET_PATH@", sizeof("@DO
 
 
 //"Doodle01"81
-//{"serial":123,"command":"get_times","args":["project","21.01.2014","23.02.2015"]}
+//{"command":"get_times","args":["project","21.01.2014","23.02.2015"]}
 
 
 //"Doodle01"81
-//{"serial":123,"command":"get_times","response":["project","21.01.2014","23.02.2015"]}
+//{"command":"get_times","response":["project","21.01.2014","23.02.2015"]}
 
 //{
 //	"serial"   : 123,
