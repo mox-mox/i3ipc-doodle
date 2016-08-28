@@ -1,5 +1,10 @@
+#ifndef doodle_socket_watcher_hpp
+#define doodle_socket_watcher_hpp
+#pragma once
 // This class is a nested class of doodle. This file may only be included _in_the_body_of_class_Doodle_!
-#include "doodle_config.hpp"
+//#warning "<<<<<<<<<<<<<<<<<<<< doodle_socket_watcher.hpp: include  doodle_config.hpp >>>>>>>>>>>>>>>>>>>>"
+//#include "doodle_config.hpp"
+//#warning "++++++++++++++++++++ doodle_socket_watcher.hpp: include  doodle_config.hpp ++++++++++++++++++++"
 //#include <ev++.h>
 
 //{{{
@@ -25,3 +30,4 @@ struct Socket_watcher : ev::io
 };
 //}}}
 
+#endif /* doodle_socket_watcher_hpp */

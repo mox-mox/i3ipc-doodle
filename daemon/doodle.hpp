@@ -1,11 +1,24 @@
+#ifndef DOODLE_HPP
+#define DOODLE_HPP
 #pragma once
 
+//#warning "<<<<<<<<<<<<<<<<<<<< doodle.hpp: include  doodle_config.hpp >>>>>>>>>>>>>>>>>>>>"
+//#include "doodle_config_dummy.hpp"
+
+//#include <iostream>
+//#include <sstream>
+//#include <iomanip>
+//#include <chrono>
+//#include <ctime>
+
 #include "doodle_config.hpp"
+//#warning "++++++++++++++++++++ doodle.hpp: include  doodle_config.hpp ++++++++++++++++++++"
 //#include <ev++.h>
 #include <i3ipc++/ipc.hpp>
 #include "job.hpp"
 #include <xcb/screensaver.h>
 #include <json/json.h>
+//#include "console_stream.hpp"
 
 using window_id = uint64_t;
 
@@ -71,13 +84,10 @@ class Doodle: public sigc::trackable
 
 	void SIGUSR1_cb(void);
 	void SIGTERM_cb(void);
-	//void socket_watcher_cb(ev::io& socket_watcher, int revents);
 
 
 	#include "doodle_socket_watcher.hpp" //struct socket_watcher;
 	Socket_watcher socket_watcher;
-	//const std::string socket_path;
-	//ev::io socket_watcher;
 
 
 
@@ -101,3 +111,5 @@ class Doodle: public sigc::trackable
 		int operator()(void);
 		friend std::ostream& operator<<(std::ostream&stream, Doodle const&doodle);
 };
+
+#endif /* DOODLE_HPP */

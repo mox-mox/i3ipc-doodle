@@ -1,33 +1,35 @@
+//#warning "<<<<<<<<<<<<<<<<<<<< doodle_terminal.cpp: include  doodle_config.hpp >>>>>>>>>>>>>>>>>>>>"
+#include "doodle_config.hpp"
+//#warning "++++++++++++++++++++ doodle_terminal.cpp: include  doodle_config.hpp ++++++++++++++++++++"
 #include "doodle.hpp"
 //#include "console_stream.hpp"
-//#include "doodle_config.hpp"
 //#include <ev++.h>
 #include "console_stream.hpp"
 
 
 Doodle::terminal_t::terminal_t(Doodle* doodle) : doodle(doodle)
 {
-	//std::cout<<"terminal at "<<this<<" ++>>"<<std::endl;
-	//std::cout<<"<<++ doodle = "<<doodle<<std::endl;
+	//debug<<"terminal at "<<this<<" ++>>"<<std::endl;
+	//debug<<"<<++ doodle = "<<doodle<<std::endl;
 }
 
 std::string Doodle::terminal_t::operator()(std::string command_line_input)
 {
-	//std::cout<<"terminal_t::operator() at"<<this<<" ++>>"<<std::endl;
-	//std::cout<<"<<++ doodle = "<<doodle<<std::endl;
+	//debug<<"terminal_t::operator() at"<<this<<" ++>>"<<std::endl;
+	//debug<<"<<++ doodle = "<<doodle<<std::endl;
 
 		Json::Value command;
 		Json::Reader reader;
 
 		if( !reader.parse(command_line_input, command, false))
 		{
-			error<<reader.getFormattedErrorMessages()<<std::endl;
+			my_error<<reader.getFormattedErrorMessages()<<std::endl;
 			return "{\"response\":\"invalid format\"}";
 		}
 		else
 		{
-			//std::cout<<"starting the terminal evaluation"<<std::endl;
-			//std::cout<<"this: "<<this<<std::endl;
+			//debug<<"starting the terminal evaluation"<<std::endl;
+			//debug<<"this: "<<this<<std::endl;
 			//return "{\"command\":\"suspend\",\"response\":\"suspended successfully\"}";
 			//return suspend(cmd).toStyledString();
 			//return (this->*func)(cmd).toStyledString();
@@ -77,7 +79,7 @@ Json::Value Doodle::terminal_t::resume(Json::Value)
 //Json::Value Doodle::terminal_t::restart(Json::Value);
 Json::Value Doodle::terminal_t::kill(Json::Value)
 {
-	std::cout<<"Shutting down..."<<std::endl;
+	logger<<"Shutting down..."<<std::endl;
 	doodle->loop.break_loop(ev::ALL);
 
 	return "{\"command\":\"kill\",\"response\":\"Apoptosis started\"}";

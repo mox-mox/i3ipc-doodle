@@ -15,7 +15,7 @@ Job::Job(const std::experimental::filesystem::path& jobfile, ev::loop_ref& loop)
 	Json::Reader reader;
 	if( !reader.parse(file, job, false))
 	{
-		error<<reader.getFormattedErrorMessages()<<std::endl;
+		my_error<<reader.getFormattedErrorMessages()<<std::endl;
 		throw std::runtime_error("Cannot parse job file");
 	}
 
@@ -38,7 +38,7 @@ Job::Job(const std::experimental::filesystem::path& jobfile, ev::loop_ref& loop)
 			std::string win_name = window_name.asString();
 			if( win_name == "no window_names" )
 			{
-				error<<"Job "<<jobname<<": Invalid window name."<<std::endl;
+				my_error<<"Job "<<jobname<<": Invalid window name."<<std::endl;
 			}
 			else
 			{
@@ -56,7 +56,7 @@ Job::Job(const std::experimental::filesystem::path& jobfile, ev::loop_ref& loop)
 	}
 	else
 	{
-		error<<"Job "<<jobname<<": No window name segments specified."<<std::endl;
+		my_error<<"Job "<<jobname<<": No window name segments specified."<<std::endl;
 	}
 	//}}}
 
@@ -68,7 +68,7 @@ Job::Job(const std::experimental::filesystem::path& jobfile, ev::loop_ref& loop)
 			std::string ws_name = workspace_name.asString();
 			if( ws_name == "no workspace_names" )
 			{
-				error<<"Job "<<jobname<<": Invalid workspace name."<<std::endl;
+				my_error<<"Job "<<jobname<<": Invalid workspace name."<<std::endl;
 			}
 			else
 			{
@@ -86,7 +86,7 @@ Job::Job(const std::experimental::filesystem::path& jobfile, ev::loop_ref& loop)
 	}
 	else
 	{
-		error<<"Job "<<jobname<<": No workspace name segments specified."<<std::endl;
+		my_error<<"Job "<<jobname<<": No workspace name segments specified."<<std::endl;
 	}
 	//}}}
 
@@ -193,7 +193,7 @@ void Job::sanitise_jobfile(const std::experimental::filesystem::path& jobfile)
 
 	if( 21 != (pos_end-pos_start))
 	{
-		std::cout<<"LENGTH too short! ("<<(pos_end-pos_start)<<")"<<std::endl;
+		my_error<<"LENGTH too short! ("<<(pos_end-pos_start)<<")"<<std::endl;
 
 		//{{{ Copy the jobfile verbatim
 		{
@@ -292,7 +292,7 @@ void Job::stop(std::chrono::steady_clock::time_point now)
 void Job::write_time_cb(void)
 {
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-	std::cout<<"Writing time for "<<jobname<<"to disk."<<std::endl;
+	debug<<"Writing time for "<<jobname<<"to disk."<<std::endl;
 
 	if( times.running )							// Account for a currently running job.
 	{

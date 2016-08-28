@@ -2,7 +2,7 @@
 
 #{{{Variables: SRCS INCDIRS LINKDIRS LIBS CMAKE_MODULE_PATH
 
-file(GLOB SRCS *.cpp ../libs/getoptpp/src/getopt_pp.cpp)
+file(GLOB SRCS *.cpp)
 set(INCDIRS "${PROJECT_BINARY_DIR}")
 set(INCDIRS_SYS "getoptpp/getoptpp")
 set(LIBS -lstdc++fs)
@@ -20,12 +20,13 @@ set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
 
 set(LIBS ${LIBS} getoptpp)
 set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/getoptpp/getoptpp)
+set(SRCS ${SRCS} ../libs/getoptpp/src/getopt_pp.cpp)
 #}}}
 
 #{{{STREAMLIB
 
-#set(LIBS ${LIBS} getoptpp)
 set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/streamlib)
+set(SRCS ${SRCS} ../libs/streamlib/console_stream.cpp)
 #}}}
 
 #{{{SIGCPP
@@ -79,7 +80,7 @@ set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
 
 # Set build type when generating the Makefile like: cmake -DCMAKE_BUILD_TYPE=Debug ..
 set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS}         -std=c++17 -lstdc++fs -Wall -Wextra -Wpedantic -Wfatal-errors -Os")
-set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -std=c++17 -lstdc++fs -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -std=c++17 -lstdc++fs -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DDEBUG -save-temps")
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++17 -lstdc++fs -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DNDEBUG")
 #}}}
 

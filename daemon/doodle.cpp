@@ -1,7 +1,8 @@
 #include "doodle.hpp"
+#include "console_stream.hpp"
 #include <fstream>
 #include <experimental/filesystem>
-//#include "console_stream.hpp"
+#include "console_stream.hpp"
 #include <functional>
 #include <json/json.h>
 #include <sys/socket.h>
@@ -10,7 +11,6 @@
 #include <map>
 #include <memory>
 
-#include "console_stream.hpp"
 
 
 
@@ -19,7 +19,7 @@
 //{{{
 Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop), socket_watcher(loop, this), terminal(this)
 {
-	std::cout<<"THIS = "<<this<<std::endl;
+	debug<<"THIS = "<<this<<std::endl;
 	//{{{ Construct all members
 
 	std::ifstream config_file(config_path+"/doodlerc");
@@ -29,12 +29,12 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 
 	if( !reader.parse(config_file, configuration_root, false))
 	{
-		error<<reader.getFormattedErrorMessages()<<std::endl;
+		my_error<<reader.getFormattedErrorMessages()<<std::endl;
 	}
 
 	//{{{ Get the configuration options
 
-	std::cout<<"retrieving config"<<std::endl;
+	debug<<"retrieving config"<<std::endl;
 	Json::Value config;
 	if( configuration_root.isMember("config"))
 	{
@@ -62,7 +62,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 			}
 			catch(std::runtime_error&e)
 			{
-				error<<"Caught exception \""<<e.what()<<"\" while constructing job "<<f.path().filename()<<". ... removing that job from the job list."<<std::endl;
+				my_error<<"Caught exception \""<<e.what()<<"\" while constructing job "<<f.path().filename()<<". ... removing that job from the job list."<<std::endl;
 			}
 		}
 	}
@@ -101,7 +101,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 
 	if( !conn.subscribe(i3ipc::ET_WORKSPACE|i3ipc::ET_WINDOW))
 	{
-		error<<"could not connect"<<std::endl;
+		my_error<<"could not connect"<<std::endl;
 		throw "Could not subscribe to the workspace- and window change events.";
 	}
 	//}}}
@@ -158,7 +158,7 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_na
 			{
 				if( retval.job != &nojob )
 				{
-					error<<"Ambiguity: Window name \""<<window_name<<"\" matched "<<retval.job->get_jobname()<<" and "<<j.get_jobname()<<"."<<std::endl;
+					my_error<<"Ambiguity: Window name \""<<window_name<<"\" matched "<<retval.job->get_jobname()<<" and "<<j.get_jobname()<<"."<<std::endl;
 					// TODO: Show an errow window that asks to which job the window belongs to.
 				}
 				else
@@ -276,7 +276,7 @@ bool Doodle::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::wo
 			return true;
 		}
 	}
-	error<<"No workspace is focused."<<std::endl;
+	my_error<<"No workspace is focused."<<std::endl;
 	return false;	// Should never be reached
 }
 //}}}
@@ -305,9 +305,9 @@ bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::contain
 //{{{
 void Doodle::SIGUSR1_cb(void)
 {
-	std::cout<<"Received SIGUSR1!"<<std::endl;
-	//std::cout<<*this<<std::endl;
-	std::cout<<"Pending count: "<<ev_pending_count(loop)<<"."<<std::endl;
+	debug<<"Received SIGUSR1!"<<std::endl;
+	//debug<<*this<<std::endl;
+	debug<<"Pending count: "<<ev_pending_count(loop)<<"."<<std::endl;
 }
 //}}}
 
@@ -315,7 +315,6 @@ void Doodle::SIGUSR1_cb(void)
 void Doodle::SIGTERM_cb(void)
 {
 	logger<<"Shutting down doodle"<<std::endl;
-	std::cout<<"Shutting down doodle"<<std::endl;
 	loop.break_loop(ev::ALL);
 }
 //}}}
@@ -329,7 +328,7 @@ void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
 
 	uint32_t idle_time = info->ms_since_user_input/1000;// use seconds
 
-	std::cout<<"Checking idle time("<<revents<<"): "<<idle_time<<"."<<std::endl;
+	debug<<"Checking idle time("<<revents<<"): "<<idle_time<<"."<<std::endl;
 	free(info);
 
 	uint32_t repeat_value = 1;
@@ -363,9 +362,9 @@ void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
 //void Doodle::socket_watcher_cb(ev::io& socket_watcher, int revents)
 //{
 //	throw std::exception();
-//	std::cout<<"THIS = "<<this<<std::endl;
+//	debug<<"THIS = "<<this<<std::endl;
 //	(void) revents;
-//	//std::cout<<"new Client_watcher(socket_watcher.fd = "<<socket_watcher.fd<<", reinterpret_cast<Client_watcher**>(&socket_watcher.data) = "<<reinterpret_cast<Client_watcher**>(&socket_watcher.data)<<", this = "<<this<<", socket_watcher.loop);"<<std::endl;
+//	//debug<<"new Client_watcher(socket_watcher.fd = "<<socket_watcher.fd<<", reinterpret_cast<Client_watcher**>(&socket_watcher.data) = "<<reinterpret_cast<Client_watcher**>(&socket_watcher.data)<<", this = "<<this<<", socket_watcher.loop);"<<std::endl;
 //	new Client_watcher(socket_watcher.fd, reinterpret_cast<Client_watcher**>(&socket_watcher.data), this, socket_watcher.loop);
 //}
 ////}}}
@@ -380,7 +379,7 @@ int Doodle::operator()(void)
 
 	conn.prepare_to_event_handling();
 
-	std::cout<<"---------------Starting the event loop---------------"<<std::endl;
+	logger<<"---------------Starting the event loop---------------"<<std::endl;
 
 	//{{{ Watcher for i3 events
 
@@ -422,7 +421,7 @@ int Doodle::operator()(void)
 
 	loop.run();
 
-	std::cout<<"Returning from event loop"<<std::endl;
+	logger<<"Returning from event loop"<<std::endl;
 
 	return retval;
 }

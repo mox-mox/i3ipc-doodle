@@ -17,7 +17,9 @@ set(DOODLE_PROTOCL_VERSION "Doodle01")
 
 
 
-option (USE_NOTIFICATIONS "Print debugging information to notification popup instead of console." ON)
+#SET (NOTIFICATION_LEVEL "Show desktop notifications about program operation? 0 = disable notifications, 1 = show critical information only, 2 = also show debugging information, 3 = be verbose" 1)
+SET (NOTIFICATION_LEVEL 1) # Show desktop notifications about program operation? 0 = disable notifications, 1 = show critical information only, 2 = also show debugging information, 3 = be verbose
+#option (USE_NOTIFICATIONS "Print debugging information to notification popup instead of console." ON)
 option (USE_SYSLOG "Enable logging to syslog." ON)
 
 

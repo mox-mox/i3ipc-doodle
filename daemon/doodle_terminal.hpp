@@ -1,5 +1,8 @@
+#ifndef DOODLE_TERMINAL_HPP
+#define DOODLE_TERMINAL_HPP
+#pragma once
 // This class is a nested class of doodle. This file may only be included _in_the_body_of_class_Doodle_!
-#include <json/json.h>
+//#include <json/json.h>
 
 
 //{{{
@@ -51,3 +54,4 @@ struct terminal_t
 };
 //}}}
 
+#endif /* DOODLE_TERMINAL_HPP */

@@ -2,7 +2,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-//#include "console_stream.hpp"
+#include "console_stream.hpp"
 
 
 
@@ -10,7 +10,7 @@
 	//{{{
 Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle) : ev::io(loop), doodle(doodle), head(nullptr)
 {
-	std::cout<<"Doodle::Socket_watcher::Socket_watcher() at "<<this<<std::endl;
+	debug<<"Doodle::Socket_watcher::Socket_watcher() at "<<this<<std::endl;
 }
 //}}}
 
@@ -18,8 +18,8 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle) : ev::
 void Doodle::Socket_watcher::init(std::string& sock_path)
 {
 	socket_path=sock_path;
-	std::cout<<"void Doodle::Socket_watcher::init() at "<<this<<std::endl;
-	std::cout<<"Socket path: "<<socket_path<<std::endl;
+	debug<<"void Doodle::Socket_watcher::init() at "<<this<<std::endl;
+	debug<<"Socket path: "<<socket_path<<std::endl;
 
 	int fd;
 	if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1 )
@@ -58,7 +58,7 @@ void Doodle::Socket_watcher::init(std::string& sock_path)
 //{{{
 Doodle::Socket_watcher::~Socket_watcher(void)
 {
-	std::cout<<"Doodle::Socket_watcher::~Socket_watcher() at "<<this<<std::endl;
+	debug<<"Doodle::Socket_watcher::~Socket_watcher() at "<<this<<std::endl;
 
 	if(head)
 	{
@@ -79,6 +79,6 @@ Doodle::Socket_watcher::~Socket_watcher(void)
 
 void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher& w, int)
 {
-	std::cout<<"void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher& w at "<<&w<<") at "<<this<<std::endl;
+	debug<<"void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher& w at "<<&w<<") at "<<this<<std::endl;
 	new Client_watcher(fd, &head, doodle, loop);
 }

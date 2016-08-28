@@ -1,5 +1,10 @@
+#ifndef DOODLE_CLIENT_WATCHER_HPP
+#define DOODLE_CLIENT_WATCHER_HPP
+#pragma once
 // This class is a nested class of doodle. This file may only be included _in_the_body_of_class_Doodle_!
-#include "doodle_config.hpp"
+//#warning "<<<<<<<<<<<<<<<<<<<< doodle_client_watcher.hpp: include  doodle_config.hpp >>>>>>>>>>>>>>>>>>>>"
+//#include "doodle_config.hpp"
+//#warning "++++++++++++++++++++ doodle_client_watcher.hpp: include  doodle_config.hpp ++++++++++++++++++++"
 //#include <ev++.h>
 
 //{{{
@@ -44,3 +49,4 @@ struct Client_watcher : ev::io
 };
 //}}}
 
+#endif /* DOODLE_CLIENT_WATCHER_HPP */

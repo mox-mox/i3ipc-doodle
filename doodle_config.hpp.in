@@ -1,4 +1,8 @@
+#ifndef DOODLE_CONFIG_HPP
+#define DOODLE_CONFIG_HPP
 #pragma once
+//#warning "#################### compiling doodle_config.hpp ####################"
+
 
 // the configured options and settings for the doodle
 #define DOODLE_VERSION_MAJOR @DOODLE_VERSION_MAJOR@
@@ -14,7 +18,8 @@
 const std::string DOODLE_SOCKET_PATH_DEFAULT("@DOODLE_SOCKET_PATH@", sizeof("@DOODLE_SOCKET_PATH@")-1); //-1 to strip the terminating null
 
 
-#cmakedefine USE_NOTIFICATIONS
+// #cmakedefine USE_NOTIFICATIONS
+#define NOTIFICATION_LEVEL @NOTIFICATION_LEVEL@
 #cmakedefine USE_SYSLOG
 
 
@@ -31,3 +36,4 @@ const std::string DOODLE_SOCKET_PATH_DEFAULT("@DOODLE_SOCKET_PATH@", sizeof("@DO
 //#include "log_stream.hpp"
 #include <ev++.h>
 
+#endif /* DOODLE_CONFIG_HPP */

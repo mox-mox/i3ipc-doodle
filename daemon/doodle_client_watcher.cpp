@@ -2,7 +2,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-//#include "console_stream.hpp"
+#include "console_stream.hpp"
 
 
 
@@ -10,10 +10,10 @@
 	//{{{
 Doodle::Client_watcher::Client_watcher(int main_fd, Client_watcher** head, Doodle* doodle, ev::loop_ref loop) : ev::io(loop), doodle(doodle), head(head), write_watcher(loop)
 	{
-		std::cout<<"Doodle::Client_watcher::Client_watcher(Client_watcher** head at "<<head<<" points to "<<*head<<", Doodle* doodle="<<doodle<<") at "<<this<<std::endl;
+		debug<<"Doodle::Client_watcher::Client_watcher(Client_watcher** head at "<<head<<" points to "<<*head<<", Doodle* doodle="<<doodle<<") at "<<this<<std::endl;
 		*this->head = this;
 		Client_watcher* next_watcher = *head;
-		//std::cout<<"Doodle::Client_watcher::Client_watcher(int main_fd, Client_watcher** head, Doodle* doodle, ev::loop_ref loop) : ev::io(loop), doodle(doodle), head(head), write_watcher(loop)"<<std::endl;
+		//debug<<"Doodle::Client_watcher::Client_watcher(int main_fd, Client_watcher** head, Doodle* doodle, ev::loop_ref loop) : ev::io(loop), doodle(doodle), head(head), write_watcher(loop)"<<std::endl;
 
 		if( -1 == main_fd )   throw std::runtime_error("Passed invalid Unix socket");
 		int client_fd = accept(main_fd, NULL, NULL);
@@ -45,7 +45,7 @@ Doodle::Client_watcher::Client_watcher(int main_fd, Client_watcher** head, Doodl
 	//{{{
 	Doodle::Client_watcher::~Client_watcher(void)
 	{
-		std::cout<<"Doodle::Client_watcher::~Client_watcher() at "<<this<<".Client_watcher** head at "<<head<<" points to "<<*head<<", Doodle* doodle="<<doodle<<")"<<std::endl;
+		debug<<"Doodle::Client_watcher::~Client_watcher() at "<<this<<".Client_watcher** head at "<<head<<" points to "<<*head<<", Doodle* doodle="<<doodle<<")"<<std::endl;
 		close(fd);
 		write_watcher.stop();
 		stop();
@@ -136,7 +136,7 @@ Doodle::Client_watcher::Client_watcher(int main_fd, Client_watcher** head, Doodl
 	//{{{
 	void Doodle::Client_watcher::Client_watcher_cb(Client_watcher& watcher, int)
 	{
-		std::cout<<"void Doodle::Client_watcher::Client_watcher_cb(Client_watcher& watcher at "<<&watcher<<") at "<<this<<std::endl;
+		debug<<"void Doodle::Client_watcher::Client_watcher_cb(Client_watcher& watcher at "<<&watcher<<") at "<<this<<std::endl;
 
 		struct
 		{
@@ -148,7 +148,7 @@ Doodle::Client_watcher::Client_watcher(int main_fd, Client_watcher** head, Doodl
 		{
 			return;
 		}
-		std::cout<<header.doodleversion<<", length: "<<header.length<<": ";
+		debug<<header.doodleversion<<", length: "<<header.length<<": ";
 
 		std::string buffer(header.length, '\0');
 		if(!read_n(fd, &buffer[0], header.length, *this))
@@ -156,7 +156,7 @@ Doodle::Client_watcher::Client_watcher(int main_fd, Client_watcher** head, Doodl
 			return;
 		}
 
-		std::cout<<"\""<<buffer<<"\""<<std::endl;
+		debug<<"\""<<buffer<<"\""<<std::endl;
 
 		*this<<doodle->terminal(buffer);
 	}
