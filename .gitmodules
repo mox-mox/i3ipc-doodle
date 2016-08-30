@@ -7,3 +7,6 @@
 [submodule "libs/getoptpp"]
 	path = libs/getoptpp
 	url = git@github.com:mox-mox/getoptpp.git
+[submodule "libs/i3ipcpp"]
+	path = libs/i3ipcpp
+	url = git@github.com:mox-mox/i3ipcpp.git
