@@ -1,6 +1,3 @@
-[submodule "libs/i3ipc++"]
-	path = libs/i3ipc++
-	url = git@github.com:mox-mox/i3ipcpp.git
 [submodule "libs/console_stream"]
 	path = libs/console_stream
 	url = git@github.com:mox-mox/console_stream.git
