@@ -7,6 +7,7 @@ set(INCDIRS "${PROJECT_BINARY_DIR}")
 set(INCDIRS_SYS "getoptpp/getoptpp")
 set(LIBS -lstdc++fs)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(LIBS_PATH ${LIBS_PATH} "${CMAKE_SOURCE_DIR}/libs/")
 #}}}
 
 #{{{I3IPC++
@@ -18,15 +19,19 @@ set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
 
 #{{{GETOPTPP
 
-set(LIBS ${LIBS} getoptpp)
-set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/getoptpp/getoptpp)
-set(SRCS ${SRCS} ../libs/getoptpp/src/getopt_pp.cpp)
+#set(LIBS ${LIBS} getoptpp)
+#set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBS_PATH}/getoptpp/getoptpp)
+#set(SRCS ${SRCS} "${LIBS_PATH}/getoptpp/src/getopt_pp.cpp")
+add_subdirectory("${LIBS_PATH}/getoptpp")
 #}}}
 
 #{{{STREAMLIB
 
-set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/streamlib)
-set(SRCS ${SRCS} ../libs/streamlib/console_stream.cpp)
+add_subdirectory("${LIBS_PATH}/console_stream")
+add_subdirectory("${LIBS_PATH}/notify_stream")
+
+#set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/streamlib)
+#set(SRCS ${SRCS} ../libs/streamlib/console_stream.cpp)
 #}}}
 
 #{{{SIGCPP
@@ -45,20 +50,20 @@ if (USE_SYSLOG)
 	set(INCDIRS_SYS ${INCDIRS_SYS} ${SYSLOG_INCLUDE_DIRS})
 endif (USE_SYSLOG)
 #}}}
-
-#{{{LIBNOTIFY
-
-# The popup notification will always be visible and will not be detected by IPC_DOODLE so viewing it does not create more output.
-if (USE_NOTIFICATIONS)
-	find_package(LIBNOTIFY REQUIRED)
-	find_package(GLIB2 REQUIRED)
-	find_package(GDK_PIXBUF2 REQUIRED)
-
-	set(LIBS ${LIBS} ${GDK_PIXBUF2_LIBRARIES} ${GLIB2_LIBRARIES} ${NOTIFY_LIBRARIES})
-	set(INCDIRS_SYS ${INCDIRS_SYS} ${NOTIFY_INCLUDE_DIRS} ${GLIB2_INCLUDE_DIRS} ${GDK_PIXBUF2_INCLUDE_DIRS})
-endif (USE_NOTIFICATIONS)
-#}}}
-
+#
+##{{{LIBNOTIFY
+#
+## The popup notification will always be visible and will not be detected by IPC_DOODLE so viewing it does not create more output.
+#if (USE_NOTIFICATIONS)
+#	find_package(LIBNOTIFY REQUIRED)
+#	find_package(GLIB2 REQUIRED)
+#	find_package(GDK_PIXBUF2 REQUIRED)
+#
+#	set(LIBS ${LIBS} ${GDK_PIXBUF2_LIBRARIES} ${GLIB2_LIBRARIES} ${NOTIFY_LIBRARIES})
+#	set(INCDIRS_SYS ${INCDIRS_SYS} ${NOTIFY_INCLUDE_DIRS} ${GLIB2_INCLUDE_DIRS} ${GDK_PIXBUF2_INCLUDE_DIRS})
+#endif (USE_NOTIFICATIONS)
+##}}}
+#
 #{{{LIBEV
 
 find_package(LIBEV REQUIRED)

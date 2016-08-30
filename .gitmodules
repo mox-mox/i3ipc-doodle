@@ -1,6 +1,9 @@
 [submodule "i3ipc++"]
 	path = libs/i3ipc++
 	url = git@github.com:mox-mox/i3ipcpp.git
-[submodule "src/getoptpp"]
-	path = libs/getoptpp
-	url = git@github.com:mox-mox/getoptpp.git
+[submodule "libs/console_stream"]
+	path = libs/console_stream
+	url = https://github.com/mox-mox/console_stream.git
+[submodule "libs/notify_stream"]
+	path = libs/notify_stream
+	url = https://github.com/mox-mox/notify_stream.git
