@@ -7,3 +7,6 @@
 [submodule "libs/notify_stream"]
 	path = libs/notify_stream
 	url = https://github.com/mox-mox/notify_stream.git
+[submodule "libs/getoptpp"]
+	path = libs/getoptpp
+	url = git@github.com:mox-mox/getoptpp.git
