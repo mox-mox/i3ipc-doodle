@@ -23,7 +23,7 @@ std::string Doodle::terminal_t::operator()(std::string command_line_input)
 
 		if( !reader.parse(command_line_input, command, false))
 		{
-			my_error<<reader.getFormattedErrorMessages()<<std::endl;
+			error<<reader.getFormattedErrorMessages()<<std::endl;
 			return "{\"response\":\"invalid format\"}";
 		}
 		else

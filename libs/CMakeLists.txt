@@ -1,1 +1,0 @@
-subdirs(getoptpp streamlib)

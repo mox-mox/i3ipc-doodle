@@ -15,7 +15,7 @@ Job::Job(const std::experimental::filesystem::path& jobfile, ev::loop_ref& loop)
 	Json::Reader reader;
 	if( !reader.parse(file, job, false))
 	{
-		my_error<<reader.getFormattedErrorMessages()<<std::endl;
+		error<<reader.getFormattedErrorMessages()<<std::endl;
 		throw std::runtime_error("Cannot parse job file");
 	}
 
@@ -38,7 +38,7 @@ Job::Job(const std::experimental::filesystem::path& jobfile, ev::loop_ref& loop)
 			std::string win_name = window_name.asString();
 			if( win_name == "no window_names" )
 			{
-				my_error<<"Job "<<jobname<<": Invalid window name."<<std::endl;
+				error<<"Job "<<jobname<<": Invalid window name."<<std::endl;
 			}
 			else
 			{
@@ -56,7 +56,7 @@ Job::Job(const std::experimental::filesystem::path& jobfile, ev::loop_ref& loop)
 	}
 	else
 	{
-		my_error<<"Job "<<jobname<<": No window name segments specified."<<std::endl;
+		error<<"Job "<<jobname<<": No window name segments specified."<<std::endl;
 	}
 	//}}}
 
@@ -68,7 +68,7 @@ Job::Job(const std::experimental::filesystem::path& jobfile, ev::loop_ref& loop)
 			std::string ws_name = workspace_name.asString();
 			if( ws_name == "no workspace_names" )
 			{
-				my_error<<"Job "<<jobname<<": Invalid workspace name."<<std::endl;
+				error<<"Job "<<jobname<<": Invalid workspace name."<<std::endl;
 			}
 			else
 			{
@@ -86,7 +86,7 @@ Job::Job(const std::experimental::filesystem::path& jobfile, ev::loop_ref& loop)
 	}
 	else
 	{
-		my_error<<"Job "<<jobname<<": No workspace name segments specified."<<std::endl;
+		error<<"Job "<<jobname<<": No workspace name segments specified."<<std::endl;
 	}
 	//}}}
 
@@ -193,7 +193,7 @@ void Job::sanitise_jobfile(const std::experimental::filesystem::path& jobfile)
 
 	if( 21 != (pos_end-pos_start))
 	{
-		my_error<<"LENGTH too short! ("<<(pos_end-pos_start)<<")"<<std::endl;
+		error<<"LENGTH too short! ("<<(pos_end-pos_start)<<")"<<std::endl;
 
 		//{{{ Copy the jobfile verbatim
 		{

@@ -3,7 +3,6 @@
 #pragma once
 
 //#warning "<<<<<<<<<<<<<<<<<<<< doodle.hpp: include  doodle_config.hpp >>>>>>>>>>>>>>>>>>>>"
-//#include "doodle_config_dummy.hpp"
 
 //#include <iostream>
 //#include <sstream>

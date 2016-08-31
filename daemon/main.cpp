@@ -1,7 +1,4 @@
-//#warning "<<<<<<<<<<<<<<<<<<<< main.cpp: include  doodle_config.hpp >>>>>>>>>>>>>>>>>>>>"
 #include "doodle_config.hpp"
-#include "doodle_config_dummy.hpp"
-//#warning "++++++++++++++++++++ main.cpp: include  doodle_config.hpp ++++++++++++++++++++"
 #include "console_stream.hpp"
 #include <iostream>
 #include "doodle.hpp"
@@ -9,10 +6,6 @@
 #include <unistd.h>
 
 #include "notify_stream.hpp"
-
-//#ifdef USE_NOTIFICATIONS
-//	#include <libnotify/notify.h>
-//#endif
 
 #ifdef USE_SYSLOG
 	#include <syslog.h>
@@ -45,14 +38,6 @@ void version_message()
 
 int main(int argc, char* argv[])
 {
-
-	my_error << "foobar" << std::endl;
-	return 0;
-
-
-
-
-
 	int retval = -1;
 
 	//{{{ Argument handling

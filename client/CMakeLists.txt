@@ -43,24 +43,12 @@ set(LIBS ${LIBS} ${LIBEV_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEV_INCLUDE_DIRS})
 #}}}
 
-
-
-
-
-
-
-
-#{{{CXXFLAGS
-
-# Set build type when generating the Makefile like: cmake -DCMAKE_BUILD_TYPE=Debug ..
-set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS}         -std=c++17 -lstdc++fs -Wall -Wextra -Wpedantic -Wfatal-errors -Os")
-set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -std=c++17 -lstdc++fs -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DDEBUG")
-#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++17 -lstdc++fs -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DNDEBUG")
-#}}}
-
-
 add_executable(doodle_client ${SRCS})
 target_link_libraries(doodle_client ${LIBS} )
 target_include_directories(doodle_client PUBLIC ${INCDIRS})
 target_include_directories(doodle_client SYSTEM PUBLIC ${INCDIRS_SYS})
+target_compile_options(doodle_client PUBLIC -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors)
+
+target_compile_options(doodle_client PUBLIC $<$<CONFIG:DEBUG>:-O0 -ggdb -save-temps>)
+target_compile_options(doodle_client PUBLIC $<$<CONFIG:RELEASE>:-O3>)
 

@@ -62,4 +62,4 @@ configure_file (
 #}}}
 
 
-subdirs(daemon client libs)
+subdirs(daemon client)

@@ -10,28 +10,23 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 set(LIBS_PATH ${LIBS_PATH} "${CMAKE_SOURCE_DIR}/libs/")
 #}}}
 
-#{{{I3IPC++
+#{{{I3IPCPP
 
-add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/i3ipc++ i3ipc++)
+add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/i3ipcpp "libs/i3ipcpp")
 set(LIBS ${LIBS} ${I3IPCpp_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
 #}}}
 
 #{{{GETOPTPP
 
-#set(LIBS ${LIBS} getoptpp)
-#set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBS_PATH}/getoptpp/getoptpp)
-#set(SRCS ${SRCS} "${LIBS_PATH}/getoptpp/src/getopt_pp.cpp")
-add_subdirectory("${LIBS_PATH}/getoptpp")
+add_subdirectory("${LIBS_PATH}/getoptpp" "libs/getoptpp")
 #}}}
 
 #{{{STREAMLIB
 
-add_subdirectory("${LIBS_PATH}/console_stream")
-add_subdirectory("${LIBS_PATH}/notify_stream")
+add_subdirectory("${LIBS_PATH}/console_stream" "libs/console_stream")
+add_subdirectory("${LIBS_PATH}/notify_stream" "libs/notify_stream")
 
-#set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/streamlib)
-#set(SRCS ${SRCS} ../libs/streamlib/console_stream.cpp)
 #}}}
 
 #{{{SIGCPP
@@ -50,6 +45,10 @@ if (USE_SYSLOG)
 	set(INCDIRS_SYS ${INCDIRS_SYS} ${SYSLOG_INCLUDE_DIRS})
 endif (USE_SYSLOG)
 #}}}
+
+
+
+
 #
 ##{{{LIBNOTIFY
 #
@@ -64,6 +63,9 @@ endif (USE_SYSLOG)
 #endif (USE_NOTIFICATIONS)
 ##}}}
 #
+
+
+
 #{{{LIBEV
 
 find_package(LIBEV REQUIRED)
@@ -81,19 +83,14 @@ set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
 #}}}
 
 
-#{{{CXXFLAGS
-
-# Set build type when generating the Makefile like: cmake -DCMAKE_BUILD_TYPE=Debug ..
-set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS}         -std=c++17 -lstdc++fs -Wall -Wextra -Wpedantic -Wfatal-errors -Os")
-set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -std=c++17 -lstdc++fs -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DDEBUG -save-temps")
-#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++17 -lstdc++fs -Wall -Wextra -Wpedantic -Wfatal-errors -O0 -ggdb -DNDEBUG")
-#}}}
-
 
 add_executable(doodle_daemon ${SRCS})
 target_link_libraries(doodle_daemon ${LIBS} )
 target_include_directories(doodle_daemon PUBLIC ${INCDIRS})
 target_include_directories(doodle_daemon SYSTEM PUBLIC ${INCDIRS_SYS})
+target_compile_options(doodle_daemon PUBLIC -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors -DNOTIFY_PROGRAM_NAME="${DOODLE_PROGRAM_NAME}")
+target_compile_options(doodle_daemon PUBLIC $<$<CONFIG:DEBUG>:-DNOTIFY_LEVEL=3 -DLOGGING_LEVEL=3 -O0 -ggdb -save-temps>)
+target_compile_options(doodle_daemon PUBLIC $<$<CONFIG:RELEASE>:-DNOTIFY_LEVEL=1 -DLOGGING_LEVEL=1 -O3>)
 
 add_custom_command(TARGET doodle_daemon POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory

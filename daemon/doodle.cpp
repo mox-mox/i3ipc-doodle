@@ -29,7 +29,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 
 	if( !reader.parse(config_file, configuration_root, false))
 	{
-		my_error<<reader.getFormattedErrorMessages()<<std::endl;
+		error<<reader.getFormattedErrorMessages()<<std::endl;
 	}
 
 	//{{{ Get the configuration options
@@ -62,7 +62,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 			}
 			catch(std::runtime_error&e)
 			{
-				my_error<<"Caught exception \""<<e.what()<<"\" while constructing job "<<f.path().filename()<<". ... removing that job from the job list."<<std::endl;
+				error<<"Caught exception \""<<e.what()<<"\" while constructing job "<<f.path().filename()<<". ... removing that job from the job list."<<std::endl;
 			}
 		}
 	}
@@ -101,7 +101,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 
 	if( !conn.subscribe(i3ipc::ET_WORKSPACE|i3ipc::ET_WINDOW))
 	{
-		my_error<<"could not connect"<<std::endl;
+		error<<"could not connect"<<std::endl;
 		throw "Could not subscribe to the workspace- and window change events.";
 	}
 	//}}}
@@ -158,7 +158,7 @@ inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_na
 			{
 				if( retval.job != &nojob )
 				{
-					my_error<<"Ambiguity: Window name \""<<window_name<<"\" matched "<<retval.job->get_jobname()<<" and "<<j.get_jobname()<<"."<<std::endl;
+					error<<"Ambiguity: Window name \""<<window_name<<"\" matched "<<retval.job->get_jobname()<<" and "<<j.get_jobname()<<"."<<std::endl;
 					// TODO: Show an errow window that asks to which job the window belongs to.
 				}
 				else
@@ -276,7 +276,7 @@ bool Doodle::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::wo
 			return true;
 		}
 	}
-	my_error<<"No workspace is focused."<<std::endl;
+	error<<"No workspace is focused."<<std::endl;
 	return false;	// Should never be reached
 }
 //}}}
