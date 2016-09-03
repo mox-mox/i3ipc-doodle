@@ -1,7 +1,6 @@
 #ifndef DOODLE_CONFIG_HPP
 #define DOODLE_CONFIG_HPP
 #pragma once
-//#warning "#################### compiling doodle_config.hpp ####################"
 
 
 // the configured options and settings for the doodle
@@ -28,12 +27,5 @@ const std::string DOODLE_SOCKET_PATH_DEFAULT("@DOODLE_SOCKET_PATH@", sizeof("@DO
 // Settings for libev
 #define EV_NO_SMP 1
 #define EV_NO_THREADS 1
-
-
-
-#include "console_stream.hpp"
-#include "notify_stream.hpp"
-//#include "log_stream.hpp"
-#include <ev++.h>
 
 #endif /* DOODLE_CONFIG_HPP */

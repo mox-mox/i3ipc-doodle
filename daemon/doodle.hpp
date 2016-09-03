@@ -3,7 +3,7 @@
 #pragma once
 
 
-#include "doodle_config.hpp"
+#include "main.hpp"
 #include <i3ipc++/ipc.hpp>
 #include "job.hpp"
 #include <xcb/screensaver.h>

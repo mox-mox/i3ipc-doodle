@@ -2,11 +2,11 @@
 
 #{{{Variables: SRCS INCDIRS LINKDIRS LIBS CMAKE_MODULE_PATH
 
-file(GLOB SRCS *.cpp)
-set(SRCS ${SRCS} ../doodle_config.hpp.in)
-set(INCDIRS "${PROJECT_BINARY_DIR}" "${PROJECT_BINARY_DIR}/..")
-set(INCDIRS_SYS "")
-set(LIBS -lstdc++fs)
+file(GLOB SRCS_LOCAL *.cpp)
+set(SRCS ${SRCS} ${SRCS_LOCAL})
+set(INCDIRS ${INCDIRS} "${PROJECT_BINARY_DIR}" "${PROJECT_BINARY_DIR}/..")
+set(INCDIRS_SYS ${INCDIRS_SYS})
+set(LIBS ${LIBS} -lstdc++fs)
 #}}}
 
 #{{{I3IPCPP
@@ -49,20 +49,15 @@ set(LIBS ${LIBS} ${XCB_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
 #}}}
 
-add_subdirectory("${LIBS_PATH}/getoptpp" "libs/getoptpp")
-add_subdirectory("${LIBS_PATH}/console_stream" "libs/console_stream")
-add_subdirectory("${LIBS_PATH}/notify_stream" "libs/notify_stream")
+#{{{LIBBSD
 
-
-
-
-
-
-
+FIND_LIBRARY(LIBBSD_LIBRARIES NAMES bsd)
+set(LIBS ${LIBS} ${LIBBSD_LIBRARIES})
+#}}}
 
 
 add_executable(doodle_daemon ${SRCS})
-target_link_libraries(doodle_daemon ${LIBS} )
+target_link_libraries(doodle_daemon ${LIBS})
 target_include_directories(doodle_daemon PUBLIC ${INCDIRS})
 target_include_directories(doodle_daemon SYSTEM PUBLIC ${INCDIRS_SYS})
 target_compile_options(doodle_daemon PUBLIC -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors -DNOTIFY_PROGRAM_NAME="${DOODLE_PROGRAM_NAME}")

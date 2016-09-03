@@ -1,15 +1,16 @@
-//#ifndef DOODLE_TERMINAL_HPP
-//#define DOODLE_TERMINAL_HPP
 #pragma once
 // This class is a nested class of doodle. This file may only be included _in_the_body_of_class_Doodle_!
-//#include <json/json.h>
 
 
 struct terminal_t
 {
 	Doodle* const doodle;
 	terminal_t(Doodle* doodle);
+
 	std::string operator()(std::string command_line_input);
+
+	//{{{ The terminal functions
+
 	Json::Value suspend(Json::Value);
 	Json::Value resume(Json::Value);
 	Json::Value list_jobs(Json::Value);
@@ -18,12 +19,10 @@ struct terminal_t
 	Json::Value get_ws_names(Json::Value args);
 	Json::Value detect_idle(Json::Value args);
 	Json::Value detect_ambiguity(Json::Value args);
-	//Json::Value restart(Json::Value);
+	Json::Value restart(Json::Value);
 	Json::Value kill(Json::Value);
 	Json::Value help(Json::Value);
-
-
-	//Json::Value (terminal_t::* func)(Json::Value) = &terminal_t::suspend;
+	//}}}
 
 
 	struct command_t
@@ -42,10 +41,8 @@ struct terminal_t
 		{"get_ws_names",     {&terminal_t::get_ws_names,     "jobname",               "List all workspace names or regular expressions for a job."}},
 		{"detect_idle",      {&terminal_t::detect_idle,      "true|fale|time",        "Set whether to watch for idle time. If set to true, uses value set in config file."}},
 		{"detect_ambiguity", {&terminal_t::detect_ambiguity, "true|false",            "Whether to check for ambiguous matching rules. Costs a bit of performance."}},
-		//{"restart",          {&terminal_t::restart,          "none",                  "Restart the program to re-read the configuration."}},
+		{"restart",          {&terminal_t::restart,          "none",                  "Restart the program to re-read the configuration."}},
 		{"kill",             {&terminal_t::kill,             "none",                  "Stop the program."}},
 		{"help",             {&terminal_t::help,             "none",                  "Show this help."}},
 	};
 };
-
-//#endif /* DOODLE_TERMINAL_HPP */

@@ -20,7 +20,7 @@ set(DOODLE_PROTOCL_VERSION "Doodle01")
 #SET (NOTIFICATION_LEVEL "Show desktop notifications about program operation? 0 = disable notifications, 1 = show critical information only, 2 = also show debugging information, 3 = be verbose" 1)
 SET (NOTIFICATION_LEVEL 1) # Show desktop notifications about program operation? 0 = disable notifications, 1 = show critical information only, 2 = also show debugging information, 3 = be verbose
 #option (USE_NOTIFICATIONS "Print debugging information to notification popup instead of console." ON)
-option (USE_SYSLOG "Enable logging to syslog." ON)
+option (USE_SYSLOG "Enable logging to syslog." OFF)
 
 
 
@@ -66,5 +66,17 @@ configure_file (
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 set(LIBS_PATH ${LIBS_PATH} "${CMAKE_SOURCE_DIR}/libs/")
 
+
+#{{{Variables: SRCS INCDIRS LINKDIRS LIBS CMAKE_MODULE_PATH
+
+set(SRCS "${CMAKE_CURRENT_SOURCE_DIR}/doodle_config.hpp.in")
+set(INCDIRS "")
+set(INCDIRS_SYS "")
+set(LIBS "")
+#}}}
+
+add_subdirectory("${LIBS_PATH}/getoptpp" "libs/getoptpp")
+add_subdirectory("${LIBS_PATH}/console_stream" "libs/console_stream")
+add_subdirectory("${LIBS_PATH}/notify_stream" "libs/notify_stream")
 
 subdirs(daemon client)

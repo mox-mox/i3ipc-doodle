@@ -1,5 +1,5 @@
 #pragma once
-#include "doodle_config.hpp"
+#include "main.hpp"
 #include <string>
 #include <deque>
 #include <regex>
