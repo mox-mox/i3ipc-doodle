@@ -77,33 +77,40 @@ int main(int argc, char* argv[])
 	}
 	//}}}
 
+	//{{{Check if the socket is already in use.
+
+	//}}}
+
+
 	//{{{ Create a pidfile
 
-	struct pidfh* pfh = nullptr;
-	pid_t otherpid;
-	std::string pidfile;
-	if ((pidfile = getenv("XDG_RUNTIME_DIR")).empty())
-		if ((pidfile = getenv("HOME")).empty())
-			pidfile = getpwuid(getuid())->pw_dir;
-	pidfile.append("/.doodle.pid");
-	debug<<"PID file stored to "<<pidfile<<std::endl;
+	//struct pidfh* pfh = nullptr;
+	//pid_t otherpid;
+	//std::string pidfile;
+	//if ((pidfile = getenv("XDG_RUNTIME_DIR")).empty())
+	//	if ((pidfile = getenv("HOME")).empty())
+	//		pidfile = getpwuid(getuid())->pw_dir;
+	//pidfile.append("/.doodle.pid");
+	//debug<<"PID file stored to "<<pidfile<<std::endl;
 
-	while(!(pfh = pidfile_open(pidfile.c_str(), 0600, &otherpid)))
-	{
-		if(errno == EEXIST && restart)
-		{
-			kill(otherpid, SIGTERM);
-			usleep(1000);
-			continue;
-		}
+	//while(!(pfh = pidfile_open(pidfile.c_str(), 0600, &otherpid)))
+	//{
+	//	if(errno == EEXIST && restart)
+	//	{
+	//		kill(otherpid, SIGTERM);
+	//		usleep(1000);
+	//		continue;
+	//	}
 
-		if (errno == EEXIST)
-			error<<"Daemon already running, pid: "<<(intmax_t)otherpid<<std::endl;
-		else
-			error<<"Cannot open or create pidfile"<<std::endl;
-		return EXIT_FAILURE;
-	}
+	//	if (errno == EEXIST)
+	//		error<<"Daemon already running, pid: "<<(intmax_t)otherpid<<std::endl;
+	//	else
+	//		error<<"Cannot open or create pidfile"<<std::endl;
+	//	return EXIT_FAILURE;
+	//}
 	//}}}
+
+	Doodle doodle(config_path);
 
 	//{{{ Fork to the background
 
@@ -112,16 +119,12 @@ int main(int argc, char* argv[])
 		if( daemon(1, 0))
 		{
 			error<<"Could not daemonize."<<std::endl;
-			pidfile_remove(pfh);
 			return EXIT_FAILURE;
 		}
 	}
-	pidfile_write(pfh); 
 	//}}}
 
-	Doodle doodle(config_path);
 	retval = doodle();
 
-	pidfile_remove(pfh);
 	return retval;
 }
