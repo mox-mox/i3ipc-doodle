@@ -31,8 +31,8 @@ const std::string DOODLE_SOCKET_PATH_DEFAULT("@DOODLE_SOCKET_PATH@", sizeof("@DO
 
 
 
-//#include "console_stream.hpp"
-//#include "notify_stream.hpp"
+#include "console_stream.hpp"
+#include "notify_stream.hpp"
 //#include "log_stream.hpp"
 #include <ev++.h>
 

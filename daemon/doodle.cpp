@@ -1,8 +1,6 @@
 #include "doodle.hpp"
-#include "console_stream.hpp"
 #include <fstream>
 #include <experimental/filesystem>
-#include "console_stream.hpp"
 #include <functional>
 #include <json/json.h>
 #include <sys/socket.h>
@@ -370,7 +368,6 @@ void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
 ////}}}
 
 //}}}
-
 
 //{{{
 int Doodle::operator()(void)

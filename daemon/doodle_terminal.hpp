@@ -1,11 +1,10 @@
-#ifndef DOODLE_TERMINAL_HPP
-#define DOODLE_TERMINAL_HPP
+//#ifndef DOODLE_TERMINAL_HPP
+//#define DOODLE_TERMINAL_HPP
 #pragma once
 // This class is a nested class of doodle. This file may only be included _in_the_body_of_class_Doodle_!
 //#include <json/json.h>
 
 
-//{{{
 struct terminal_t
 {
 	Doodle* const doodle;
@@ -19,12 +18,12 @@ struct terminal_t
 	Json::Value get_ws_names(Json::Value args);
 	Json::Value detect_idle(Json::Value args);
 	Json::Value detect_ambiguity(Json::Value args);
-	Json::Value restart(Json::Value);
+	//Json::Value restart(Json::Value);
 	Json::Value kill(Json::Value);
 	Json::Value help(Json::Value);
 
 
-		//Json::Value (terminal_t::* func)(Json::Value) = &terminal_t::suspend;
+	//Json::Value (terminal_t::* func)(Json::Value) = &terminal_t::suspend;
 
 
 	struct command_t
@@ -37,21 +36,16 @@ struct terminal_t
 	{
 		{"suspend",          {&terminal_t::suspend,          "none",                  "Suspend operation until resume is called. Called when computer goes to sleep, or for a coffe break ;)"}},
 		{"resume",           {&terminal_t::resume,           "none",                  "Resume suspended operation."}},
-		//{"list_jobs",        {&terminal_t::list_jobs,        "none",                  "List the names of all known jobs with their current total times"}},
-		//{"get_times",        {&terminal_t::get_times,        "jobname, [start, end]", "Get the active times for a job. If start and and are provided, only times in that interval are shown."}},
-		//{"get_win_names",    {&terminal_t::get_win_names,    "jobname",               "List all window names or regular expressions for a job."}},
-		//{"get_ws_names",     {&terminal_t::get_ws_names,     "jobname",               "List all workspace names or regular expressions for a job."}},
-		//{"detect_idle",      {&terminal_t::detect_idle,      "true|fale|time",        "Set whether to watch for idle time. If set to true, uses value set in config file."}},
-		//{"detect_ambiguity", {&terminal_t::detect_ambiguity, "true|false",            "Whether to check for ambiguous matching rules. Costs a bit of performance."}},
+		{"list_jobs",        {&terminal_t::list_jobs,        "none",                  "List the names of all known jobs with their current total times"}},
+		{"get_times",        {&terminal_t::get_times,        "jobname, [start, end]", "Get the active times for a job. If start and and are provided, only times in that interval are shown."}},
+		{"get_win_names",    {&terminal_t::get_win_names,    "jobname",               "List all window names or regular expressions for a job."}},
+		{"get_ws_names",     {&terminal_t::get_ws_names,     "jobname",               "List all workspace names or regular expressions for a job."}},
+		{"detect_idle",      {&terminal_t::detect_idle,      "true|fale|time",        "Set whether to watch for idle time. If set to true, uses value set in config file."}},
+		{"detect_ambiguity", {&terminal_t::detect_ambiguity, "true|false",            "Whether to check for ambiguous matching rules. Costs a bit of performance."}},
 		//{"restart",          {&terminal_t::restart,          "none",                  "Restart the program to re-read the configuration."}},
 		{"kill",             {&terminal_t::kill,             "none",                  "Stop the program."}},
-		//{"help",             {&terminal_t::help,             "none",                  "Show this help."}},
+		{"help",             {&terminal_t::help,             "none",                  "Show this help."}},
 	};
-
-
-
-
 };
-//}}}
 
-#endif /* DOODLE_TERMINAL_HPP */
+//#endif /* DOODLE_TERMINAL_HPP */

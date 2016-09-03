@@ -62,4 +62,9 @@ configure_file (
 #}}}
 
 
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(LIBS_PATH ${LIBS_PATH} "${CMAKE_SOURCE_DIR}/libs/")
+
+
 subdirs(daemon client)

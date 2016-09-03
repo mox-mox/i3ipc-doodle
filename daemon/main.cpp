@@ -1,15 +1,13 @@
 #include "doodle_config.hpp"
-#include "console_stream.hpp"
 #include <iostream>
 #include "doodle.hpp"
 #include "getopt_pp.h"
 #include <unistd.h>
 
-#include "notify_stream.hpp"
 
-#ifdef USE_SYSLOG
-	#include <syslog.h>
-#endif
+//#ifdef USE_SYSLOG
+//	#include <syslog.h>
+//#endif
 
 
 
@@ -97,22 +95,22 @@ int main(int argc, char* argv[])
 
 
 	//{{{
-#ifdef USE_SYSLOG
-		setlogmask(LOG_UPTO(LOG_NOTICE));
-		openlog("DOODLE", LOG_CONS|LOG_PID|LOG_NDELAY, LOG_LOCAL1);
-		syslog(LOG_NOTICE, "Writing to my Syslog");
-#endif
+//#ifdef USE_SYSLOG
+//		setlogmask(LOG_UPTO(LOG_NOTICE));
+//		openlog("DOODLE", LOG_CONS|LOG_PID|LOG_NDELAY, LOG_LOCAL1);
+//		syslog(LOG_NOTICE, "Writing to my Syslog");
+//#endif
 	//}}}
 
 	Doodle doodle(config);
 	retval = doodle();
 
-
-	//{{{
-	#ifdef USE_SYSLOG
-		closelog();
-	#endif
-	//}}}
-
+//
+//	//{{{
+//	#ifdef USE_SYSLOG
+//		closelog();
+//	#endif
+//	//}}}
+//
 	return retval;
 }

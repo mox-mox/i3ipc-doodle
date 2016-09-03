@@ -6,34 +6,8 @@ file(GLOB SRCS *.cpp ../libs/getoptpp/src/getopt_pp.cpp)
 set(INCDIRS "${PROJECT_BINARY_DIR}")
 #set(INCDIRS_SYS "getoptpp/getoptpp")
 set(LIBS -lstdc++fs)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 #}}}
 
-
-#{{{GETOPTPP
-
-set(LIBS ${LIBS} getoptpp)
-set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/getoptpp/getoptpp)
-#}}}
-
-#{{{STREAMLIB
-
-#set(LIBS ${LIBS} getoptpp)
-set(INCDIRS_SYS ${INCDIRS_SYS} ${i3ipc-doodle_SOURCE_DIR}/libs/streamlib)
-#}}}
-
-#{{{LIBNOTIFY
-
-# The popup notification will always be visible and will not be detected by IPC_DOODLE so viewing it does not create more output.
-if (USE_NOTIFICATIONS)
-	find_package(LIBNOTIFY REQUIRED)
-	find_package(GLIB2 REQUIRED)
-	find_package(GDK_PIXBUF2 REQUIRED)
-
-	set(LIBS ${LIBS} ${GDK_PIXBUF2_LIBRARIES} ${GLIB2_LIBRARIES} ${NOTIFY_LIBRARIES})
-	set(INCDIRS_SYS ${INCDIRS_SYS} ${NOTIFY_INCLUDE_DIRS} ${GLIB2_INCLUDE_DIRS} ${GDK_PIXBUF2_INCLUDE_DIRS})
-endif (USE_NOTIFICATIONS)
-#}}}
 
 #{{{LIBEV
 
@@ -43,12 +17,14 @@ set(LIBS ${LIBS} ${LIBEV_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEV_INCLUDE_DIRS})
 #}}}
 
+add_subdirectory("${LIBS_PATH}/getoptpp" "libs/getoptpp")
+add_subdirectory("${LIBS_PATH}/console_stream" "libs/console_stream")
+add_subdirectory("${LIBS_PATH}/notify_stream" "libs/notify_stream")
+
 add_executable(doodle_client ${SRCS})
 target_link_libraries(doodle_client ${LIBS} )
 target_include_directories(doodle_client PUBLIC ${INCDIRS})
 target_include_directories(doodle_client SYSTEM PUBLIC ${INCDIRS_SYS})
 target_compile_options(doodle_client PUBLIC -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors)
-
-target_compile_options(doodle_client PUBLIC $<$<CONFIG:DEBUG>:-O0 -ggdb -save-temps>)
-target_compile_options(doodle_client PUBLIC $<$<CONFIG:RELEASE>:-O3>)
-
+target_compile_options(doodle_client PUBLIC $<$<CONFIG:DEBUG>:-O0 -ggdb -save-temps -DLOGGING_LEVEL=3>)
+target_compile_options(doodle_client PUBLIC $<$<CONFIG:RELEASE>:-O3 -DLOGGING_LEVEL=1>)

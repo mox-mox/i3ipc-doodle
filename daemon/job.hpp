@@ -1,12 +1,9 @@
 #pragma once
-//#warning "<<<<<<<<<<<<<<<<<<<< job.hpp: include  doodle_config.hpp >>>>>>>>>>>>>>>>>>>>"
 #include "doodle_config.hpp"
-//#warning "++++++++++++++++++++ job.hpp: include  doodle_config.hpp ++++++++++++++++++++"
 #include <string>
 #include <deque>
 #include <regex>
 #include <experimental/filesystem>
-//#include <ev++.h>
 
 
 class Job

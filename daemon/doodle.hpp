@@ -2,22 +2,12 @@
 #define DOODLE_HPP
 #pragma once
 
-//#warning "<<<<<<<<<<<<<<<<<<<< doodle.hpp: include  doodle_config.hpp >>>>>>>>>>>>>>>>>>>>"
-
-//#include <iostream>
-//#include <sstream>
-//#include <iomanip>
-//#include <chrono>
-//#include <ctime>
 
 #include "doodle_config.hpp"
-//#warning "++++++++++++++++++++ doodle.hpp: include  doodle_config.hpp ++++++++++++++++++++"
-//#include <ev++.h>
 #include <i3ipc++/ipc.hpp>
 #include "job.hpp"
 #include <xcb/screensaver.h>
 #include <json/json.h>
-//#include "console_stream.hpp"
 
 using window_id = uint64_t;
 
@@ -91,7 +81,7 @@ class Doodle: public sigc::trackable
 
 
 
-	#include "doodle_terminal.hpp" //struct terminal_t;
+	#include "doodle_terminal.hpp"       //struct terminal_t;
 	terminal_t terminal;
 
 

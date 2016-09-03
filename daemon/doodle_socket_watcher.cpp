@@ -2,19 +2,18 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-#include "console_stream.hpp"
 
 
 
 
-	//{{{
+//{{{
 Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle) : ev::io(loop), doodle(doodle), head(nullptr)
 {
 	debug<<"Doodle::Socket_watcher::Socket_watcher() at "<<this<<std::endl;
 }
 //}}}
 
-	//{{{
+//{{{
 void Doodle::Socket_watcher::init(std::string& sock_path)
 {
 	socket_path=sock_path;
@@ -77,8 +76,10 @@ Doodle::Socket_watcher::~Socket_watcher(void)
 }
 //}}}
 
+//{{{
 void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher& w, int)
 {
 	debug<<"void Doodle::Socket_watcher::socket_watcher_cb(Socket_watcher& w at "<<&w<<") at "<<this<<std::endl;
 	new Client_watcher(fd, &head, doodle, loop);
 }
+//}}}

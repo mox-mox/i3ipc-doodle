@@ -1,10 +1,4 @@
-//#warning "<<<<<<<<<<<<<<<<<<<< doodle_terminal.cpp: include  doodle_config.hpp >>>>>>>>>>>>>>>>>>>>"
-#include "doodle_config.hpp"
-//#warning "++++++++++++++++++++ doodle_terminal.cpp: include  doodle_config.hpp ++++++++++++++++++++"
 #include "doodle.hpp"
-//#include "console_stream.hpp"
-//#include <ev++.h>
-#include "console_stream.hpp"
 
 
 Doodle::terminal_t::terminal_t(Doodle* doodle) : doodle(doodle)
@@ -70,13 +64,39 @@ Json::Value Doodle::terminal_t::resume(Json::Value)
 	return "{\"command\":\"resume\",\"response\":\"resumed successfully\"}";
 }
 
-//Json::Value Doodle::terminal_t::list_jobs(Json::Value);
-//Json::Value Doodle::terminal_t::get_times(Json::Value args);
-//Json::Value Doodle::terminal_t::get_win_names(Json::Value args);
-//Json::Value Doodle::terminal_t::get_ws_names(Json::Value args);
-//Json::Value Doodle::terminal_t::detect_idle(Json::Value args);
-//Json::Value Doodle::terminal_t::detect_ambiguity(Json::Value args);
-//Json::Value Doodle::terminal_t::restart(Json::Value);
+Json::Value Doodle::terminal_t::list_jobs(Json::Value)
+{
+	return "";
+}
+Json::Value Doodle::terminal_t::get_times(Json::Value args)
+{
+	(void) args;
+	return "";
+}
+Json::Value Doodle::terminal_t::get_win_names(Json::Value args)
+{
+	(void) args;
+	return "";
+}
+Json::Value Doodle::terminal_t::get_ws_names(Json::Value args)
+{
+	(void) args;
+	return "";
+}
+Json::Value Doodle::terminal_t::detect_idle(Json::Value args)
+{
+	(void) args;
+	return "";
+}
+Json::Value Doodle::terminal_t::detect_ambiguity(Json::Value args)
+{
+	(void) args;
+	return "";
+}
+//Json::Value Doodle::terminal_t::restart(Json::Value)
+//{
+//	return "";
+//}
 Json::Value Doodle::terminal_t::kill(Json::Value)
 {
 	logger<<"Shutting down..."<<std::endl;
@@ -85,5 +105,23 @@ Json::Value Doodle::terminal_t::kill(Json::Value)
 	return "{\"command\":\"kill\",\"response\":\"Apoptosis started\"}";
 
 }
-//Json::Value Doodle::terminal_t::help(Json::Value);
+Json::Value Doodle::terminal_t::help(Json::Value)
+{
+	Json::Value retval;
+	retval["command"] = "help";
+	//retval["response"]["COMMAND"] = "ARGS		DESCRIPTION";
+	//retval["response"].append("COMMAND	ARGS	DESCRIPTION");
+	for(auto& command : commands)
+	{
+		Json::Value entry;
+		entry[command.first].append(command.second.args);
+		entry[command.first].append(command.second.description);
+		retval["response"].append(entry);
+	}
+	return retval;
+
+
+
+
+}
 
