@@ -15,7 +15,8 @@
 
 
 //{{{
-Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop), socket_watcher(loop, this), terminal(this)
+//Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop), socket_watcher(loop, this), terminal(this)
+Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop), terminal(this)
 {
 	debug<<"THIS = "<<this<<std::endl;
 	//{{{ Construct all members
@@ -107,7 +108,8 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 	//}}}
 
 	//new(&socket_watcher) Socket_watcher(loop, this, settings.socket_path);
-	socket_watcher.init(settings.socket_path);
+	socket_watcher=new Socket_watcher(loop, this);
+	socket_watcher->init(settings.socket_path);
 }
 //}}}
 
@@ -115,6 +117,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 Doodle::~Doodle(void)
 {
 	xcb_disconnect(connection);
+	delete socket_watcher;
 
 	////{{{
 
@@ -355,18 +358,6 @@ void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
 	}
 }
 //}}}
-
-////{{{
-//void Doodle::socket_watcher_cb(ev::io& socket_watcher, int revents)
-//{
-//	throw std::exception();
-//	debug<<"THIS = "<<this<<std::endl;
-//	(void) revents;
-//	//debug<<"new Client_watcher(socket_watcher.fd = "<<socket_watcher.fd<<", reinterpret_cast<Client_watcher**>(&socket_watcher.data) = "<<reinterpret_cast<Client_watcher**>(&socket_watcher.data)<<", this = "<<this<<", socket_watcher.loop);"<<std::endl;
-//	new Client_watcher(socket_watcher.fd, reinterpret_cast<Client_watcher**>(&socket_watcher.data), this, socket_watcher.loop);
-//}
-////}}}
-
 //}}}
 
 //{{{
@@ -413,7 +404,7 @@ int Doodle::operator()(void)
 	//}}}
 	//}}}
 
-	socket_watcher.start();
+	socket_watcher->start();
 
 
 	loop.run();

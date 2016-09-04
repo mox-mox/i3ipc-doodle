@@ -25,6 +25,7 @@ void Doodle::Socket_watcher::init(std::string& sock_path)
 	{
 		throw std::runtime_error("Could not create a Unix socket.");
 	}
+	std::cout<<"....................FD: "<<fd<<std::endl;
 
 	set(fd, ev::READ);
 	struct sockaddr_un addr;
@@ -45,6 +46,7 @@ void Doodle::Socket_watcher::init(std::string& sock_path)
 	////////////////////
 	while(bind(fd, static_cast<struct sockaddr*>(static_cast<void*>(&addr)), socket_path.length()+1) == -1 )
 	{
+		std::cout<<"TRYING TO BIND fd "<<fd<<"to "<<socket_path<<std::endl;
 		switch(errno)
 		{
 			case EINVAL: //The socket is already bound to an address. || addrlen is wrong, or addr is not a valid address for this socket's domain.
@@ -73,7 +75,6 @@ void Doodle::Socket_watcher::init(std::string& sock_path)
 			case EADDRINUSE: //The given address is already in use.
 				if(restart)
 				{
-
 					//{{{ Kill the old process
 
 					int client_socket_fd;
@@ -105,27 +106,42 @@ void Doodle::Socket_watcher::init(std::string& sock_path)
 					{
 						throw std::runtime_error("Could not connect to socket "+socket_path+".");
 					}
-					const char* killmsg = "{\"cmd\":\"kill\",\"args\":[]}";
+
+					//const char* killmsg = "{\"cmd\":\"kill\",\"args\":[]}";
+
+
+					std::string cmd = "{\"cmd\":\"kill\",\"args\":[]}";
+
+					uint16_t length = cmd.length();
+					std::string credential(DOODLE_PROTOCOL_VERSION, 0, sizeof(DOODLE_PROTOCOL_VERSION)-1);
+					credential.append(static_cast<char*>(static_cast<void*>(&length)), 2);
+
+					std::string killmsg = credential + cmd;
+
 					int write_count = 0;
-					while(write_count < static_cast<int>(sizeof(killmsg)))
+					//while(write_count < static_cast<int>(sizeof(killmsg)))
+					while(write_count < static_cast<int>(killmsg.length()))
 					{
 						int n;
-						switch((n=write(client_socket_fd, &killmsg[write_count], sizeof(killmsg)-write_count)))
+						switch((n=write(client_socket_fd, &killmsg[write_count], killmsg.length()-write_count)))
 						{
 							case -1:
-								throw std::runtime_error("Write error on the connection using fd." + std::to_string(fd) + ".");
+								throw std::runtime_error("Write error on the connection using fd." + std::to_string(client_socket_fd) + ".");
 							case  0:
 								std::cout<<"Received EOF (Client has closed the connection)."<<std::endl;
-								throw std::runtime_error("Write error on the connection using fd." + std::to_string(fd) + ".");
+								throw std::runtime_error("Write error on the connection using fd." + std::to_string(client_socket_fd) + ".");
 								return;
 							default:
 								write_count+=n;
 						}
 					}
+
+					//killmsg.resize(1024);
+					//read(client_socket_fd, &killmsg[0], killmsg.length());
+
 					close(client_socket_fd);
 					//}}}
-
-					usleep(10000);
+					usleep(1000000);
 					continue;
 				}
 				else
@@ -170,6 +186,8 @@ Doodle::Socket_watcher::~Socket_watcher(void)
 		}
 		delete head;
 	}
+
+	std::cout<<"++++++++++++++++++++++++++++++++++++++++++++++ close fd "<<fd<<" and unlink +++++++++++++++++++++++++++++++++++++++++++++++++++"<<std::endl;
 	close(fd);
 	unlink(&socket_path[0]);
 }

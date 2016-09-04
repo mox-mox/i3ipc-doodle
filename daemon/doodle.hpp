@@ -76,7 +76,8 @@ class Doodle: public sigc::trackable
 
 
 	#include "doodle_socket_watcher.hpp" //struct socket_watcher;
-	Socket_watcher socket_watcher;
+	//Socket_watcher socket_watcher;
+	Socket_watcher* socket_watcher;
 
 
 

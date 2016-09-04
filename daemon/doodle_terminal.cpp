@@ -102,11 +102,13 @@ Json::Value Doodle::terminal_t::restart(Json::Value)
 			std::cerr << "Uh-Oh! fork() failed.\n";
 			exit(1);
 		case 0: /* Child process */
+			delete doodle->socket_watcher;
 			execl(program_path, std::experimental::filesystem::path(program_path).filename().c_str(), "-r", nofork?"-n":"", "-c", doodle->config_path.c_str(), "-s", socket_path.c_str(),  static_cast<char*>(nullptr)); /* Execute the program */
 			std::cerr << "Uh-Oh! execl() failed!"; /* execl doesn't return unless there's an error */
 			exit(1);
 		default: /* Parent process */
 			debug << "Process created with pid " << pid << "\n";
+			doodle->loop.break_loop(ev::ALL);
 			return "{\"response\":\"Restarting\"}";
 	}
 }

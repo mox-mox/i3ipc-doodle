@@ -63,7 +63,6 @@ namespace ev
 
 	friend socket& operator<<(socket& lhs, std::string& data)
 	{
-
 		std::stringstream ss(data); std::string token;
 
 		ss >> token;
