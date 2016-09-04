@@ -79,39 +79,14 @@ Json::Value Doodle::terminal_t::detect_ambiguity(Json::Value args)
 	(void) args;
 	return "";
 }
+
 Json::Value Doodle::terminal_t::restart(Json::Value)
 {
-	logger<<"<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>"<<std::endl;
-	char program_path[1024];
-	ssize_t len = ::readlink("/proc/self/exe", program_path, sizeof(program_path)-1);
-	if (len != -1)
-	{
-		program_path[len] = '\0';
-	}
-	else
-	{
-		error<<"Cannot get own path. => cannot restart."<<std::endl;
-		return "{\"response\":\"Cannot restart\"}";
-	}
-
-	pid_t pid;
-
-	switch ((pid = fork()))
-	{
-		case -1: /* Error */
-			std::cerr << "Uh-Oh! fork() failed.\n";
-			exit(1);
-		case 0: /* Child process */
-			delete doodle->socket_watcher;
-			execl(program_path, std::experimental::filesystem::path(program_path).filename().c_str(), "-r", nofork?"-n":"", "-c", doodle->config_path.c_str(), "-s", socket_path.c_str(),  static_cast<char*>(nullptr)); /* Execute the program */
-			std::cerr << "Uh-Oh! execl() failed!"; /* execl doesn't return unless there's an error */
-			exit(1);
-		default: /* Parent process */
-			debug << "Process created with pid " << pid << "\n";
-			doodle->loop.break_loop(ev::ALL);
-			return "{\"response\":\"Restarting\"}";
-	}
+	fork_to_restart = true;
+	doodle->loop.break_loop(ev::ALL);
+	return "{\"command\":\"restart\",\"response\":\"Restarting\"}";
 }
+
 Json::Value Doodle::terminal_t::kill(Json::Value)
 {
 	logger<<"Shutting down..."<<std::endl;
@@ -120,6 +95,7 @@ Json::Value Doodle::terminal_t::kill(Json::Value)
 	return "{\"command\":\"kill\",\"response\":\"Apoptosis started\"}";
 
 }
+
 Json::Value Doodle::terminal_t::help(Json::Value)
 {
 	Json::Value retval;

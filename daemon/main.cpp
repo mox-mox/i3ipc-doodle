@@ -7,14 +7,15 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <signal.h>
+#include <json/json.h>
+#include <fstream>
 
 bool show_help;
 bool show_version;
 bool nofork;
 bool restart;
-std::string config_path;
-std::string socket_path;
-
+bool fork_to_restart=false;
+Settings settings;
 
 //{{{ Help and version messages
 
@@ -39,6 +40,75 @@ void version_message()
 }
 //}}}
 
+//{{{
+void restart_doodle(void)
+{
+	char program_path[1024];
+	ssize_t len = ::readlink("/proc/self/exe", program_path, sizeof(program_path)-1);
+	if(len != -1)
+	{
+		program_path[len] = '\0';
+	}
+	else
+	{
+		error<<"Cannot get own path. => cannot restart."<<std::endl;
+	}
+
+	pid_t pid;
+	switch ((pid = fork()))
+	{
+		case -1: /* Error */
+			error << "Uh-Oh! fork() failed.\n";
+			exit(1);
+		case 0: /* Child process */
+			execl(program_path,
+					fs::path(program_path).filename().c_str(),
+					nofork?"-n":"",
+					"-r",
+					"-c", settings.config_path.c_str(),
+					"-s", settings.socket_path.c_str(),
+				   	static_cast<char*>(nullptr));
+			error << "Uh-Oh! execl() failed!"; /* execl doesn't return unless there's an error */
+			exit(1);
+		default: /* Parent process */
+			debug << "Process created with pid " << pid << "\n";
+	}
+}
+//}}}
+
+//{{{
+void parse_config(void)
+{
+	std::ifstream config_file(settings.config_path+"/doodlerc");
+
+	Json::Value configuration_root;
+	Json::Reader reader;
+
+	if( !reader.parse(config_file, configuration_root, false))
+	{
+		error<<reader.getFormattedErrorMessages()<<std::endl;
+	}
+
+	//{{{ Get the configuration options
+
+	debug<<"retrieving config"<<std::endl;
+	Json::Value config;
+	if( configuration_root.isMember("config"))
+	{
+		config = configuration_root.get("config", "no config");
+	}
+	else
+	{
+		config = configuration_root;
+	}
+	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
+	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
+	settings.socket_path = config.get("socket_path", DOODLE_SOCKET_PATH_DEFAULT).asString();
+	if(settings.socket_path[0] == '@') settings.socket_path[0] = '\0';
+	//}}}
+}
+//}}}
+
 
 int main(int argc, char* argv[])
 {
@@ -55,8 +125,8 @@ int main(int argc, char* argv[])
 		ops>>GetOpt::OptionPresent('n', "nofork", nofork);
 		ops>>GetOpt::OptionPresent('r', "restart", restart);
 		//ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
-		ops>>GetOpt::Option('c', "config", config_path, DOODLE_CONFIG_PATH);
-		ops>>GetOpt::Option('s', "socket", socket_path, DOODLE_CONFIG_PATH);
+		ops>>GetOpt::Option('c', "config", settings.config_path, DOODLE_CONFIG_PATH);
+		ops>>GetOpt::Option('s', "socket", settings.socket_path, DOODLE_CONFIG_PATH);
 	}
 	catch(GetOpt::GetOptEx ex)
 	{
@@ -77,22 +147,23 @@ int main(int argc, char* argv[])
 	}
 	//}}}
 
-	Doodle* doodle = new Doodle(config_path);
-
-	//{{{ Fork to the background
-
-	if( !nofork )
 	{
-		if( daemon(1, 0))
-		{
-			error<<"Could not daemonize."<<std::endl;
-			return EXIT_FAILURE;
-		}
-	}
-	//}}}
+		//Doodle doodle(settings.config_path);
+		Doodle doodle(settings);
 
-	retval = (*doodle)();
-	delete doodle;
+		if(!nofork)
+		{
+			if(daemon(1, 0))
+			{
+				error<<"Could not daemonize."<<std::endl;
+				return EXIT_FAILURE;
+			}
+		}
+
+		retval = doodle();
+	}
+
+	if(fork_to_restart) restart_doodle();
 
 	return retval;
 }

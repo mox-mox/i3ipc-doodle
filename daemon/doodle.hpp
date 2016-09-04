@@ -13,20 +13,21 @@ using window_id = uint64_t;
 
 class Doodle: public sigc::trackable
 {
+	Settings& settings;
 	i3ipc::connection conn;
-	const std::string config_path;
+	//const std::string config_path;
 	std::string current_workspace;
 
 	//{{{ Nested classes
 
-	struct settings
-	{
-		static constexpr unsigned int MAX_IDLE_TIME_DEFAULT_VALUE = 60;
-		unsigned int max_idle_time = MAX_IDLE_TIME_DEFAULT_VALUE;
-		static constexpr bool DETECT_AMBIGUITY_DEFAULT_VALUE = false;
-		bool detect_ambiguity = DETECT_AMBIGUITY_DEFAULT_VALUE;
-		std::string socket_path = DOODLE_SOCKET_PATH_DEFAULT;
-	} settings;
+	//struct settings
+	//{
+	//	static constexpr unsigned int MAX_IDLE_TIME_DEFAULT_VALUE = 60;
+	//	unsigned int max_idle_time = MAX_IDLE_TIME_DEFAULT_VALUE;
+	//	static constexpr bool DETECT_AMBIGUITY_DEFAULT_VALUE = false;
+	//	bool detect_ambiguity = DETECT_AMBIGUITY_DEFAULT_VALUE;
+	//	std::string socket_path = DOODLE_SOCKET_PATH_DEFAULT;
+	//} settings;
 
 	//{{{
 	struct win_id_lookup_entry
@@ -76,8 +77,7 @@ class Doodle: public sigc::trackable
 
 
 	#include "doodle_socket_watcher.hpp" //struct socket_watcher;
-	//Socket_watcher socket_watcher;
-	Socket_watcher* socket_watcher;
+	Socket_watcher socket_watcher;
 
 
 
@@ -90,7 +90,8 @@ class Doodle: public sigc::trackable
 	public:
 		//{{{ Constructor
 
-		explicit Doodle(const std::string& config_path = ".config/doodle");	// Todo: use xdg_config_path
+		//explicit Doodle(const std::string& config_path = ".config/doodle");	// Todo: use xdg_config_path
+		explicit Doodle(Settings& settings);	// Todo: use xdg_config_path
 		Doodle(const Doodle&) = delete;
 		Doodle(Doodle &&) = delete;
 		Doodle& operator = (const Doodle&) = delete;

@@ -16,44 +16,15 @@
 
 //{{{
 //Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop), socket_watcher(loop, this), terminal(this)
-Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop), terminal(this)
+Doodle::Doodle(Settings& settings) : settings(settings), conn(), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop), socket_watcher(loop, this, settings.socket_path), terminal(this)
 {
 	debug<<"THIS = "<<this<<std::endl;
-	//{{{ Construct all members
-
-	std::ifstream config_file(config_path+"/doodlerc");
-
-	Json::Value configuration_root;
-	Json::Reader reader;
-
-	if( !reader.parse(config_file, configuration_root, false))
-	{
-		error<<reader.getFormattedErrorMessages()<<std::endl;
-	}
-
-	//{{{ Get the configuration options
-
-	debug<<"retrieving config"<<std::endl;
-	Json::Value config;
-	if( configuration_root.isMember("config"))
-	{
-		config = configuration_root.get("config", "no config");
-	}
-	else
-	{
-		config = configuration_root;
-	}
-	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
-	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
-	settings.socket_path = config.get("socket_path", DOODLE_SOCKET_PATH_DEFAULT).asString();
-	if(settings.socket_path[0] == '@') settings.socket_path[0] = '\0';
-	//}}}
 
 	//{{{ Create the individual jobs
 
-	for( auto&f: std::experimental::filesystem::directory_iterator(config_path+"/jobs"))
+	for( auto&f: fs::directory_iterator(settings.config_path+"/jobs"))
 	{
-		if((f.path() != config_path+"/doodlerc") && (std::string::npos == f.path().string().find("_backup")) && std::experimental::filesystem::is_regular_file(f))
+		if((f.path() != settings.config_path+"/doodlerc") && (std::string::npos == f.path().string().find("_backup")) && fs::is_regular_file(f))
 		{
 			try
 			{
@@ -69,6 +40,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 
 	nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
 	//}}}
+
 
 	//{{{ Prepare for operation
 
@@ -108,8 +80,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 	//}}}
 
 	//new(&socket_watcher) Socket_watcher(loop, this, settings.socket_path);
-	socket_watcher=new Socket_watcher(loop, this);
-	socket_watcher->init(settings.socket_path);
+	//socket_watcher.init(settings.socket_path);
 }
 //}}}
 
@@ -117,25 +88,7 @@ Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path
 Doodle::~Doodle(void)
 {
 	xcb_disconnect(connection);
-	delete socket_watcher;
-
-	////{{{
-
-	//Client_watcher* head = static_cast<Client_watcher*>(socket_watcher.data);
-	//if(head)
-	//{
-	//	Client_watcher* w = head->next;
-
-	//	while(w && w != head)
-	//	{
-	//		Client_watcher* current = w;
-	//		w = w->next;
-	//		delete current;
-	//	}
-	//	delete head;
-	//}
-	//unlink(&settings.socket_path[0]);
-	////}}}
+	//delete socket_watcher;
 }
 //}}}
 
@@ -404,7 +357,7 @@ int Doodle::operator()(void)
 	//}}}
 	//}}}
 
-	socket_watcher->start();
+	socket_watcher.start();
 
 
 	loop.run();
