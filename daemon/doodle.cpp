@@ -1,6 +1,5 @@
 #include "doodle.hpp"
 #include <fstream>
-//#include <experimental/filesystem>
 #include <functional>
 #include <json/json.h>
 #include <sys/socket.h>
@@ -15,11 +14,20 @@
 
 
 //{{{
-//Doodle::Doodle(const std::string& config_path) : conn(), config_path(config_path), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop), socket_watcher(loop, this), terminal(this)
-Doodle::Doodle(Settings& settings) : settings(settings), conn(), current_workspace(""), nojob(), current_job(&nojob), loop(), idle(true), connection(xcb_connect(NULL, NULL)), screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data), idle_watcher_timer(loop), socket_watcher(loop, this, settings.socket_path), terminal(this)
+Doodle::Doodle(Settings& settings) :
+	settings(settings),
+	conn(),
+	current_workspace(""),
+	nojob(),
+	current_job(&nojob),
+	loop(),
+	idle(true),
+	connection(xcb_connect(NULL, NULL)),
+	screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data),
+	idle_watcher_timer(loop),
+	socket_watcher(loop, this, settings.socket_path),
+	terminal(this)
 {
-	debug<<"THIS = "<<this<<std::endl;
-
 	//{{{ Create the individual jobs
 
 	for( auto&f: fs::directory_iterator(settings.config_path+"/jobs"))
@@ -36,24 +44,17 @@ Doodle::Doodle(Settings& settings) : settings(settings), conn(), current_workspa
 			}
 		}
 	}
-	//}}}
 
 	nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
 	//}}}
-
-
-	//{{{ Prepare for operation
 
 	//{{{ Idle time detection
 
 	if( settings.max_idle_time )
 	{
-		//{{{ Watcher for idle time
-
-		idle_watcher_timer.set < Doodle, &Doodle::idle_time_watcher_cb > (this);
+		idle_watcher_timer.set<Doodle, &Doodle::idle_time_watcher_cb>(this);
 		idle_watcher_timer.set(settings.max_idle_time, settings.max_idle_time);
 		idle_watcher_timer.start();
-		//}}}
 	}
 	else
 	{
@@ -61,12 +62,11 @@ Doodle::Doodle(Settings& settings) : settings(settings), conn(), current_workspa
 	}
 	//}}}
 
-	simulate_workspace_change(conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
-	//simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
-
-
 	//{{{ i3 event subscriptions
 
+	simulate_workspace_change(conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
+	//simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+	//
 	conn.signal_window_event.connect(sigc::mem_fun(*this, &Doodle::on_window_change));
 	conn.signal_workspace_event.connect(sigc::mem_fun(*this, &Doodle::on_workspace_change));
 
@@ -76,11 +76,6 @@ Doodle::Doodle(Settings& settings) : settings(settings), conn(), current_workspa
 		throw "Could not subscribe to the workspace- and window change events.";
 	}
 	//}}}
-
-	//}}}
-
-	//new(&socket_watcher) Socket_watcher(loop, this, settings.socket_path);
-	//socket_watcher.init(settings.socket_path);
 }
 //}}}
 
@@ -88,7 +83,6 @@ Doodle::Doodle(Settings& settings) : settings(settings), conn(), current_workspa
 Doodle::~Doodle(void)
 {
 	xcb_disconnect(connection);
-	//delete socket_watcher;
 }
 //}}}
 

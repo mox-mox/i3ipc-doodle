@@ -1,20 +1,17 @@
 #include "main.hpp"
-#include <iostream>
 #include "doodle.hpp"
 #include "getopt_pp.h"
-#include <unistd.h>
-#include <bsd/libutil.h> 
-#include <sys/types.h>
-#include <pwd.h>
-#include <signal.h>
-#include <json/json.h>
 #include <fstream>
+//#include <unistd.h>
+//#include <bsd/libutil.h> 
+//#include <sys/types.h>
+//#include <pwd.h>
+//#include <signal.h>
+//#include <json/json.h>
+//#include <iostream>
 
-bool show_help;
-bool show_version;
-bool nofork;
-bool restart;
 bool fork_to_restart=false;
+Args args;
 Settings settings;
 
 //{{{ Help and version messages
@@ -29,7 +26,7 @@ std::string help_message(std::string progname)
 	message += "	-r|--restart        : Wait for already running daemon to finish instead of aborting when another daemon is already running.\n";
 	//message += "	-a|--allow_idle     : Disable idle time checking.\n";
 	message += "	-c|--config  <path> : The path to the config file. Default: \"" DOODLE_CONFIG_PATH "\".\n";
-	message += "	-s|--socket  <path> : Where to store the socket for user communication. Default: \"" + DOODLE_SOCKET_PATH_DEFAULT + "\".\n";
+	message += "	-s|--socket  <path> : Where to store the socket for user communication. Default: \"" + DOODLE_SOCKET_PATH + "\".\n";
 	return message;
 }
 
@@ -63,7 +60,7 @@ void restart_doodle(void)
 		case 0: /* Child process */
 			execl(program_path,
 					fs::path(program_path).filename().c_str(),
-					nofork?"-n":"",
+					args.nofork?"-n":"",
 					"-r",
 					"-c", settings.config_path.c_str(),
 					"-s", settings.socket_path.c_str(),
@@ -103,7 +100,7 @@ void parse_config(void)
 	}
 	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
 	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
-	settings.socket_path = config.get("socket_path", DOODLE_SOCKET_PATH_DEFAULT).asString();
+	settings.socket_path = config.get("socket_path", DOODLE_SOCKET_PATH).asString();
 	if(settings.socket_path[0] == '@') settings.socket_path[0] = '\0';
 	//}}}
 }
@@ -120,13 +117,13 @@ int main(int argc, char* argv[])
 	ops.exceptions(std::ios::failbit|std::ios::eofbit);
 	try
 	{
-		ops>>GetOpt::OptionPresent('h', "help", show_help);
-		ops>>GetOpt::OptionPresent('v', "version", show_version);
-		ops>>GetOpt::OptionPresent('n', "nofork", nofork);
-		ops>>GetOpt::OptionPresent('r', "restart", restart);
+		ops>>GetOpt::OptionPresent('h', "help", args.show_help);
+		ops>>GetOpt::OptionPresent('v', "version", args.show_version);
+		ops>>GetOpt::OptionPresent('n', "nofork", args.nofork);
+		ops>>GetOpt::OptionPresent('r', "restart", args.restart);
 		//ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
 		ops>>GetOpt::Option('c', "config", settings.config_path, DOODLE_CONFIG_PATH);
-		ops>>GetOpt::Option('s', "socket", settings.socket_path, DOODLE_CONFIG_PATH);
+		ops>>GetOpt::Option('s', "socket", settings.socket_path, DOODLE_SOCKET_PATH);
 	}
 	catch(GetOpt::GetOptEx ex)
 	{
@@ -135,23 +132,22 @@ int main(int argc, char* argv[])
 		std::cerr<<help_message(argv[0])<<std::endl;
 		return -1;
 	}
-	if( show_help )
+	if( args.show_help )
 	{
 		std::cout<<help_message(argv[0])<<std::endl;
 		return 0;
 	}
-	if( show_version )
+	if( args.show_version )
 	{
 		version_message();
 		return 0;
 	}
 	//}}}
 
-	{
-		//Doodle doodle(settings.config_path);
+	{	// Restrict life time of the doodle object
 		Doodle doodle(settings);
 
-		if(!nofork)
+		if(!args.nofork)
 		{
 			if(daemon(1, 0))
 			{

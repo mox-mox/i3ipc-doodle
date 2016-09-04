@@ -14,7 +14,7 @@
 
 #include <iostream>
 #include <string>
-const std::string DOODLE_SOCKET_PATH_DEFAULT("@DOODLE_SOCKET_PATH@", sizeof("@DOODLE_SOCKET_PATH@")-1); //-1 to strip the terminating null
+const std::string DOODLE_SOCKET_PATH("@DOODLE_SOCKET_PATH@", sizeof("@DOODLE_SOCKET_PATH@")-1); //-1 to strip the terminating null
 
 
 // #cmakedefine USE_NOTIFICATIONS

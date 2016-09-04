@@ -74,7 +74,7 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 				throw std::runtime_error("The socket path is invalid file sytem is not writable: " + socket_path + '.');
 				break;
 			case EADDRINUSE: //The given address is already in use.
-				if(restart)
+				if(args.restart)
 				{
 					kill();
 //
