@@ -6,15 +6,8 @@
 
 
 
-////{{{
-//Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle) : ev::io(loop), doodle(doodle), head(nullptr)
-//{
-//	debug<<"Doodle::Socket_watcher::Socket_watcher() at "<<this<<std::endl;
-//}
-////}}}
 
 //{{{
-//void Doodle::Socket_watcher::init(std::string& sock_path)
 Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string& socket_path) : ev::io(loop), doodle(doodle), head(nullptr), socket_path(socket_path)
 {
 	//socket_path=sock_path;

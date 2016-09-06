@@ -16,6 +16,9 @@ struct Args
 	bool nofork;
 	bool restart;
 
+	bool config_set;
+	bool data_set;
+	bool socket_set;
 };
 
 extern Args args;
@@ -30,7 +33,9 @@ struct Settings
 	unsigned int max_idle_time = MAX_IDLE_TIME_DEFAULT_VALUE;
 	static constexpr bool DETECT_AMBIGUITY_DEFAULT_VALUE = false;
 	bool detect_ambiguity = DETECT_AMBIGUITY_DEFAULT_VALUE;
+
 	std::string config_path;
+	std::string data_path;
 	std::string socket_path;
 };
 //}}}

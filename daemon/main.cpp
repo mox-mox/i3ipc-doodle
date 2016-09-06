@@ -2,7 +2,8 @@
 #include "doodle.hpp"
 #include "getopt_pp.h"
 #include <fstream>
-//#include <unistd.h>
+#include <stdlib.h>
+#include <unistd.h>
 //#include <bsd/libutil.h> 
 //#include <sys/types.h>
 //#include <pwd.h>
@@ -107,6 +108,36 @@ void parse_config(void)
 //}}}
 
 
+//{{{
+void find_paths(void)
+{
+	if(args.config_set)
+	{
+		/* check if there is a config file and at least a job file there */
+	}
+	if(!args.config_set)
+	{
+		const char* config_dir;
+		debug<<"No configuration directory set, checking $XDG_CONFIG_HOME"<<std::end;
+		if(((config_dir = getenv("XDG_CONFIG_HOME")) == nullptr) || !exits(std::experimental::filesystem::path::path(std::string(static_cast<const char*>(config_dir))+"/doodle/config.json")))
+		{
+			if(((config_dir = getenv("XDG_CONFIG_DIRS")) == nullptr))
+			{
+			}
+			else
+			{
+				while( std::getline(jobfile, line, ':'))
+				{
+
+				}
+			}
+
+		}
+	}
+}
+//}}}
+
+
 int main(int argc, char* argv[])
 {
 	int retval = -1;
@@ -117,13 +148,18 @@ int main(int argc, char* argv[])
 	ops.exceptions(std::ios::failbit|std::ios::eofbit);
 	try
 	{
-		ops>>GetOpt::OptionPresent('h', "help", args.show_help);
-		ops>>GetOpt::OptionPresent('v', "version", args.show_version);
-		ops>>GetOpt::OptionPresent('n', "nofork", args.nofork);
-		ops>>GetOpt::OptionPresent('r', "restart", args.restart);
+		ops>>GetOpt::OptionPresent('h', "help",       args.show_help);
+		ops>>GetOpt::OptionPresent('v', "version",    args.show_version);
+		ops>>GetOpt::OptionPresent('n', "nofork",     args.nofork);
+		ops>>GetOpt::OptionPresent('r', "restart",    args.restart);
 		//ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
-		ops>>GetOpt::Option('c', "config", settings.config_path, DOODLE_CONFIG_PATH);
-		ops>>GetOpt::Option('s', "socket", settings.socket_path, DOODLE_SOCKET_PATH);
+
+		ops>>GetOpt::OptionPresent('c', "config",     args.config_set);
+		ops>>GetOpt::OptionPresent('d', "data",       args.data_set);
+		ops>>GetOpt::OptionPresent('s', "socket",     args.socket_set);
+		ops>>GetOpt::Option('c',        "config",     settings.config_path, DOODLE_CONFIG_PATH);
+		ops>>GetOpt::Option('d',        "data",       settings.data_path, DOODLE_CONFIG_PATH);
+		ops>>GetOpt::Option('s',        "socket",     settings.socket_path, DOODLE_SOCKET_PATH);
 	}
 	catch(GetOpt::GetOptEx ex)
 	{
@@ -143,6 +179,13 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 	//}}}
+
+	std::cout<<"config_path: "<<settings.config_path<<'\n'<<"config_set: "<<args.config_set<<std::endl;
+
+
+
+
+
 
 	{	// Restrict life time of the doodle object
 		Doodle doodle(settings);

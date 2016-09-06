@@ -216,7 +216,7 @@ std::string help_message(std::string progname)
 	message += "	-v|--version        : Show version information and exit.\n";
 	message += "	-s|--socket  <path> : Where to store the socket for user communication. Default: \"" + DOODLE_SOCKET_PATH + "\".\n";
 	message += "Commands:\n";
-	
+
 	return message;
 }
 

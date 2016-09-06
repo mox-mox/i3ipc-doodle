@@ -8,9 +8,7 @@ struct Socket_watcher : ev::io
 	std::string socket_path;
 
 
-	//Socket_watcher(ev::loop_ref loop, Doodle* doodle);
 	Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string& socket_path);
-	//void init(std::string& socket_path);
 	void kill(void);
 
 	Socket_watcher(void) = delete;
