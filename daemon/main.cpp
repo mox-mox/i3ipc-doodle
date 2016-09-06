@@ -102,41 +102,40 @@ void parse_config(void)
 	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
 	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
 	settings.socket_path = config.get("socket_path", DOODLE_SOCKET_PATH).asString();
-	if(settings.socket_path[0] == '@') settings.socket_path[0] = '\0';
 	//}}}
 }
 //}}}
 
-
-//{{{
-void find_paths(void)
-{
-	if(args.config_set)
-	{
-		/* check if there is a config file and at least a job file there */
-	}
-	if(!args.config_set)
-	{
-		const char* config_dir;
-		debug<<"No configuration directory set, checking $XDG_CONFIG_HOME"<<std::end;
-		if(((config_dir = getenv("XDG_CONFIG_HOME")) == nullptr) || !exits(std::experimental::filesystem::path::path(std::string(static_cast<const char*>(config_dir))+"/doodle/config.json")))
-		{
-			if(((config_dir = getenv("XDG_CONFIG_DIRS")) == nullptr))
-			{
-			}
-			else
-			{
-				while( std::getline(jobfile, line, ':'))
-				{
-
-				}
-			}
-
-		}
-	}
-}
-//}}}
-
+//
+////{{{
+//void find_paths(void)
+//{
+//	if(args.config_set)
+//	{
+//		/* check if there is a config file and at least a job file there */
+//	}
+//	if(!args.config_set)
+//	{
+//		const char* config_dir;
+//		debug<<"No configuration directory set, checking $XDG_CONFIG_HOME"<<std::end;
+//		if(((config_dir = getenv("XDG_CONFIG_HOME")) == nullptr) || !exits(std::experimental::filesystem::path::path(std::string(static_cast<const char*>(config_dir))+"/doodle/config.json")))
+//		{
+//			if(((config_dir = getenv("XDG_CONFIG_DIRS")) == nullptr))
+//			{
+//			}
+//			else
+//			{
+//				while( std::getline(jobfile, line, ':'))
+//				{
+//
+//				}
+//			}
+//
+//		}
+//	}
+//}
+////}}}
+//
 
 int main(int argc, char* argv[])
 {

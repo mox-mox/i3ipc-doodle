@@ -243,13 +243,6 @@ int main(void)
 	struct sockaddr_un addr;
 	addr.sun_family = AF_UNIX;
 
-	// Unix sockets beginning with a null character map to the invisible unix socket space.
-	// Since Strings that begin with a null character a difficult to handle, use @ instead
-	// and translate @ to the null character here.
-	if(socket_path[0] == '@') socket_path[0] = '\0';
-
-
-
 	if(socket_path.length() >= sizeof(addr.sun_path)-1)
 	{
 		throw std::runtime_error("Unix socket path \"" + socket_path + "\" is too long. "
@@ -257,9 +250,12 @@ int main(void)
 	}
 
 	socket_path.copy(addr.sun_path, socket_path.length());
+	// Unix sockets beginning with a null character map to the invisible unix socket space.
+	// Since Strings that begin with a null character a difficult to handle, use @ instead
+	// and translate @ to the null character here.
+	if(addr.sun_path[0] == '%') addr.sun_path[0] = '\0';
 
-
-	if( connect(socket_watcher_write.fd, static_cast<struct sockaddr*>(static_cast<void*>(&addr)), socket_path.length()+1) == -1 )
+	if( connect(socket_watcher_write.fd, static_cast<struct sockaddr*>(static_cast<void*>(&addr)), sizeof(addr.sun_path)) == -1 )
 	{
 		throw std::runtime_error("Could not connect to socket "+socket_path+".");
 	}

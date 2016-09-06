@@ -1,4 +1,3 @@
-// compile with g++ timer.cpp -lev
 #include <ev++.h>
 #include <iostream>
 #include <queue>
