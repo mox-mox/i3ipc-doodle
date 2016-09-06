@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <cstring>
 
 
 
@@ -30,12 +31,24 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 		throw std::runtime_error("Unix socket path \"" + socket_path + "\" is too long. "
 		                         "Maximum allowed size is " + std::to_string(sizeof(addr.sun_path)) + "." );
 	}
-	for(unsigned int i=0; i<sizeof(addr.sun_path); i++)
-	{
-		addr.sun_path[i] = 0;
-	}
+	//for(unsigned int i=0; i<sizeof(addr.sun_path); i++)
+	//{
+	//	addr.sun_path[i] = 0;
+	//}
 
-	socket_path.copy(addr.sun_path, socket_path.length());
+	socket_path.copy(addr.sun_path, socket_path.length()); addr.sun_path[socket_path.length()] = '\0';
+	std::cout<<"addr.sun_path: |";
+	for(unsigned int i=0; i<50; i++)
+	{
+		std::cout<<"  "<<addr.sun_path[i]<<'|';
+	}
+	std::cout<<"."<<std::endl;
+	std::cout<<"addr.sun_path: |";
+	for(unsigned int i=0; i<50; i++)
+	{
+		std::cout<<std::setw(3)<<static_cast<unsigned int>(addr.sun_path[i])<<'|';
+	}
+	std::cout<<"."<<std::endl;
 
   	// Unix sockets beginning with a null character map to the invisible unix socket space.
   	// Since Strings that begin with a null character a difficult to handle, use % instead
@@ -50,7 +63,7 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 		{
 			if(args.restart)
 			{
-				kill();
+				kill_other_daemon();
 				usleep(1000000);
 				continue;
 			}
@@ -75,8 +88,10 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 //}}}
 
 //{{{
-void Doodle::Socket_watcher::kill(void)
+void Doodle::Socket_watcher::kill_other_daemon(void)
 {
+	//{{{ Create a temporary socket to send the kill command to the other client
+
 	int client_socket_fd;
 	if((client_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1 )
 	{
@@ -93,7 +108,20 @@ void Doodle::Socket_watcher::kill(void)
 				"Maximum allowed size is " + std::to_string(sizeof(addr.sun_path)) + "." );
 	}
 
-	socket_path.copy(addr.sun_path, socket_path.length());
+	socket_path.copy(addr.sun_path, socket_path.length()); addr.sun_path[socket_path.length()] = '\0';
+	std::cout<<"addr.sun_path: |";
+	for(unsigned int i=0; i<50; i++)
+	{
+		std::cout<<"  "<<addr.sun_path[i]<<'|';
+	}
+	std::cout<<"."<<std::endl;
+	std::cout<<"addr.sun_path: |";
+	for(unsigned int i=0; i<50; i++)
+	{
+		std::cout<<std::setw(3)<<static_cast<unsigned int>(addr.sun_path[i])<<'|';
+	}
+	std::cout<<"."<<std::endl;
+
 	// Unix sockets beginning with a null character map to the invisible unix socket space.
 	// Since Strings that begin with a null character a difficult to handle, use % instead
 	// and translate % to the null character here.
@@ -102,8 +130,9 @@ void Doodle::Socket_watcher::kill(void)
 
 	if( connect(client_socket_fd, static_cast<struct sockaddr*>(static_cast<void*>(&addr)), sizeof(addr.sun_path)) == -1 )
 	{
-		throw std::runtime_error("Could not connect to socket "+socket_path+".");
+		throw std::runtime_error("Could not connect to socket "+socket_path+". Error: "+std::strerror(errno));
 	}
+	//}}}
 
 
 	std::string cmd = "{\"cmd\":\"kill\",\"args\":[]}";
@@ -131,8 +160,8 @@ void Doodle::Socket_watcher::kill(void)
 		}
 	}
 
-	killmsg.resize(1024);
-	read(client_socket_fd, &killmsg[0], killmsg.length());
+	//killmsg.resize(1024);
+	//read(client_socket_fd, &killmsg[0], killmsg.length());
 
 	close(client_socket_fd);
 }
