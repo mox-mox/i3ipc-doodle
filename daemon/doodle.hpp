@@ -13,7 +13,6 @@ using window_id = uint64_t;
 
 class Doodle: public sigc::trackable
 {
-	Settings& settings;
 	i3ipc::connection i3_conn;
 	std::string current_workspace;
 
@@ -77,7 +76,7 @@ class Doodle: public sigc::trackable
 	public:
 		//{{{ Constructor
 
-		explicit Doodle(Settings& settings);	// Todo: use xdg_config_path
+		explicit Doodle(void);	// Todo: use xdg_config_path
 		Doodle(const Doodle&) = delete;
 		Doodle(Doodle &&) = delete;
 		Doodle& operator = (const Doodle&) = delete;

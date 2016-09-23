@@ -65,7 +65,7 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 	{
 		if(errno == EADDRINUSE)
 		{
-			if(args.restart)
+			if(args.replace)
 			{
 				kill_other_daemon();
 				usleep(1000000);

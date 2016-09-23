@@ -14,11 +14,14 @@ struct Args
 	bool show_help;
 	bool show_version;
 	bool nofork;
-	bool restart;
+	bool replace;
 
 	bool config_set;
 	bool data_set;
 	bool socket_set;
+	std::string config_dir;
+	std::string data_dir;
+	std::string socket_path;
 };
 
 extern Args args;
@@ -34,8 +37,8 @@ struct Settings
 	static constexpr bool DETECT_AMBIGUITY_DEFAULT_VALUE = false;
 	bool detect_ambiguity = DETECT_AMBIGUITY_DEFAULT_VALUE;
 
-	std::string config_dir;
-	std::string data_dir;
+	fs::path config_dir;
+	fs::path data_dir;
 	std::string socket_path;
 };
 //}}}

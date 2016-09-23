@@ -77,7 +77,7 @@ void restart_doodle(void)
 //{{{
 void parse_config(void)
 {
-	std::ifstream config_file(settings.config_dir+"/doodlerc");
+	std::ifstream config_file(settings.config_dir/"doodlerc");
 
 	Json::Value configuration_root;
 	Json::Reader reader;
@@ -113,17 +113,18 @@ void check_config_dir(void)
 	// Check order: User set value -> $XDG_CONFIG_HOME/doodle -> $HOME/.doodle -> $HOME/.config/doodle.
 	// Note that $XDG_CONFIG_DIRS is not checked. There would be no sense in doing so as doodle MUST have a user configuration specifying the jobs anyway.
 
-	fs::path test_path(settings.config_dir);
+	fs::path& config_dir = settings.config_dir;
+	config_dir = args.config_dir;
 
 	if(args.config_set)
 	{
-		if(!fs::exists(test_path/"/config.json") && !fs::exists(test_path/"/doodlerc"))
+		if(!fs::exists(config_dir/"/config.json") && !fs::exists(config_dir/"/doodlerc"))
 		{
 			error<<"No config found in "<<settings.config_dir<<" set by command line switch. Aborting..."<<std::endl;
 			//TODO: Copy some default config file
 			exit(EXIT_FAILURE);
 		}
-		debug<<"Config found in "<<test_path<<'.'<<std::endl;
+		debug<<"Config found in "<<config_dir<<'.'<<std::endl;
 		return;
 	}
 
@@ -131,20 +132,20 @@ void check_config_dir(void)
 	debug<<"No configuration directory set => checking $XDG_CONFIG_HOME"<<std::endl;
 	if((config_dir_temp=getenv("XDG_CONFIG_HOME")))
 	{
-		debug<<"Found $XDG_CONFIG_HOME = "<<test_path<<'.'<<std::endl;
-		if(!fs::exists((test_path=config_dir_temp)/="doodle"))
+		debug<<"Found $XDG_CONFIG_HOME = "<<config_dir<<'.'<<std::endl;
+		if(!fs::exists((config_dir=config_dir_temp)/="doodle"))
 		{
-			error<<"No configuration directory found at $XDG_CONFIG_HOME/doodle = "<<test_path<<'.'<<std::endl;
+			error<<"No configuration directory found at $XDG_CONFIG_HOME/doodle = "<<config_dir<<'.'<<std::endl;
 		}
-		debug<<"Config directory found at $XDG_CONFIG_HOME = "<<test_path<<'.'<<std::endl;
-		if(!fs::exists(test_path/"/config.json") && !fs::exists(test_path/"/doodlerc"))
+		debug<<"Config directory found at $XDG_CONFIG_HOME = "<<config_dir<<'.'<<std::endl;
+		if(!fs::exists(config_dir/"/config.json") && !fs::exists(config_dir/"/doodlerc"))
 		{
-			error<<"No config found in $XDG_CONFIG_HOME/doodle = "<<test_path<<". Aborting..."<<std::endl;
+			error<<"No config found in $XDG_CONFIG_HOME/doodle = "<<config_dir<<". Aborting..."<<std::endl;
 			//TODO: Copy some default config file
 			exit(EXIT_FAILURE);
 		}
-		debug<<"Config found in "<<test_path<<std::endl;
-		settings.config_dir = test_path;
+		debug<<"Config found in "<<config_dir<<std::endl;
+		//settings.config_dir = config_dir;
 		return;
 	}
 
@@ -155,32 +156,30 @@ void check_config_dir(void)
 		config_dir_temp = getpwuid(getuid())->pw_dir;
 	}
 
-	if(fs::exists((test_path=config_dir_temp)/".doodle"))
+	if(fs::exists((config_dir=config_dir_temp)/=".doodle"))
 	{
 		debug<<"Config directory found at $HOME/.doodle"<<std::endl;
-		if(!fs::exists(test_path/"/.doodle/config.json") && !fs::exists(test_path/"/.doodle/doodlerc"))
+		if(!fs::exists(config_dir/"config.json") && !fs::exists(config_dir/"doodlerc"))
 		{
 			error<<"No config found in $HOME/.doodle. Aborting..."<<std::endl;
 			//TODO: Copy some default config file
 			exit(EXIT_FAILURE);
 		}
-		debug<<"Config found in "<<test_path/".doodle"<<std::endl;
-		settings.config_dir = test_path/".doodle";
+		debug<<"Config found in "<<config_dir<<std::endl;
 		return;
 	}
 
 	debug<<"No config directory found in $HOME/.doodle => try $HOME/.config/doodle"<<std::endl;
-	if(fs::exists(test_path/".config/doodle"))
+	if(fs::exists((config_dir=config_dir_temp)/=".config/doodle"))
 	{
 		debug<<"Config directory found at $HOME/.config/doodle"<<std::endl;
-		if(!fs::exists(test_path/"/.config/doodle/config.json") && !fs::exists(test_path/"/.config/doodle/doodlerc"))
+		if(!fs::exists(config_dir/"config.json") && !fs::exists(config_dir/"doodlerc"))
 		{
 			error<<"No config found in $HOME/.doodle. Aborting..."<<std::endl;
 			//TODO: Copy some default config file
 			exit(EXIT_FAILURE);
 		}
-		debug<<"Config found in "<<test_path/".config/doodle"<<std::endl;
-		settings.config_dir = test_path/".config/doodle";
+		debug<<"Config found in "<<config_dir<<std::endl;
 		return;
 	}
 
@@ -196,19 +195,20 @@ void check_data_dir(void)
 	// Check order: User set value -> $XDG_DATA_HOME/doodle -> $HOME/.local/doodle
 	// Note that $XDG_DATA_DIRS is not checked. There would be no sense in doing so as doodle MUST have a user configuration specifying the jobs anyway.
 
-	fs::path test_path(settings.data_dir);
+	fs::path& data_dir = settings.data_dir;
+	data_dir = args.data_dir;
 
 	if(args.data_set)
 	{
-		if(!fs::exists(test_path))
+		if(!fs::exists(data_dir))
 		{
 			debug<<"No data directory found at "<<settings.data_dir<<'.'<<std::endl;
 			std::error_code fs_error;
-			if(!fs::create_directory(test_path, fs_error))
+			if(!fs::create_directory(data_dir, fs_error))
 			{
-				error<<"Could not create data directory $XDG_DATA_HOME/doodle = "<<test_path<<": "<<fs_error.message()<<'.'<<std::endl;
+				error<<"Could not create data directory $XDG_DATA_HOME/doodle = "<<data_dir<<": "<<fs_error.message()<<'.'<<std::endl;
 			}
-			debug<<"Created data directory $XDG_DATA_HOME/doodle = "<<test_path<<'.'<<std::endl;
+			debug<<"Created data directory $XDG_DATA_HOME/doodle = "<<data_dir<<'.'<<std::endl;
 		}
 		return;
 	}
@@ -218,17 +218,17 @@ void check_data_dir(void)
 	if((data_dir_temp=getenv("XDG_DATA_HOME")))
 	{
 		debug<<"$XDG_DATA_HOME set => data directory should be at $XDG_DATA_HOME/doodle"<<std::endl;
-		if(!fs::exists((test_path=data_dir_temp)/="doodle"))
+		if(!fs::exists((data_dir=data_dir_temp)/="doodle"))
 		{
 			debug<<"No data directory found at $XDG_DATA_HOME/doodle => Create it and set it as data dir"<<std::endl;
 			std::error_code fs_error;
-			if(!fs::create_directory(test_path, fs_error))
+			if(!fs::create_directory(data_dir, fs_error))
 			{
-				error<<"Could not create data directory $XDG_DATA_HOME/doodle = "<<test_path<<": "<<fs_error.message()<<'.'<<std::endl;
+				error<<"Could not create data directory $XDG_DATA_HOME/doodle = "<<data_dir<<": "<<fs_error.message()<<'.'<<std::endl;
 			}
-			debug<<"Created data directory $XDG_DATA_HOME/doodle = "<<test_path<<'.'<<std::endl;
+			debug<<"Created data directory $XDG_DATA_HOME/doodle = "<<data_dir<<'.'<<std::endl;
 		}
-		settings.data_dir = test_path;
+		debug<<"Data directory found at "<<data_dir<<std::endl;
 		return;
 	}
 
@@ -239,17 +239,16 @@ void check_data_dir(void)
 		data_dir_temp = getpwuid(getuid())->pw_dir;
 	}
 
-	if(!fs::exists((test_path=data_dir_temp)/=".local/share/doodle"))
+	if(!fs::exists((data_dir=data_dir_temp)/=".local/share/doodle"))
 	{
 		debug<<"No data directory found in $HOME/.local/share/doodle => create it and set it as data dir"<<std::endl;
 		std::error_code fs_error;
-		if(!fs::create_directory(test_path, fs_error))
+		if(!fs::create_directory(data_dir, fs_error))
 		{
-			error<<"Could not create data directory $HOME/.local/share/doodle = "<<test_path<<": "<<fs_error.message()<<'.'<<std::endl;
+			error<<"Could not create data directory $HOME/.local/share/doodle = "<<data_dir<<": "<<fs_error.message()<<'.'<<std::endl;
 		}
-		debug<<"Created data directory $HOME/.local/share/doodle = "<<test_path<<'.'<<std::endl;
+		debug<<"Created data directory $HOME/.local/share/doodle = "<<data_dir<<'.'<<std::endl;
 	}
-	settings.data_dir = test_path;
 	return;
 }
 //}}}
@@ -269,15 +268,15 @@ int main(int argc, char* argv[])
 		ops>>GetOpt::OptionPresent('h', "help",       args.show_help);
 		ops>>GetOpt::OptionPresent('v', "version",    args.show_version);
 		ops>>GetOpt::OptionPresent('n', "nofork",     args.nofork);
-		ops>>GetOpt::OptionPresent('r', "restart",    args.restart);
+		ops>>GetOpt::OptionPresent('r', "replace",    args.replace);
 		//ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
 
 		ops>>GetOpt::OptionPresent('c', "config",     args.config_set);
 		ops>>GetOpt::OptionPresent('d', "data",       args.data_set);
 		ops>>GetOpt::OptionPresent('s', "socket",     args.socket_set);
-		ops>>GetOpt::Option('c',        "config",     settings.config_dir, "");
-		ops>>GetOpt::Option('d',        "data",       settings.data_dir, "");
-		ops>>GetOpt::Option('s',        "socket",     settings.socket_path, DOODLE_SOCKET_PATH);
+		ops>>GetOpt::Option('c',        "config",     args.config_dir, "");
+		ops>>GetOpt::Option('d',        "data",       args.data_dir, "");
+		ops>>GetOpt::Option('s',        "socket",     args.socket_path, DOODLE_SOCKET_PATH);
 	}
 	catch(GetOpt::GetOptEx ex)
 	{
@@ -302,12 +301,13 @@ int main(int argc, char* argv[])
 
 	check_config_dir();
 	check_data_dir();
+	settings.socket_path = args.socket_path;
 	settings.socket_path.append(1, '\0');
 	//}}}
 
 
 	{	// Restrict life time of the doodle object
-		Doodle doodle(settings);
+		Doodle doodle;
 
 		if(!args.nofork)
 		{

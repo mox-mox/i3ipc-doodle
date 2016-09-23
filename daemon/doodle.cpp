@@ -14,8 +14,7 @@
 
 
 //{{{
-Doodle::Doodle(Settings& settings) :
-	settings(settings),
+Doodle::Doodle(void) :
 	i3_conn(),
 	current_workspace(""),
 	nojob(),
@@ -30,20 +29,22 @@ Doodle::Doodle(Settings& settings) :
 {
 	//{{{ Create the individual jobs
 
-	//for( auto&f: fs::directory_iterator(settings.config_path+"/jobs"))
-	//{
-	//	if((f.path() != settings.config_path+"/doodlerc") && (std::string::npos == f.path().string().find("_backup")) && fs::is_regular_file(f))
-	//	{
-	//		try
-	//		{
-	//			jobs.push_back({ f.path(), loop });
-	//		}
-	//		catch(std::runtime_error&e)
-	//		{
-	//			error<<"Caught exception \""<<e.what()<<"\" while constructing job "<<f.path().filename()<<". ... removing that job from the job list."<<std::endl;
-	//		}
-	//	}
-	//}
+	for( auto&f: fs::directory_iterator(settings.config_dir/"jobs"))
+	{
+		std::cout<<"f.path(): "<<f.path()<<", extension: "<<f.path().extension()<<std::endl;
+		if(f.path().extension() == ".job")
+		{
+			try
+			{
+				std::cout<<"try to push job "<<f.path().stem()<<std::endl;
+				jobs.push_back({ f.path(), loop });
+			}
+			catch(std::runtime_error&e)
+			{
+				error<<"Caught exception \""<<e.what()<<"\" while constructing job "<<f.path().filename()<<". ... removing that job from the job list."<<std::endl;
+			}
+		}
+	}
 
 	nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
 	//}}}

@@ -9,18 +9,18 @@
 class Job
 {
 	const std::string jobname;
-	const std::experimental::filesystem::path jobfile;
-	const std::experimental::filesystem::path timefile;
+	const fs::path jobfile_path;
+	const fs::path timefile_path;
 	//const std::streampos total_time_position;
 	struct ev_loop* loop;
 
 
 	//{{{
-	struct settings
+	struct job_settings
 	{
 		static constexpr unsigned int GRANULARITY_DEFAULT_VALUE = 3600;
 		unsigned int granularity;
-	} settings;
+	} job_settings;
 	//}}}
 
 
@@ -62,11 +62,11 @@ class Job
 	inline std::string win_included(const std::string& window_title) const;
 	//}}}
 
-	void sanitise_jobfile(const std::experimental::filesystem::path& jobfile);
+	//void sanitise_jobfile(const fs::path& jobfile);
 	public:
 		//{{{ Constructors
 
-		Job(const std::experimental::filesystem::path&jobfile, ev::loop_ref&loop);
+		Job(const fs::path&jobfile_path, ev::loop_ref&loop);
 		Job(void);
 		Job(Job && o) noexcept;
 		//}}}
