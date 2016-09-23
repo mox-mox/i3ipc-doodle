@@ -14,7 +14,7 @@ using window_id = uint64_t;
 class Doodle: public sigc::trackable
 {
 	Settings& settings;
-	i3ipc::connection conn;
+	i3ipc::connection i3_conn;
 	std::string current_workspace;
 
 
@@ -38,7 +38,7 @@ class Doodle: public sigc::trackable
 
 	bool idle;
 	bool suspended;
-	xcb_connection_t * connection;
+	xcb_connection_t * xcb_conn;
 	xcb_screen_t * screen;
 	ev::timer idle_watcher_timer;
 	void idle_time_watcher_cb(ev::timer& io_watcher, int revents);

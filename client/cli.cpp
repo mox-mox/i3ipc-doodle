@@ -1,8 +1,14 @@
 #include "cli.hpp"
 #include <sstream>
 #include <unistd.h>
+#include "getopt_pp.h"
+#include <iomanip>
 
-std::string socket_path = DOODLE_SOCKET_PATH;
+
+Args args;
+Settings settings;
+
+
 
 //{{{ Extend an IO watcher with a wrtie-queue
 
@@ -227,8 +233,43 @@ void version_message()
 }
 //}}}
 
-int main(void)
+int main(int argc, char* argv[])
 {
+	//{{{ Argument handling
+	GetOpt::GetOpt_pp ops(argc, argv);
+
+	ops.exceptions(std::ios::failbit|std::ios::eofbit);
+	try
+	{
+		//ops>>GetOpt::OptionPresent('h', "help",       args.show_help);
+		//ops>>GetOpt::OptionPresent('v', "version",    args.show_version);
+
+		//ops>>GetOpt::OptionPresent('c', "config",     args.config_set);
+		//ops>>GetOpt::OptionPresent('d', "data",       args.data_set);
+		ops>>GetOpt::OptionPresent('s', "socket",     args.socket_set);
+		//ops>>GetOpt::Option('c',        "config",     settings.config_path, DOODLE_CONFIG_PATH);
+		//ops>>GetOpt::Option('d',        "data",       settings.data_path, DOODLE_CONFIG_PATH);
+		ops>>GetOpt::Option('s',        "socket",     settings.socket_path, DOODLE_SOCKET_PATH);
+	}
+	catch(GetOpt::GetOptEx ex)
+	{
+		std::cerr<<"Error in arguments"<<std::endl;
+
+		std::cerr<<help_message(argv[0])<<std::endl;
+		return -1;
+	}
+	if( args.show_help )
+	{
+		std::cout<<help_message(argv[0])<<std::endl;
+		return 0;
+	}
+	if( args.show_version )
+	{
+		version_message();
+		return 0;
+	}
+	//}}}
+
 
 	ev::default_loop loop;
 
@@ -243,21 +284,40 @@ int main(void)
 	struct sockaddr_un addr;
 	addr.sun_family = AF_UNIX;
 
-	if(socket_path.length() >= sizeof(addr.sun_path)-1)
+	if(settings.socket_path.length() >= sizeof(addr.sun_path)-1)
 	{
-		throw std::runtime_error("Unix socket path \"" + socket_path + "\" is too long. "
+		throw std::runtime_error("Unix socket path \"" + settings.socket_path + "\" is too long. "
 		                         "Maximum allowed size is " + std::to_string(sizeof(addr.sun_path)) + "." );
 	}
 
-	socket_path.copy(addr.sun_path, socket_path.length());
+	memset(&addr.sun_path, 0, sizeof(addr.sun_path));
+	settings.socket_path.copy(addr.sun_path, settings.socket_path.length()); addr.sun_path[settings.socket_path.length()] = '\0';
 	// Unix sockets beginning with a null character map to the invisible unix socket space.
 	// Since Strings that begin with a null character a difficult to handle, use @ instead
 	// and translate @ to the null character here.
 	if(addr.sun_path[0] == '%') addr.sun_path[0] = '\0';
 
-	if( connect(socket_watcher_write.fd, static_cast<struct sockaddr*>(static_cast<void*>(&addr)), sizeof(addr.sun_path)) == -1 )
+
+	std::cout<<"addr.sun_path: |";
+	for(unsigned int i=0; i<50; i++)
 	{
-		throw std::runtime_error("Could not connect to socket "+socket_path+".");
+		std::cout<<"  "<<addr.sun_path[i]<<'|';
+	}
+	std::cout<<"."<<std::endl;
+	std::cout<<"addr.sun_path: |";
+	for(unsigned int i=0; i<50; i++)
+	{
+		std::cout<<std::setw(3)<<static_cast<unsigned int>(addr.sun_path[i])<<'|';
+	}
+	std::cout<<"."<<std::endl;
+
+
+
+
+
+	if( connect(socket_watcher_write.fd, static_cast<struct sockaddr*>(static_cast<void*>(&addr)), sizeof(addr)) == -1 )
+	{
+		throw std::runtime_error("Could not connect to socket "+settings.socket_path+".");
 	}
 
 	socket_watcher_write.start();

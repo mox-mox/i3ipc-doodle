@@ -10,7 +10,8 @@ class Job
 {
 	const std::string jobname;
 	const std::experimental::filesystem::path jobfile;
-	const std::streampos total_time_position;
+	const std::experimental::filesystem::path timefile;
+	//const std::streampos total_time_position;
 	struct ev_loop* loop;
 
 

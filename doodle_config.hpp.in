@@ -10,7 +10,7 @@
 
 #define GIT_BRANCH "@GIT_BRANCH@"
 #define GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
-#define DOODLE_CONFIG_PATH "@DOODLE_CONFIG_PATH@"
+//#define DOODLE_CONFIG_PATH "@DOODLE_CONFIG_PATH@"
 
 #include <iostream>
 #include <string>

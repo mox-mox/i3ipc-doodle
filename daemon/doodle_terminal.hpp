@@ -13,6 +13,12 @@ struct terminal_t
 
 	Json::Value suspend(Json::Value);
 	Json::Value resume(Json::Value);
+
+	Json::Value get_config_path(Json::Value);
+	Json::Value get_times_path(Json::Value);
+
+
+
 	Json::Value list_jobs(Json::Value);
 	Json::Value get_times(Json::Value args);
 	Json::Value get_win_names(Json::Value args);
@@ -35,6 +41,10 @@ struct terminal_t
 	{
 		{"suspend",          {&terminal_t::suspend,          "none",                  "Suspend operation until resume is called. Called when computer goes to sleep, or for a coffe break ;)"}},
 		{"resume",           {&terminal_t::resume,           "none",                  "Resume suspended operation."}},
+
+		{"get_config_path",  {&terminal_t::get_config_path,  "none",                  "Get the path to the currently used config file."}},
+		{"get_times_path",   {&terminal_t::get_times_path,   "none",                  "Get the path to the currently used time files."}},
+
 		{"list_jobs",        {&terminal_t::list_jobs,        "none",                  "List the names of all known jobs with their current total times"}},
 		{"get_times",        {&terminal_t::get_times,        "jobname, [start, end]", "Get the active times for a job. If start and and are provided, only times in that interval are shown."}},
 		{"get_win_names",    {&terminal_t::get_win_names,    "jobname",               "List all window names or regular expressions for a job."}},

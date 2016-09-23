@@ -34,8 +34,8 @@ struct Settings
 	static constexpr bool DETECT_AMBIGUITY_DEFAULT_VALUE = false;
 	bool detect_ambiguity = DETECT_AMBIGUITY_DEFAULT_VALUE;
 
-	std::string config_path;
-	std::string data_path;
+	std::string config_dir;
+	std::string data_dir;
 	std::string socket_path;
 };
 //}}}

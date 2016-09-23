@@ -16,34 +16,34 @@
 //{{{
 Doodle::Doodle(Settings& settings) :
 	settings(settings),
-	conn(),
+	i3_conn(),
 	current_workspace(""),
 	nojob(),
 	current_job(&nojob),
 	loop(),
 	idle(true),
-	connection(xcb_connect(NULL, NULL)),
-	screen(xcb_setup_roots_iterator(xcb_get_setup(connection)).data),
+	xcb_conn(xcb_connect(NULL, NULL)),
+	screen(xcb_setup_roots_iterator(xcb_get_setup(xcb_conn)).data),
 	idle_watcher_timer(loop),
 	socket_watcher(loop, this, settings.socket_path),
 	terminal(this)
 {
 	//{{{ Create the individual jobs
 
-	for( auto&f: fs::directory_iterator(settings.config_path+"/jobs"))
-	{
-		if((f.path() != settings.config_path+"/doodlerc") && (std::string::npos == f.path().string().find("_backup")) && fs::is_regular_file(f))
-		{
-			try
-			{
-				jobs.push_back({ f.path(), loop });
-			}
-			catch(std::runtime_error&e)
-			{
-				error<<"Caught exception \""<<e.what()<<"\" while constructing job "<<f.path().filename()<<". ... removing that job from the job list."<<std::endl;
-			}
-		}
-	}
+	//for( auto&f: fs::directory_iterator(settings.config_path+"/jobs"))
+	//{
+	//	if((f.path() != settings.config_path+"/doodlerc") && (std::string::npos == f.path().string().find("_backup")) && fs::is_regular_file(f))
+	//	{
+	//		try
+	//		{
+	//			jobs.push_back({ f.path(), loop });
+	//		}
+	//		catch(std::runtime_error&e)
+	//		{
+	//			error<<"Caught exception \""<<e.what()<<"\" while constructing job "<<f.path().filename()<<". ... removing that job from the job list."<<std::endl;
+	//		}
+	//	}
+	//}
 
 	nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
 	//}}}
@@ -64,13 +64,13 @@ Doodle::Doodle(Settings& settings) :
 
 	//{{{ i3 event subscriptions
 
-	simulate_workspace_change(conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
-	//simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+	simulate_workspace_change(i3_conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
+	//simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
 	//
-	conn.signal_window_event.connect(sigc::mem_fun(*this, &Doodle::on_window_change));
-	conn.signal_workspace_event.connect(sigc::mem_fun(*this, &Doodle::on_workspace_change));
+	i3_conn.signal_window_event.connect(sigc::mem_fun(*this, &Doodle::on_window_change));
+	i3_conn.signal_workspace_event.connect(sigc::mem_fun(*this, &Doodle::on_workspace_change));
 
-	if( !conn.subscribe(i3ipc::ET_WORKSPACE|i3ipc::ET_WINDOW))
+	if( !i3_conn.subscribe(i3ipc::ET_WORKSPACE|i3ipc::ET_WINDOW))
 	{
 		error<<"could not connect"<<std::endl;
 		throw "Could not subscribe to the workspace- and window change events.";
@@ -82,7 +82,7 @@ Doodle::Doodle(Settings& settings) :
 //{{{
 Doodle::~Doodle(void)
 {
-	xcb_disconnect(connection);
+	xcb_disconnect(xcb_conn);
 }
 //}}}
 
@@ -170,7 +170,7 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	else if( evt.type == i3ipc::WindowEventType::CLOSE )
 	{
 		win_id_lookup.erase(evt.container->id);
-		simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+		simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
 	}
 }
 //}}}
@@ -182,7 +182,7 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 	{
 		logger<<"New current_workspace: "<<evt.current->name<<std::endl;
 		current_workspace = evt.current->name;
-		simulate_window_change(conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+		simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
 	}
 #ifdef DEBUG
 	else
@@ -271,8 +271,8 @@ void Doodle::SIGTERM_cb(void)
 void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
 {
 	(void) revents;
-	xcb_screensaver_query_info_cookie_t cookie = xcb_screensaver_query_info(connection, screen->root);
-	xcb_screensaver_query_info_reply_t* info = xcb_screensaver_query_info_reply(connection, cookie, NULL);
+	xcb_screensaver_query_info_cookie_t cookie = xcb_screensaver_query_info(xcb_conn, screen->root);
+	xcb_screensaver_query_info_reply_t* info = xcb_screensaver_query_info_reply(xcb_conn, cookie, NULL);
 
 	uint32_t idle_time = info->ms_since_user_input/1000;// use seconds
 
@@ -312,15 +312,15 @@ int Doodle::operator()(void)
 {
 	int retval = 0;
 
-	conn.prepare_to_event_handling();
+	i3_conn.prepare_to_event_handling();
 
 	logger<<"---------------Starting the event loop---------------"<<std::endl;
 
 	//{{{ Watcher for i3 events
 
 	ev::io i3_watcher;
-	i3_watcher.set < i3ipc::connection, &i3ipc::connection::handle_event > (&conn);
-	i3_watcher.set(conn.get_file_descriptor(), ev::READ);
+	i3_watcher.set < i3ipc::connection, &i3ipc::connection::handle_event > (&i3_conn);
+	i3_watcher.set(i3_conn.get_file_descriptor(), ev::READ);
 	i3_watcher.start();
 	//}}}
 

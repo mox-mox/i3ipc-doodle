@@ -50,6 +50,17 @@ Json::Value Doodle::terminal_t::resume(Json::Value)
 	return "{\"command\":\"resume\",\"response\":\"resumed successfully\"}";
 }
 
+
+Json::Value Doodle::terminal_t::get_config_path(Json::Value)
+{
+	return "";
+}
+
+Json::Value Doodle::terminal_t::get_times_path(Json::Value)
+{
+	return "";
+}
+
 Json::Value Doodle::terminal_t::list_jobs(Json::Value)
 {
 	return "";

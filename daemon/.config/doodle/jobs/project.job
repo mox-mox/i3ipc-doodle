@@ -1,5 +1,4 @@
 {
-	"total_time" : 1000,		// The current total time of the job. f
 	"granularity" : 10,
     "window_names" :		// A list of regular expressions to match the window titles of the job. Matching
 	[						// uses std::regex_search() so "~/projects" will also match

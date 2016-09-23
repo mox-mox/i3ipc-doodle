@@ -1,8 +1,5 @@
 {
-	"total_time" : 1000,
 	"granularity" : 10,
 	"window_names" :[ "home/mox/scratch", "~/scratch", "okular" ],
 	"workspace_names" :[ "" ]
 }
-10 20
-40 60
