@@ -4,6 +4,7 @@
 #include <deque>
 #include <regex>
 #include <experimental/filesystem>
+#include <json/json.h>
 
 
 class Job
@@ -78,7 +79,9 @@ class Job
 
 		inline std::string match(const std::string& current_workspace, const std::string& window_title) const;
 
-		std::string get_jobname(void);
+		std::string get_jobname(void) const;
+		Json::Value get_times(uint64_t start=0, uint64_t end=0) const;
+
 };
 
 //{{{ Name matching functions ( inline )

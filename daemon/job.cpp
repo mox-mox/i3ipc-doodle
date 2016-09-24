@@ -1,6 +1,5 @@
 #include "job.hpp"
 #include <fstream>
-#include <json/json.h>
 
 
 
@@ -19,7 +18,8 @@ Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_pat
 
 	job_settings.granularity = job.get("granularity", job_settings.GRANULARITY_DEFAULT_VALUE).asInt64();
 
-	//{{{
+	//{{{ Get window names
+
 	if(job.isMember("window_names"))
 	{
 		for( auto&window_name : job.get("window_names", "no window_names"))
@@ -49,7 +49,8 @@ Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_pat
 	}
 	//}}}
 
-	//{{{
+	//{{{ Get workspace names
+
 	if(job.isMember("workspace_names"))
 	{
 		for( auto&workspace_name : job.get("workspace_names", "no workspace_names"))
@@ -79,7 +80,8 @@ Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_pat
 	}
 	//}}}
 
-	//{{{
+	//{{{ Time file
+
 	if(!fs::exists(timefile_path))
 	{
 		logger<<"There was no time file for job \""<<jobname<<"\". Creating one: "<<timefile_path.string()<<std::endl;
@@ -93,9 +95,14 @@ Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_pat
 	}
 
 	std::ifstream timefile(timefile_path);
-	timefile.ignore(100, ' ');
-	timefile.ignore(100, ' ');
-	timefile.ignore(100, ' ');
+	if(!timefile.is_open())
+	{
+		error<<"Could not open time file for job \""<<jobname<<"\"."<<std::endl;
+		exit(EXIT_FAILURE);
+	}
+	timefile.ignore(std::numeric_limits<std::streamsize>::max(), ' ');	// Go to where
+	timefile.ignore(std::numeric_limits<std::streamsize>::max(), ' ');	// the total time
+	timefile.ignore(std::numeric_limits<std::streamsize>::max(), ' ');	// is stored.
 	uint64_t temp;
 	timefile>>temp;
 	times.total = std::chrono::seconds(temp);
@@ -183,9 +190,9 @@ void Job::write_time_cb(void)
 	std::fstream timefile(timefile_path);
 	if(timefile.is_open())
 	{
-		timefile.ignore(100, ' ');				// Go to where
-		timefile.ignore(100, ' ');				// the total time
-		timefile.ignore(100, ' ');				// is stored
+		timefile.ignore(std::numeric_limits<std::streamsize>::max(), ' ');	// Go to where
+		timefile.ignore(std::numeric_limits<std::streamsize>::max(), ' ');	// the total time
+		timefile.ignore(std::numeric_limits<std::streamsize>::max(), ' ');	// is stored.
 		timefile<<std::setw(20)<<std::setfill('0')<<times.total.count();
 		timefile.seekg(0, std::ios_base::end);	// Go to the end of the jobfile
 		timefile<<times.slot_start.time_since_epoch().count()<<"\t"<<times.slot.count()<<std::endl;
@@ -199,6 +206,7 @@ void Job::write_time_cb(void)
 
 	if( times.running ) // If the job is currently not running
 	{
+		times.slot_start = std::chrono::system_clock::now();
 		write_time_timer.start(job_settings.granularity);
 	}
 	else
@@ -237,8 +245,53 @@ std::ostream& operator<<(std::ostream&stream, Job const&job)
 //}}}
 
 //{{{
-std::string Job::get_jobname(void)
+std::string Job::get_jobname(void) const
 {
 	return jobname;
+}
+//}}}
+
+//{{{
+Json::Value Job::get_times(uint64_t start, uint64_t end) const
+{
+	Json::Value retval;
+	std::ifstream timefile(timefile_path);
+	if(!timefile.is_open())
+	{
+		error<<"Could not open time file for job \""<<jobname<<"\"."<<std::endl;
+		exit(EXIT_FAILURE);
+	}
+	std::string line;
+
+	// Go to the firest times line
+	while(!std::getline(timefile, line).eof())
+	{
+		if(line == "# Start-time	time-spent")
+			break;
+	}
+
+	// Read each line
+	//int i = 0;
+	while(!std::getline(timefile, line).eof())
+	{
+		std::stringstream linestream(line);
+		uint64_t slot_start;
+		uint64_t slot_time;
+		linestream>>slot_start;
+		if(end && slot_start > end)
+			break;
+		if(slot_start >= start)
+		{
+			linestream>>slot_time;
+			std::cout<<"Matching slot: "<<slot_start<<", "<<slot_time<<std::endl;
+			retval[retval.size()][0] = slot_start;
+			retval[retval.size()-1][1] = slot_time;
+			//i++;
+		}
+	}
+	std::cout<<"retval = "<<retval<<std::endl;
+
+
+	return retval;
 }
 //}}}

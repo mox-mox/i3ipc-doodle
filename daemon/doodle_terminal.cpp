@@ -67,7 +67,15 @@ Json::Value Doodle::terminal_t::list_jobs(Json::Value)
 }
 Json::Value Doodle::terminal_t::get_times(Json::Value args)
 {
-	(void) args;
+	std::cout<<"=======================args: "<<args<<std::endl;
+	std::string jobname = args[0].asString();
+	if(!jobname.empty())
+	{
+		const Job& job = *std::find_if(std::begin(doodle->jobs), std::end(doodle->jobs), [&](const Job& job) -> bool { return job.get_jobname() == jobname; } );
+		std::cout<<"found job: "<<job<<std::endl;
+
+		return job.get_times(args[1].asUInt64(), args[2].asUInt64());
+	}
 	return "";
 }
 Json::Value Doodle::terminal_t::get_win_names(Json::Value args)

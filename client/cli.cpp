@@ -293,8 +293,8 @@ int main(int argc, char* argv[])
 	memset(&addr.sun_path, 0, sizeof(addr.sun_path));
 	settings.socket_path.copy(addr.sun_path, settings.socket_path.length()); addr.sun_path[settings.socket_path.length()] = '\0';
 	// Unix sockets beginning with a null character map to the invisible unix socket space.
-	// Since Strings that begin with a null character a difficult to handle, use @ instead
-	// and translate @ to the null character here.
+	// Since Strings that begin with a null character a difficult to handle, use % instead
+	// and translate % to the null character here.
 	if(addr.sun_path[0] == '%') addr.sun_path[0] = '\0';
 
 
