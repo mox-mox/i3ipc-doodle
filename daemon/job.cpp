@@ -7,7 +7,7 @@
 //{{{
 Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_path.stem()), jobfile_path(jobfile_path), timefile_path(settings.data_dir/(jobname+".times")), write_time_timer(loop)
 {
-	debug<<"This: "<<reinterpret_cast<void*>(this)<<". Constructing job "<<jobname<<"."<<std::endl;
+	debug<<". Constructing job "<<jobname<<"."<<std::endl;
 	std::ifstream jobfile(jobfile_path);
 	Json::Value job;
 	Json::Reader reader;
@@ -20,7 +20,7 @@ Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_pat
 	job_settings.granularity = job.get("granularity", job_settings.GRANULARITY_DEFAULT_VALUE).asInt64();
 
 	//{{{
-	if( job.isMember("window_names"))
+	if(job.isMember("window_names"))
 	{
 		for( auto&window_name : job.get("window_names", "no window_names"))
 		{
@@ -50,7 +50,7 @@ Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_pat
 	//}}}
 
 	//{{{
-	if( job.isMember("workspace_names"))
+	if(job.isMember("workspace_names"))
 	{
 		for( auto&workspace_name : job.get("workspace_names", "no workspace_names"))
 		{
@@ -79,10 +79,7 @@ Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_pat
 	}
 	//}}}
 
-
-
-
-	//std::cout<<"timefile_path: "<<timefile_path<<std::endl;
+	//{{{
 	if(!fs::exists(timefile_path))
 	{
 		logger<<"There was no time file for job \""<<jobname<<"\". Creating one: "<<timefile_path.string()<<std::endl;
@@ -95,19 +92,14 @@ Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_pat
 		timefile<<"# Total time: "<<std::setfill('0')<<std::setw(20)<<0<<"\n# Start-time	time-spent"<<std::endl;
 	}
 
-
 	std::ifstream timefile(timefile_path);
 	timefile.ignore(100, ' ');
 	timefile.ignore(100, ' ');
 	timefile.ignore(100, ' ');
 	uint64_t temp;
 	timefile>>temp;
-	//std::cout<<">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>total time for job "<<jobname<<" is: "<<temp<<std::endl;
 	times.total = std::chrono::seconds(temp);
-
-	//times.total = std::chrono::seconds(job.get("total_time", 0).asInt64());
-
-
+	//}}}
 
 	write_time_timer.set < Job, &Job::write_time_cb > (this);
 }
@@ -167,7 +159,7 @@ void Job::stop(std::chrono::steady_clock::time_point now)
 void Job::write_time_cb(void)
 {
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-	debug<<"This = "<<reinterpret_cast<void*>(this)<<". Writing time for "<<jobname<<" to disk file "<<timefile_path<<'.'<<std::endl;
+	debug<<". Writing time for "<<jobname<<" to disk file "<<timefile_path<<'.'<<std::endl;
 
 	if( times.running )							// Account for a currently running job.
 	{

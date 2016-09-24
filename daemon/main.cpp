@@ -101,7 +101,11 @@ void parse_config(void)
 	}
 	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
 	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
-	settings.socket_path = config.get("socket_path", DOODLE_SOCKET_PATH).asString();
+	if(!args.socket_set)
+		settings.socket_path = config.get("socket_path", DOODLE_SOCKET_PATH).asString();
+	else
+		settings.socket_path = args.socket_path;
+	settings.socket_path.append(1, '\0');
 	//}}}
 }
 //}}}
@@ -118,7 +122,7 @@ void check_config_dir(void)
 
 	if(args.config_set)
 	{
-		if(!fs::exists(config_dir/"/config.json") && !fs::exists(config_dir/"/doodlerc"))
+		if(!fs::exists(config_dir/"/doodlerc"))
 		{
 			error<<"No config found in "<<settings.config_dir<<" set by command line switch. Aborting..."<<std::endl;
 			//TODO: Copy some default config file
@@ -138,7 +142,7 @@ void check_config_dir(void)
 			error<<"No configuration directory found at $XDG_CONFIG_HOME/doodle = "<<config_dir<<'.'<<std::endl;
 		}
 		debug<<"Config directory found at $XDG_CONFIG_HOME = "<<config_dir<<'.'<<std::endl;
-		if(!fs::exists(config_dir/"/config.json") && !fs::exists(config_dir/"/doodlerc"))
+		if(!fs::exists(config_dir/"/doodlerc"))
 		{
 			error<<"No config found in $XDG_CONFIG_HOME/doodle = "<<config_dir<<". Aborting..."<<std::endl;
 			//TODO: Copy some default config file
@@ -159,7 +163,7 @@ void check_config_dir(void)
 	if(fs::exists((config_dir=config_dir_temp)/=".doodle"))
 	{
 		debug<<"Config directory found at $HOME/.doodle"<<std::endl;
-		if(!fs::exists(config_dir/"config.json") && !fs::exists(config_dir/"doodlerc"))
+		if(!fs::exists(config_dir/"doodlerc"))
 		{
 			error<<"No config found in $HOME/.doodle. Aborting..."<<std::endl;
 			//TODO: Copy some default config file
@@ -173,7 +177,7 @@ void check_config_dir(void)
 	if(fs::exists((config_dir=config_dir_temp)/=".config/doodle"))
 	{
 		debug<<"Config directory found at $HOME/.config/doodle"<<std::endl;
-		if(!fs::exists(config_dir/"config.json") && !fs::exists(config_dir/"doodlerc"))
+		if(!fs::exists(config_dir/"doodlerc"))
 		{
 			error<<"No config found in $HOME/.doodle. Aborting..."<<std::endl;
 			//TODO: Copy some default config file
@@ -301,8 +305,7 @@ int main(int argc, char* argv[])
 
 	check_config_dir();
 	check_data_dir();
-	settings.socket_path = args.socket_path;
-	settings.socket_path.append(1, '\0');
+	parse_config();
 	//}}}
 
 
