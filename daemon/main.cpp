@@ -38,6 +38,7 @@ void version_message()
 }
 //}}}
 
+
 //{{{
 void restart_doodle(void)
 {
@@ -73,6 +74,7 @@ void restart_doodle(void)
 	}
 }
 //}}}
+
 
 //{{{
 void parse_config(void)
@@ -110,7 +112,6 @@ void parse_config(void)
 }
 //}}}
 
-
 //{{{
 void check_config_dir(void)
 {
@@ -120,6 +121,7 @@ void check_config_dir(void)
 	fs::path& config_dir = settings.config_dir;
 	config_dir = args.config_dir;
 
+	//{{{
 	if(args.config_set)
 	{
 		if(!fs::exists(config_dir/"/doodlerc"))
@@ -131,8 +133,12 @@ void check_config_dir(void)
 		debug<<"Config found in "<<config_dir<<'.'<<std::endl;
 		return;
 	}
+	//}}}
 
 	const char* config_dir_temp;
+
+	//{{{ Check $XDG_CONFIG_HOME
+
 	debug<<"No configuration directory set => checking $XDG_CONFIG_HOME"<<std::endl;
 	if((config_dir_temp=getenv("XDG_CONFIG_HOME")))
 	{
@@ -152,13 +158,14 @@ void check_config_dir(void)
 		//settings.config_dir = config_dir;
 		return;
 	}
-
-
+	//}}}
 
 	if((config_dir_temp = getenv("HOME")) == nullptr)
 	{
 		config_dir_temp = getpwuid(getuid())->pw_dir;
 	}
+
+	//{{{ Check $HOME/.doodle
 
 	if(fs::exists((config_dir=config_dir_temp)/=".doodle"))
 	{
@@ -172,6 +179,9 @@ void check_config_dir(void)
 		debug<<"Config found in "<<config_dir<<std::endl;
 		return;
 	}
+	//}}}
+
+	//{{{ Check $HOME/.config/doodle
 
 	debug<<"No config directory found in $HOME/.doodle => try $HOME/.config/doodle"<<std::endl;
 	if(fs::exists((config_dir=config_dir_temp)/=".config/doodle"))
@@ -186,12 +196,12 @@ void check_config_dir(void)
 		debug<<"Config found in "<<config_dir<<std::endl;
 		return;
 	}
+	//}}}
 
 	error<<"No config found. Aborting..."<<std::endl;
 	exit(EXIT_FAILURE);
 }
 //}}}
-
 
 //{{{
 void check_data_dir(void)
@@ -202,6 +212,7 @@ void check_data_dir(void)
 	fs::path& data_dir = settings.data_dir;
 	data_dir = args.data_dir;
 
+	//{{{
 	if(args.data_set)
 	{
 		if(!fs::exists(data_dir))
@@ -216,9 +227,13 @@ void check_data_dir(void)
 		}
 		return;
 	}
+	//}}}
+
+	const char* data_dir_temp;
+
+	//{{{ Check $XDG_DATA_HOME
 
 	debug<<"No data directory set => checking $XDG_DATA_HOME"<<std::endl;
-	const char* data_dir_temp;
 	if((data_dir_temp=getenv("XDG_DATA_HOME")))
 	{
 		debug<<"$XDG_DATA_HOME set => data directory should be at $XDG_DATA_HOME/doodle"<<std::endl;
@@ -235,6 +250,10 @@ void check_data_dir(void)
 		debug<<"Data directory found at "<<data_dir<<std::endl;
 		return;
 	}
+	//}}}
+
+
+	//{{{ Check $HOME/.local/share
 
 	debug<<"$XDG_DATA_HOME not set => checking $HOME/.local/share/doodle"<<std::endl;
 
@@ -253,6 +272,7 @@ void check_data_dir(void)
 		}
 		debug<<"Created data directory $HOME/.local/share/doodle = "<<data_dir<<'.'<<std::endl;
 	}
+	//}}}
 	return;
 }
 //}}}
@@ -307,7 +327,6 @@ int main(int argc, char* argv[])
 	check_data_dir();
 	parse_config();
 	//}}}
-
 
 	{	// Restrict life time of the doodle object
 		Doodle doodle;

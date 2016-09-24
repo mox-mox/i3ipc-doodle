@@ -31,12 +31,10 @@ Doodle::Doodle(void) :
 
 	for( auto&f: fs::directory_iterator(settings.config_dir/"jobs"))
 	{
-		std::cout<<"f.path(): "<<f.path()<<", extension: "<<f.path().extension()<<std::endl;
 		if(f.path().extension() == ".job")
 		{
 			try
 			{
-				std::cout<<"try to push job "<<f.path().stem()<<std::endl;
 				jobs.push_back({ f.path(), loop });
 			}
 			catch(std::runtime_error&e)

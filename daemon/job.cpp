@@ -105,8 +105,6 @@ Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_pat
 }
 //}}}
 
-
-
 //{{{
 Job::Job(Job && other) noexcept : jobname(other.jobname), jobfile_path(other.jobfile_path), timefile_path(other.timefile_path), job_settings(std::move(other.job_settings)), write_time_timer(other.write_time_timer.loop)
 {
@@ -123,9 +121,21 @@ Job::Job(Job && other) noexcept : jobname(other.jobname), jobfile_path(other.job
 Job::Job(void) :
 	jobname("NOJOB"),
 	jobfile_path(),
+	timefile_path(),
 	times{std::chrono::seconds(0), std::chrono::steady_clock::time_point(), false,  std::chrono::seconds(0), std::chrono::system_clock::time_point(), true},
 	matchers{{}, { "!" }, {}, { "!" }}
 { }
+//}}}
+
+//{{{
+Job::~Job(void)
+{
+	if(write_time_timer.is_active())
+	{
+		debug<<"Writing last timing for job "<<jobname<<std::endl;
+		write_time_cb();
+	}
+}
 //}}}
 
 //{{{
@@ -159,7 +169,6 @@ void Job::stop(std::chrono::steady_clock::time_point now)
 void Job::write_time_cb(void)
 {
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-	debug<<". Writing time for "<<jobname<<" to disk file "<<timefile_path<<'.'<<std::endl;
 
 	if( times.running )							// Account for a currently running job.
 	{
@@ -168,6 +177,8 @@ void Job::write_time_cb(void)
 		times.slot      += elapsed;
 		times.job_start  = now;
 	}
+
+	debug<<". Writing time for "<<jobname<<" to disk file "<<timefile_path<<": "<<times.slot.count()<<" seconds active in the last "<<job_settings.granularity<<" seconds."<<std::endl;
 
 	std::fstream timefile(timefile_path);
 	if(timefile.is_open())

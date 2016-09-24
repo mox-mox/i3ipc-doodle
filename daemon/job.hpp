@@ -62,13 +62,13 @@ class Job
 	inline std::string win_included(const std::string& window_title) const;
 	//}}}
 
-	//void sanitise_jobfile(const fs::path& jobfile);
 	public:
 		//{{{ Constructors
 
 		Job(const fs::path&jobfile_path, ev::loop_ref&loop);
-		Job(void);
 		Job(Job && o) noexcept;
+		Job(void);
+		~Job(void);
 		//}}}
 
 		void start(std::chrono::steady_clock::time_point now);
