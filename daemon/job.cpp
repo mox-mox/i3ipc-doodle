@@ -271,7 +271,6 @@ Json::Value Job::get_times(uint64_t start, uint64_t end) const
 	}
 
 	// Read each line
-	//int i = 0;
 	while(!std::getline(timefile, line).eof())
 	{
 		std::stringstream linestream(line);
@@ -283,14 +282,10 @@ Json::Value Job::get_times(uint64_t start, uint64_t end) const
 		if(slot_start >= start)
 		{
 			linestream>>slot_time;
-			std::cout<<"Matching slot: "<<slot_start<<", "<<slot_time<<std::endl;
 			retval[retval.size()][0] = slot_start;
 			retval[retval.size()-1][1] = slot_time;
-			//i++;
 		}
 	}
-	std::cout<<"retval = "<<retval<<std::endl;
-
 
 	return retval;
 }

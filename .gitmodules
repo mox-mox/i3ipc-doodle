@@ -10,3 +10,6 @@
 [submodule "libs/i3ipcpp"]
 	path = libs/i3ipcpp
 	url = git@github.com:mox-mox/i3ipcpp.git
+[submodule "libs/parse_date"]
+	path = libs/parse_date
+	url = git@github.com:mox-mox/parse_date.git
