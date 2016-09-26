@@ -1,4 +1,5 @@
 #include "doodle.hpp"
+#include "parse_date.hpp"
 
 
 Doodle::terminal_t::terminal_t(Doodle* doodle) : doodle(doodle) {}

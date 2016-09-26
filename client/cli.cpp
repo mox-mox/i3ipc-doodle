@@ -9,107 +9,108 @@ Args args;
 Settings settings;
 
 
-
-//{{{ Extend an IO watcher with a wrtie-queue
-
-namespace ev
-{
-	struct socket : ev::io
-	{
-		using ev::io::io;
-		socket(int fd, int events, ev::loop_ref loop) : ev::io(loop)
-		{
-			if( -1 == fd ) throw std::runtime_error("Received invalid Unix socket");
-			ev::io::set(fd, events);
-		}
-		socket(int fd, int events)
-		{
-			if( -1 == fd ) throw std::runtime_error("Received invalid Unix socket");
-			ev::io::set(fd, events);
-		}
-
-		std::deque<std::string> write_data;
-
-		//{{{ Template Magic to allow using callbacks with "void socket_watcher_cb(ev::socket& socket_watcher, int revents);"
-
-		//{{{
-		template < class K, void (K::* method)(ev::socket& w, int) >
-		static void method_thunk(struct ev_loop* loop, ev_watcher* w, int revents)
-		{
-			(void) loop;
-			(static_cast < K*> (w->data)->*method)(*reinterpret_cast<ev::socket*>(w), revents);
-		}
-
-		template < class K, void (K::* method)(ev::socket& w, int) >
-		void set(K* object) throw()
-		{
-			this->data = (void*) object;
-			this->cb = reinterpret_cast<void (*)(struct ev_loop*, struct ev_io*, int)>(&method_thunk < K, method >);
-		}
-		//}}}
-
-		//{{{
-		template < void (* function)(ev::socket& w, int) >
-		static void function_thunk(struct ev_loop* loop, ev_watcher* w, int revents)
-		{
-			(void) loop;
-			function(*reinterpret_cast<ev::socket*>(w), revents);
-		}
-
-		template < void (* function)(ev::socket& w, int) >
-		void set(void* data = 0) throw()
-		{
-			this->data = data;
-			this->cb = reinterpret_cast<void (*)(struct ev_loop*, struct ev_io*, int)>(&function_thunk < function >);
-		}
-		//}}}
-
-		//}}}
-
-
-	friend socket& operator<<(socket& lhs, std::string& data)
-	{
-		std::stringstream ss(data); std::string token;
-
-		ss >> token;
-		std::string cmd = "{\"cmd\":\"" + token + "\",\"args\":[";
-
-		//for(bool first=true, token = ""; ss>>token; first=false)
-		bool first = true;
-		token = "";
-		while(ss >> token)
-		{
-			if(!first)
-			{
-				cmd += ',';
-			}
-			first = false;
-			cmd += "\"";
-			cmd += token;
-			cmd += "\"";
-		token = "";
-			usleep(100000);
-		}
-		cmd += "]}";
-
-		uint16_t length = cmd.length();
-		std::string credential(DOODLE_PROTOCOL_VERSION, 0, sizeof(DOODLE_PROTOCOL_VERSION)-1);
-		credential.append(static_cast<char*>(static_cast<void*>(&length)), 2);
-
-		std::cout<<"Writing credential: "<<credential<<std::endl;
-		lhs.write_data.push_back(credential);
-		std::cout<<"Writing cmd: "<<cmd<<std::endl;
-		lhs.write_data.push_back(cmd);
-		if(!lhs.is_active()) lhs.start();
-		std::cout<<"...done"<<std::endl;
-
-		return lhs;
-	}
-
-	};
-
-}
-//}}}
+//
+////{{{ Extend an IO watcher with a wrtie-queue
+//
+//namespace ev
+//{
+//	struct socket : ev::io
+//	{
+//		using ev::io::io;
+//		socket(int fd, int events, ev::loop_ref loop) : ev::io(loop)
+//		{
+//			if( -1 == fd ) throw std::runtime_error("Received invalid Unix socket");
+//			ev::io::set(fd, events);
+//		}
+//		socket(int fd, int events)
+//		{
+//			if( -1 == fd ) throw std::runtime_error("Received invalid Unix socket");
+//			ev::io::set(fd, events);
+//		}
+//
+//		std::deque<std::string> write_data;
+//
+//		//{{{ Template Magic to allow using callbacks with "void socket_watcher_cb(ev::socket& socket_watcher, int revents);"
+//
+//		//{{{
+//		template < class K, void (K::* method)(ev::socket& w, int) >
+//		static void method_thunk(struct ev_loop* loop, ev_watcher* w, int revents)
+//		{
+//			(void) loop;
+//			(static_cast < K*> (w->data)->*method)(*reinterpret_cast<ev::socket*>(w), revents);
+//		}
+//
+//		template < class K, void (K::* method)(ev::socket& w, int) >
+//		void set(K* object) throw()
+//		{
+//			this->data = (void*) object;
+//			this->cb = reinterpret_cast<void (*)(struct ev_loop*, struct ev_io*, int)>(&method_thunk < K, method >);
+//		}
+//		//}}}
+//
+//		//{{{
+//		template < void (* function)(ev::socket& w, int) >
+//		static void function_thunk(struct ev_loop* loop, ev_watcher* w, int revents)
+//		{
+//			(void) loop;
+//			function(*reinterpret_cast<ev::socket*>(w), revents);
+//		}
+//
+//		template < void (* function)(ev::socket& w, int) >
+//		void set(void* data = 0) throw()
+//		{
+//			this->data = data;
+//			this->cb = reinterpret_cast<void (*)(struct ev_loop*, struct ev_io*, int)>(&function_thunk < function >);
+//		}
+//		//}}}
+//
+//		//}}}
+//
+//
+//	friend socket& operator<<(socket& lhs, std::string& data)
+//	{
+//		std::stringstream ss(data); std::string token;
+//
+//		ss >> token;
+//		std::string cmd = "{\"cmd\":\"" + token + "\",\"args\":[";
+//
+//		//for(bool first=true, token = ""; ss>>token; first=false)
+//		bool first = true;
+//		token = "";
+//		while(ss >> token)
+//		{
+//			if(!first)
+//			{
+//				cmd += ',';
+//			}
+//			first = false;
+//			cmd += "\"";
+//			cmd += token;
+//			cmd += "\"";
+//		token = "";
+//			usleep(100000);
+//		}
+//		cmd += "]}";
+//
+//		uint16_t length = cmd.length();
+//		std::string credential(DOODLE_PROTOCOL_VERSION, 0, sizeof(DOODLE_PROTOCOL_VERSION)-1);
+//		credential.append(static_cast<char*>(static_cast<void*>(&length)), 2);
+//
+//		std::cout<<"Writing credential: "<<credential<<std::endl;
+//		lhs.write_data.push_back(credential);
+//		std::cout<<"Writing cmd: "<<cmd<<std::endl;
+//		lhs.write_data.push_back(cmd);
+//		if(!lhs.is_active()) lhs.start();
+//		std::cout<<"...done"<<std::endl;
+//
+//		return lhs;
+//	}
+//
+//	};
+//
+//}
+////}}}
+//
 
 //{{{
 void stdin_cb(ev::io& w, int revent)

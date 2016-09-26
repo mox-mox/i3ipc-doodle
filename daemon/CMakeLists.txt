@@ -49,12 +49,7 @@ set(LIBS ${LIBS} ${XCB_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
 #}}}
 
-#{{{LIBBSD
-
-FIND_LIBRARY(LIBBSD_LIBRARIES NAMES bsd)
-set(LIBS ${LIBS} ${LIBBSD_LIBRARIES})
-#}}}
-
+add_subdirectory("${LIBS_PATH}/parse_date" "libs/parse_date")
 
 add_executable(doodle_daemon ${SRCS})
 target_link_libraries(doodle_daemon ${LIBS})

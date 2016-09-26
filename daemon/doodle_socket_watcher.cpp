@@ -21,7 +21,6 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 	}
 	std::cout<<"....................FD: "<<fd<<std::endl;
 
-	set(fd, ev::READ);
 	struct sockaddr_un addr;
 	addr.sun_family = AF_UNIX;
 
@@ -87,6 +86,8 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 	{
 		throw std::runtime_error("Could not listen() to socket " + socket_path + ".");
 	}
+
+	set(fd, ev::READ);
 	set<Socket_watcher, reinterpret_cast<void (Socket_watcher::*)(ev::io& socket_watcher, int revents)>( &Socket_watcher::socket_watcher_cb) >(this);
 }
 //}}}
