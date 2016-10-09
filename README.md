@@ -11,6 +11,8 @@ When running, doodle creates a time-file of the same name for every .job file in
 The first line contains the total time for that job in seconds, the remaining lines hold the details. Each line represents one time slice.
 Each line contains two numbers of which the first is the beginning of a time slice and the second is the time spent on that job during the time slice.
 
+## TODO
+ - Implement an "action" list for jobs: When a job becomes active, the active workspace and window name is matched to a second list in the job file and if it matches, the corresponding action/system command is started.
 
 
 

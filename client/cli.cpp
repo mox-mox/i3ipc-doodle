@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include "getopt_pp.h"
 #include <iomanip>
+#include "io_watcher.hpp"
 
 
 Args args;
@@ -111,6 +112,53 @@ Settings settings;
 //}
 ////}}}
 //
+////{{{
+//bool read_n(int fd, char buffer[], int size, ev::socket& watcher)	// Read exactly size bytes
+//{
+//	int read_count = 0;
+//	while(read_count < size)
+//	{
+//		int n;
+//		switch((n=read(fd, &buffer[read_count], size-read_count)))
+//		{
+//			case -1:
+//				throw std::runtime_error("Read error on the connection using fd." + std::to_string(fd) + ".");
+//			case  0:
+//				std::cout<<"Received EOF (Client has closed the connection)."<<std::endl;
+//				watcher.stop();
+//				watcher.loop.break_loop(ev::ALL);
+//				return true;
+//			default:
+//				read_count+=n;
+//		}
+//	}
+//	return false;
+//}
+////}}}
+//
+////{{{
+//void write_n(int fd, char buffer[], int size)	// Write exactly size bytes
+//{
+//	int write_count = 0;
+//	while(write_count < size)
+//	{
+//		int n;
+//		switch((n=write(fd, &buffer[write_count], size-write_count)))
+//		{
+//			case -1:
+//				throw std::runtime_error("Write error on the connection using fd." + std::to_string(fd) + ".");
+//			case  0:
+//				std::cout<<"Received EOF (Client has closed the connection)."<<std::endl;
+//				throw std::runtime_error("Write error on the connection using fd." + std::to_string(fd) + ".");
+//				return;
+//			default:
+//				write_count+=n;
+//		}
+//	}
+//}
+////}}}
+//
+
 
 //{{{
 void stdin_cb(ev::io& w, int revent)
@@ -123,95 +171,10 @@ void stdin_cb(ev::io& w, int revent)
 
 	std::cout<<"|"<<buf<<"|"<<std::endl;
 
-	(*static_cast<ev::socket*>(w.data))<<buf;
+	(*static_cast<ev::Socket*>(w.data))<<buf;
 }
 //}}}
 
-//{{{
-void write_n(int fd, char buffer[], int size)	// Write exactly size bytes
-{
-	int write_count = 0;
-	while(write_count < size)
-	{
-		int n;
-		switch((n=write(fd, &buffer[write_count], size-write_count)))
-		{
-			case -1:
-				throw std::runtime_error("Write error on the connection using fd." + std::to_string(fd) + ".");
-			case  0:
-				std::cout<<"Received EOF (Client has closed the connection)."<<std::endl;
-				throw std::runtime_error("Write error on the connection using fd." + std::to_string(fd) + ".");
-				return;
-			default:
-				write_count+=n;
-		}
-	}
-}
-//}}}
-
-//{{{
-void socket_write_cb(ev::socket& w, int revent)
-{
-	(void) revent;
-	if(w.write_data.empty())
-	{
-		w.stop();
-	}
-	else
-	{
-		write_n(w.fd, &w.write_data.front()[0], w.write_data.front().length());
-		w.write_data.pop_front();
-	}
-}
-//}}}
-
-//{{{
-bool read_n(int fd, char buffer[], int size, ev::socket& watcher)	// Read exactly size bytes
-{
-	int read_count = 0;
-	while(read_count < size)
-	{
-		int n;
-		switch((n=read(fd, &buffer[read_count], size-read_count)))
-		{
-			case -1:
-				throw std::runtime_error("Read error on the connection using fd." + std::to_string(fd) + ".");
-			case  0:
-				std::cout<<"Received EOF (Client has closed the connection)."<<std::endl;
-				watcher.stop();
-				watcher.loop.break_loop(ev::ALL);
-				return true;
-			default:
-				read_count+=n;
-		}
-	}
-	return false;
-}
-//}}}
-
-//{{{
-void socket_read_cb(ev::socket& watcher, int revents)
-{
-	(void) revents;
-	struct
-	{
-		char doodleversion[sizeof(DOODLE_PROTOCOL_VERSION)-1];
-		uint16_t length;
-	}  __attribute__ ((packed)) header;
-
-	if(read_n(watcher.fd, static_cast<char*>(static_cast<void*>(&header)), sizeof(header), watcher))
-	{
-		return;
-	}
-
-	std::string buffer(header.length, '\0');
-	if(read_n(watcher.fd, &buffer[0], header.length, watcher)) { return; }
-
-	////////////////////////////////////////
-	std::cout<<"	Received: |"<<buffer<<"|"<<std::endl;	// Do something with the received data
-	////////////////////////////////////////
-}
-//}}}
 
 //{{{ Help and version messages
 
@@ -273,63 +236,13 @@ int main(int argc, char* argv[])
 
 
 	ev::default_loop loop;
+	ev::Socket socket_watcher(settings.socket_path, loop);
 
-	//{{{ Standard Unix socket creation
-
-	ev::socket socket_watcher_write(socket(AF_UNIX, SOCK_STREAM, 0), ev::WRITE, loop);
-	ev::socket socket_watcher_read(socket_watcher_write.fd, ev::READ, loop);
-
-	socket_watcher_write.set<socket_write_cb>(nullptr);
-	socket_watcher_read.set<socket_read_cb>(nullptr);
-
-	struct sockaddr_un addr;
-	addr.sun_family = AF_UNIX;
-
-	if(settings.socket_path.length() >= sizeof(addr.sun_path)-1)
-	{
-		throw std::runtime_error("Unix socket path \"" + settings.socket_path + "\" is too long. "
-		                         "Maximum allowed size is " + std::to_string(sizeof(addr.sun_path)) + "." );
-	}
-
-	memset(&addr.sun_path, 0, sizeof(addr.sun_path));
-	settings.socket_path.copy(addr.sun_path, settings.socket_path.length()); addr.sun_path[settings.socket_path.length()] = '\0';
-	// Unix sockets beginning with a null character map to the invisible unix socket space.
-	// Since Strings that begin with a null character a difficult to handle, use % instead
-	// and translate % to the null character here.
-	if(addr.sun_path[0] == '%') addr.sun_path[0] = '\0';
-
-
-	std::cout<<"addr.sun_path: |";
-	for(unsigned int i=0; i<50; i++)
-	{
-		std::cout<<"  "<<addr.sun_path[i]<<'|';
-	}
-	std::cout<<"."<<std::endl;
-	std::cout<<"addr.sun_path: |";
-	for(unsigned int i=0; i<50; i++)
-	{
-		std::cout<<std::setw(3)<<static_cast<unsigned int>(addr.sun_path[i])<<'|';
-	}
-	std::cout<<"."<<std::endl;
-
-
-
-
-
-	if( connect(socket_watcher_write.fd, static_cast<struct sockaddr*>(static_cast<void*>(&addr)), sizeof(addr)) == -1 )
-	{
-		throw std::runtime_error("Could not connect to socket "+settings.socket_path+".");
-	}
-
-	socket_watcher_write.start();
-	socket_watcher_read.start();
-
-	//}}}
 
 	//{{{ Create a libev io watcher to respond to terminal input
 
 	ev::io stdin_watcher(loop);
-	stdin_watcher.set<stdin_cb>(static_cast<void*>(&socket_watcher_write));
+	stdin_watcher.set<stdin_cb>(static_cast<void*>(&socket_watcher));
 	stdin_watcher.set(STDIN_FILENO, ev::READ);
 	stdin_watcher.start();
 	//}}}
