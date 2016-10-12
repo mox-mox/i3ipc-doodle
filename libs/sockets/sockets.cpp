@@ -6,7 +6,7 @@
 #include <cstring>
 #include "console_stream.hpp"
 
-structset-prooset-prop Sock
+struct Sock
 {
 	int fd;
 	struct sockaddr_un addr;
@@ -93,6 +93,15 @@ int open_server_socket(std::string& socket_path)
 	{
 		throw std::runtime_error("Could not listen() to socket " + socket_path + ".");
 	}
+	if(sock.fd <= 0)
+	{
+		std::cout<<"AAAAAAAAAAAAAAARRRRRRRRRRRRRRGGGGGGGGGGGGGHHHHHHHHHHHHHHHHHHHH!!"<<std::endl;
+	}
+	else
+	{
+		std::cout<<"##sock.fd = "<<sock.fd<<std::endl;
+	}
+
 	return sock.fd;
 }
 //}}}

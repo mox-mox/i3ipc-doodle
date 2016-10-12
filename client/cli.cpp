@@ -235,6 +235,8 @@ int main(int argc, char* argv[])
 	//}}}
 
 
+	settings.socket_path.append(1, '\0');
+
 	ev::default_loop loop;
 	ev::Socket socket_watcher(settings.socket_path, loop);
 

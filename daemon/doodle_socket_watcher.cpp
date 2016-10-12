@@ -15,7 +15,7 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 	debug<<"void Doodle::Socket_watcher::init() at "<<this<<std::endl;
 	debug<<"Socket path: "<<socket_path<<std::endl;
 
-	open_server_socket(socket_path);
+	fd=open_server_socket(socket_path);
 
 	set(fd, ev::READ);
 	set<Socket_watcher, reinterpret_cast<void (Socket_watcher::*)(ev::io& socket_watcher, int revents)>( &Socket_watcher::socket_watcher_cb) >(this);
