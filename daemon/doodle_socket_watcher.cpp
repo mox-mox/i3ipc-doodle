@@ -69,7 +69,7 @@ void Doodle::Socket_watcher::kill_other_daemon(void)
 //{{{
 Doodle::Socket_watcher::~Socket_watcher(void)
 {
-	debug<<"Doodle::Socket_watcher::~Socket_watcher() at "<<this<<": closing fd = "<<fs<<'.'<<std::endl;
+	debug<<"Doodle::Socket_watcher::~Socket_watcher() at "<<this<<": closing fd = "<<fd<<'.'<<std::endl;
 
 	if(head)
 	{

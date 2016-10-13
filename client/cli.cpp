@@ -4,6 +4,7 @@
 #include "getopt_pp.h"
 #include <iomanip>
 #include "io_watcher.hpp"
+#include "parse_command.hpp"
 
 
 Args args;
@@ -17,13 +18,13 @@ void stdin_cb(ev::io& w, int revent)
 {
 	(void) revent;
 
-	std::string buf;
-	std::getline(std::cin, buf);
+	std::string entry;
+	std::getline(std::cin, entry);
 
-	std::cout<<"|"<<buf<<"|"<<std::endl;
+	std::cout<<"|"<<entry<<"|"<<std::endl;
 
 	ev::Socket& doodle_ipc = (*static_cast<ev::Socket*>(w.data));
-	doodle_ipc<<buf;
+	doodle_ipc<<parse_command(entry);
 }
 //}}}
 
