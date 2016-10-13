@@ -10,5 +10,4 @@ int open_client_socket(std::string& socket_path);
 void write_n(int fd, char buffer[], int size);	// Write exactly size bytes
 
 
-//bool read_n(int fd, char buffer[], int size, ev::socket& watcher);	// Read exactly size bytes
 bool read_n(int fd, char buffer[], int size);	// Read exactly size bytes

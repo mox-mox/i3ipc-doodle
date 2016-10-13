@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ev++.h>
 #include <iostream>
 #include <queue>

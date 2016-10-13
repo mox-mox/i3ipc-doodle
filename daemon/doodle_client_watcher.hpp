@@ -25,7 +25,7 @@ struct Client_watcher : ev::io
 
 	void write_cb(ev::io& w, int revent);
 
-	bool read_n(int fd, char buffer[], int size, Client_watcher& watcher);	// Read exactly size bytes
+	//bool read_n(int fd, char buffer[], int size, Client_watcher& watcher);	// Read exactly size bytes
 
 	void Client_watcher_cb(Client_watcher& watcher, int revents);
 

@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include "sockets.hpp"
 
 
 
@@ -92,27 +93,29 @@ void Doodle::Client_watcher::write_cb(ev::io& w, int revent)
 }
 //}}}
 
-//{{{
-bool Doodle::Client_watcher::read_n(int fd, char buffer[], int size, Client_watcher& watcher)	// Read exactly size bytes
-{
-	int read_count = 0;
-	while(read_count < size)
-	{
-		int n;
-		switch((n=read(fd, &buffer[read_count], size-read_count)))
-		{
-			case -1:
-				throw std::runtime_error("Read error on the connection using fd." + std::to_string(fd) + ".");
-			case  0:
-				delete &watcher;
-				return false;
-			default:
-				read_count+=n;
-		}
-	}
-	return true;
-}
-//}}}
+//
+////{{{
+//bool Doodle::Client_watcher::read_n(int fd, char buffer[], int size, Client_watcher& watcher)	// Read exactly size bytes
+//{
+//	int read_count = 0;
+//	while(read_count < size)
+//	{
+//		int n;
+//		switch((n=read(fd, &buffer[read_count], size-read_count)))
+//		{
+//			case -1:
+//				throw std::runtime_error("Read error on the connection using fd." + std::to_string(fd) + ".");
+//			case  0:
+//				delete &watcher;
+//				return false;
+//			default:
+//				read_count+=n;
+//		}
+//	}
+//	return true;
+//}
+////}}}
+//
 
 //{{{
 void Doodle::Client_watcher::Client_watcher_cb(Client_watcher& watcher, int)
@@ -125,15 +128,17 @@ void Doodle::Client_watcher::Client_watcher_cb(Client_watcher& watcher, int)
 		uint16_t length;
 	}  __attribute__ ((packed)) header;
 
-	if(!read_n(fd, static_cast<char*>(static_cast<void*>(&header)), sizeof(header), *this))
+	if(read_n(fd, static_cast<char*>(static_cast<void*>(&header)), sizeof(header)))
 	{
+		delete this;
 		return;
 	}
 	debug<<header.doodleversion<<", length: "<<header.length<<": ";
 
 	std::string buffer(header.length, '\0');
-	if(!read_n(fd, &buffer[0], header.length, *this))
+	if(read_n(fd, &buffer[0], header.length))
 	{
+		delete this;
 		return;
 	}
 

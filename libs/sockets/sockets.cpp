@@ -67,39 +67,36 @@ int open_server_socket(std::string& socket_path)
 
 	//unlink(&socket_path[0]);  !!! DO NOT ATTEMPT TO REMOVE OLD SOCKETS HERE or the detection of other daemons gets broken!!!
 
-	while(bind(sock.fd, static_cast<struct sockaddr*>(static_cast<void*>(&sock.addr)), sizeof(sock.addr.sun_family)+socket_path.length()) == -1 )
+	if(bind(sock.fd, static_cast<struct sockaddr*>(static_cast<void*>(&sock.addr)), sizeof(sock.addr.sun_family)+socket_path.length()) == -1 )
 	{
-		if(errno == EADDRINUSE)
-		{
-			//if(args.replace)
-			//{
-			//	//kill_other_daemon();
-			//	usleep(1000000);
-			//	continue;
-			//}
-			//else
-			{
-				error<<"Doodle daemon seems to be running. If you are sure it is not runnung, remove the socket file: "<<socket_path<<'.'<<std::endl;
-				exit(EXIT_FAILURE);
-			}
-		}
-		error<<"Cannot create socket in \"" + socket_path + "\" because of a system error. Please report this as a bug."<<std::endl;
-		throw std::runtime_error("Cannot create socket in \"" + socket_path + "\" because of a system error. Please report this as a bug.");
+		return -1;
 	}
+
+	//while(bind(sock.fd, static_cast<struct sockaddr*>(static_cast<void*>(&sock.addr)), sizeof(sock.addr.sun_family)+socket_path.length()) == -1 )
+	//{
+	//	if(errno == EADDRINUSE)
+	//	{
+	//		//if(args.replace)
+	//		//{
+	//		//	//kill_other_daemon();
+	//		//	usleep(1000000);
+	//		//	continue;
+	//		//}
+	//		//else
+	//		{
+	//			error<<"Doodle daemon seems to be running. If you are sure it is not runnung, remove the socket file: "<<socket_path<<'.'<<std::endl;
+	//			exit(EXIT_FAILURE);
+	//		}
+	//	}
+	//	error<<"Cannot create socket in \"" + socket_path + "\" because of a system error. Please report this as a bug."<<std::endl;
+	//	throw std::runtime_error("Cannot create socket in \"" + socket_path + "\" because of a system error. Please report this as a bug.");
+	//}
 
 
 
 	if( listen(sock.fd, 5) == -1 )
 	{
 		throw std::runtime_error("Could not listen() to socket " + socket_path + ".");
-	}
-	if(sock.fd <= 0)
-	{
-		std::cout<<"AAAAAAAAAAAAAAARRRRRRRRRRRRRRGGGGGGGGGGGGGHHHHHHHHHHHHHHHHHHHH!!"<<std::endl;
-	}
-	else
-	{
-		std::cout<<"##sock.fd = "<<sock.fd<<std::endl;
 	}
 
 	return sock.fd;
@@ -166,9 +163,7 @@ bool read_n(int fd, char buffer[], int size)	// Read exactly size bytes
 			case -1:
 				throw std::runtime_error("Read error on the connection using fd." + std::to_string(fd) + ".");
 			case  0:
-				std::cout<<"Received EOF (Client has closed the connection)."<<std::endl;
-				//watcher.stop();
-				//watcher.loop.break_loop(ev::ALL);
+				debug<<"Received EOF (Client has closed the connection)."<<std::endl;
 				return true;
 			default:
 				read_count+=n;
