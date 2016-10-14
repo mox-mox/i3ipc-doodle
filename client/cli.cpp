@@ -6,6 +6,7 @@
 #include "socket_watcher.hpp"
 #include "commands.hpp"
 #include <thread>
+#include <mutex>
 
 extern "C" {
 #include <histedit.h>
@@ -61,26 +62,81 @@ int init_editline(void)
 
 std::string entry;
 
+//
+////{{{
+//void stdin_cb(ev::io& w, int)
+//{
+//	(void) w;
+//	const char *line;
+//	int count;
+//    line = el_gets(el, &count);
+//
+//    if (count > 0) {
+//      history(myhistory, &hist_ev, H_ENTER, line);
+//      printf("You typed \"%s\"\n", line);
+//    }
+//
+//	entry=line;
+//
+//	Socket_watcher& doodle_ipc = (*static_cast<Socket_watcher*>(w.data));
+//	doodle_ipc<<parse_command(entry);
+//}
+////}}}
+//
+
 
 //{{{
-void stdin_cb(ev::io& w, int)
+std::mutex async_watcher_mutex;
+void async_cb(ev::async& w, int)
 {
-	(void) w;
-	const char *line;
-	int count;
-    line = el_gets(el, &count);
-
-    if (count > 0) {
-      history(myhistory, &hist_ev, H_ENTER, line);
-      printf("You typed \"%s\"\n", line);
-    }
-
-	entry=line;
-
+	std::unique_lock<std::mutex> lock1(async_watcher_mutex);
 	Socket_watcher& doodle_ipc = (*static_cast<Socket_watcher*>(w.data));
 	doodle_ipc<<parse_command(entry);
 }
 //}}}
+
+
+ev::default_loop loop;
+ev::async async_watcher(loop);
+
+
+void loop_thread(void)
+{
+	std::cout<<"Inside loop 2"<<std::endl;;
+
+	Socket_watcher socket_watcher(settings.socket_path, loop);
+
+	////{{{ Create a libev io watcher to respond to terminal input
+
+	//ev::io stdin_watcher(loop);
+	//stdin_watcher.set<stdin_cb>(static_cast<void*>(&socket_watcher));
+	//stdin_watcher.set(STDIN_FILENO, ev::READ);
+	//stdin_watcher.start();
+	////}}}
+
+
+	//{{{ Create a libev async watcher to respond to terminal input
+
+	//ev::async async_watcher(loop);
+	async_watcher.set<async_cb>(static_cast<void*>(&socket_watcher));
+	async_watcher.start();
+	//}}}
+
+
+	std::cout<<"> "<<std::flush;
+	loop.run();
+	exit(EXIT_SUCCESS);
+
+	return;
+}
+
+
+
+
+
+
+
+
 
 
 Args args;
@@ -149,20 +205,36 @@ try
 
 	init_editline();
 
-	ev::default_loop loop;
 
-	Socket_watcher socket_watcher(settings.socket_path, loop);
 
-	//{{{ Create a libev io watcher to respond to terminal input
 
-	ev::io stdin_watcher(loop);
-	stdin_watcher.set<stdin_cb>(static_cast<void*>(&socket_watcher));
-	stdin_watcher.set(STDIN_FILENO, ev::READ);
-	stdin_watcher.start();
-	//}}}
+	std::thread socket_communication(loop_thread);
 
-	std::cout<<"> "<<std::flush;
-	loop.run();
+
+
+	const char *line;
+	int count;
+
+
+
+
+	while(1)
+	{
+		std::cout<<"*"<<std::endl;
+		line = el_gets(el, &count);
+
+		if (count > 0) {
+			history(myhistory, &hist_ev, H_ENTER, line);
+			printf("You typed \"%s\"\n", line);
+		}
+
+		std::unique_lock<std::mutex> lock1(async_watcher_mutex);
+		entry=line;
+		async_watcher.send();
+	}
+
+
+	socket_communication.join();
 
 	return 0;
 }

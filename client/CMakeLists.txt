@@ -27,6 +27,13 @@ set(LIBS ${LIBS} ${LIBEDIT_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEDIT_INCLUDE_DIRS})
 #}}}
 
+#{{{PTHREAD
+
+#find_package(LIBEDIT REQUIRED)
+
+set(LIBS ${LIBS} "pthread") ## TODO
+#set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEDIT_INCLUDE_DIRS})
+#}}}
 
 
 add_executable(doodle_client ${SRCS})
