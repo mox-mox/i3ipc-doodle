@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <cstring>
-#include <bitset>
+//#include <bitset>
 #include "doodle_config.hpp"
 
 struct Args

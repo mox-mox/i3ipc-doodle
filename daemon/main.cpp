@@ -58,7 +58,7 @@ void restart_doodle(void)
 	{
 		case -1: /* Error */
 			error << "Uh-Oh! fork() failed.\n";
-			exit(1);
+			exit(EXIT_FAILURE);
 		case 0: /* Child process */
 			execl(program_path,
 					fs::path(program_path).filename().c_str(),
@@ -68,7 +68,7 @@ void restart_doodle(void)
 					"-s", settings.socket_path.c_str(),
 				   	static_cast<char*>(nullptr));
 			error<< "Uh-Oh! execl() failed!"<<std::endl; /* execl doesn't return unless there's an error */
-			exit(1);
+			exit(EXIT_FAILURE);
 		default: /* Parent process */
 			debug << "Process created with pid " << pid << "\n";
 	}
@@ -345,5 +345,5 @@ int main(int argc, char* argv[])
 
 	if(fork_to_restart) restart_doodle();
 
-	return retval;
+	return EXIT_SUCCESS;
 }

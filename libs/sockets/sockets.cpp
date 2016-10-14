@@ -29,7 +29,7 @@ static void open_socket(std::string& socket_path, Sock& sock)
 
 	if(socket_path.length() >= sizeof(sock.addr.sun_path)-1)
 	{
-		throw std::runtime_error("Unix socket path \"" + socket_path + "\" is too long. "
+		throw std::length_error("Unix socket path \"" + socket_path + "\" is too long. "
 		                         "Maximum allowed size is " + std::to_string(sizeof(sock.addr.sun_path)) + "." );
 	}
 
@@ -41,20 +41,20 @@ static void open_socket(std::string& socket_path, Sock& sock)
 	if(sock.addr.sun_path[0] == '%') sock.addr.sun_path[0] = '\0';
 
 
-	std::cout<<"sock.addr.sun_path: |";
-	for(unsigned int i=0; i<50; i++)
-	{
-		std::cout<<"  "<<sock.addr.sun_path[i]<<'|';
-	}
-	std::cout<<"."<<std::endl;
+	//std::cout<<"sock.addr.sun_path: |";
+	//for(unsigned int i=0; i<50; i++)
+	//{
+	//	std::cout<<"  "<<sock.addr.sun_path[i]<<'|';
+	//}
+	//std::cout<<"."<<std::endl;
 
-	std::cout<<"sock.addr.sun_path: |";
-	for(unsigned int i=0; i<50; i++)
-	{
-		std::cout<<std::setw(3)<<static_cast<unsigned int>(sock.addr.sun_path[i])<<'|';
-	}
-	std::cout<<"."<<std::endl;
-	std::cout<<"sock.fd = "<<sock.fd<<std::endl;
+	//std::cout<<"sock.addr.sun_path: |";
+	//for(unsigned int i=0; i<50; i++)
+	//{
+	//	std::cout<<std::setw(3)<<static_cast<unsigned int>(sock.addr.sun_path[i])<<'|';
+	//}
+	//std::cout<<"."<<std::endl;
+	//std::cout<<"sock.fd = "<<sock.fd<<std::endl;
 }
 //}}}
 

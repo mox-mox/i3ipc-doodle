@@ -21,8 +21,6 @@ void stdin_cb(ev::io& w, int revent)
 	std::string entry;
 	std::getline(std::cin, entry);
 
-	//std::cout<<"|"<<entry<<"|"<<std::endl;
-
 	Socket_watcher& doodle_ipc = (*static_cast<Socket_watcher*>(w.data));
 	doodle_ipc<<parse_command(entry);
 }
@@ -56,7 +54,7 @@ int main(int argc, char* argv[])
 	GetOpt::GetOpt_pp ops(argc, argv);
 
 	ops.exceptions(std::ios::failbit|std::ios::eofbit);
-	try
+try
 	{
 		ops>>GetOpt::OptionPresent('h', "help",       args.show_help);
 		ops>>GetOpt::OptionPresent('v', "version",    args.show_version);
