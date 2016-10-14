@@ -5,27 +5,86 @@
 #include <iomanip>
 #include "socket_watcher.hpp"
 #include "commands.hpp"
+#include <thread>
+
+extern "C" {
+#include <histedit.h>
+}
 
 
-Args args;
-Settings settings;
 
 
+
+
+
+
+
+  /* This holds all the state for our line editor */
+  EditLine *el;
+
+  /* This holds the info for our history */
+  History *myhistory;
+
+  HistEvent hist_ev;
+
+
+const char* prompt(EditLine *e)
+{
+	(void) e;
+	return "test> ";
+}
+
+int init_editline(void)
+{
+	/* Initialize the EditLine state to use our prompt function and
+	   emacs style editing. */
+
+	el = el_init(DOODLE_PROGRAM_NAME, stdin, stdout, stderr);
+	el_set(el, EL_PROMPT, &prompt);
+	el_set(el, EL_EDITOR, "vi");
+
+	/* Initialize the history */
+	myhistory = history_init();
+	if (myhistory == 0) {
+		fprintf(stderr, "history could not be initialized\n");
+		return 1;
+	}
+
+	/* Set the size of the history */
+	history(myhistory, &hist_ev, H_SETSIZE, 800);
+
+	/* This sets up the call back functions for history functionality */
+	el_set(el, EL_HIST, history, myhistory);
+
+	return 0;
+}
+
+std::string entry;
 
 
 //{{{
-void stdin_cb(ev::io& w, int revent)
+void stdin_cb(ev::io& w, int)
 {
-	(void) revent;
+	(void) w;
+	const char *line;
+	int count;
+    line = el_gets(el, &count);
 
-	std::string entry;
-	std::getline(std::cin, entry);
+    if (count > 0) {
+      history(myhistory, &hist_ev, H_ENTER, line);
+      printf("You typed \"%s\"\n", line);
+    }
+
+	entry=line;
 
 	Socket_watcher& doodle_ipc = (*static_cast<Socket_watcher*>(w.data));
 	doodle_ipc<<parse_command(entry);
 }
 //}}}
 
+
+Args args;
+Settings settings;
 
 //{{{ Help and version messages
 
@@ -87,6 +146,8 @@ try
 
 
 	settings.socket_path.append(1, '\0');
+
+	init_editline();
 
 	ev::default_loop loop;
 

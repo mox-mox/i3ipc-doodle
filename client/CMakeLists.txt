@@ -19,6 +19,15 @@ set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEV_INCLUDE_DIRS})
 #}}}
 
 
+#{{{LIBEDIT
+
+find_package(LIBEDIT REQUIRED)
+
+set(LIBS ${LIBS} ${LIBEDIT_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEDIT_INCLUDE_DIRS})
+#}}}
+
+
 
 add_executable(doodle_client ${SRCS})
 target_link_libraries(doodle_client ${LIBS} )
