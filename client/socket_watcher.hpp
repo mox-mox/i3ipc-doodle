@@ -79,46 +79,22 @@ namespace ev
 		//}}}
 
 		//{{{
-		friend Socket& operator<<(Socket&lhs, std::string&data)
-			    {
-			    std::stringstream ss(data);
-			    std::string token;
+		friend Socket& operator<<(Socket&lhs, std::string data)
+		{
+			uint16_t length = data.length();
+			std::string credential(DOODLE_PROTOCOL_VERSION, 0, sizeof(DOODLE_PROTOCOL_VERSION)-1);
+			credential.append(static_cast<char*>(static_cast<void*>(&length)), 2);
 
-			    ss>>token;
-			    std::string cmd = "{\"cmd\":\""+token+"\",\"args\":[";
+			std::cout<<"Writing credential: "<<credential<<std::endl;
+			lhs.write_data.push_back(credential);
+			std::cout<<"Writing cmd: "<<data<<std::endl;
+			lhs.write_data.push_back(data);
+			if( !lhs.write_watcher.is_active()) lhs.write_watcher.start();
+			std::cout<<"...done"<<std::endl;
 
-				//for(bool first=true, token = ""; ss>>token; first=false)
-			    bool first = true;
-			    token = "";
-			    while( ss>>token )
-				{
-					if( !first )
-					{
-						cmd += ',';
-					}
-					first = false;
-					cmd += "\"";
-					cmd += token;
-					cmd += "\"";
-					token = "";
-					usleep(100000);
-				}
-			    cmd += "]}";
-
-			    uint16_t length = cmd.length();
-			    std::string credential(DOODLE_PROTOCOL_VERSION, 0, sizeof(DOODLE_PROTOCOL_VERSION)-1);
-			    credential.append(static_cast < char* > (static_cast < void* > (&length)), 2);
-
-			    std::cout<<"Writing credential: "<<credential<<std::endl;
-			    lhs.write_data.push_back(credential);
-			    std::cout<<"Writing cmd: "<<cmd<<std::endl;
-			    lhs.write_data.push_back(cmd);
-			    if( !lhs.write_watcher.is_active()) lhs.write_watcher.start();
-			    std::cout<<"...done"<<std::endl;
-
-			    return lhs;
-			}
-			//}}}
+			return lhs;
+		}
+		//}}}
 	};
 }
 //}}}

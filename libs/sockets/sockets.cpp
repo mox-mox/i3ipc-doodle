@@ -14,6 +14,7 @@ struct Sock
 
 
 
+//{{{
 static void open_socket(std::string& socket_path, Sock& sock)
 {
 	if((sock.fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1 )
@@ -54,8 +55,7 @@ static void open_socket(std::string& socket_path, Sock& sock)
 	std::cout<<"."<<std::endl;
 	std::cout<<"sock.fd = "<<sock.fd<<std::endl;
 }
-
-
+//}}}
 
 
 //{{{
@@ -72,28 +72,6 @@ int open_server_socket(std::string& socket_path)
 		return -1;
 	}
 
-	//while(bind(sock.fd, static_cast<struct sockaddr*>(static_cast<void*>(&sock.addr)), sizeof(sock.addr.sun_family)+socket_path.length()) == -1 )
-	//{
-	//	if(errno == EADDRINUSE)
-	//	{
-	//		//if(args.replace)
-	//		//{
-	//		//	//kill_other_daemon();
-	//		//	usleep(1000000);
-	//		//	continue;
-	//		//}
-	//		//else
-	//		{
-	//			error<<"Doodle daemon seems to be running. If you are sure it is not runnung, remove the socket file: "<<socket_path<<'.'<<std::endl;
-	//			exit(EXIT_FAILURE);
-	//		}
-	//	}
-	//	error<<"Cannot create socket in \"" + socket_path + "\" because of a system error. Please report this as a bug."<<std::endl;
-	//	throw std::runtime_error("Cannot create socket in \"" + socket_path + "\" because of a system error. Please report this as a bug.");
-	//}
-
-
-
 	if( listen(sock.fd, 5) == -1 )
 	{
 		throw std::runtime_error("Could not listen() to socket " + socket_path + ".");
@@ -102,10 +80,6 @@ int open_server_socket(std::string& socket_path)
 	return sock.fd;
 }
 //}}}
-
-
-
-
 
 
 //{{{
@@ -121,10 +95,6 @@ int open_client_socket(std::string& socket_path)
 	return sock.fd;
 }
 //}}}
-
-
-
-
 
 
 //{{{
@@ -151,7 +121,6 @@ void write_n(int fd, char buffer[], int size)	// Write exactly size bytes
 
 
 //{{{
-//bool read_n(int fd, char buffer[], int size, ev::socket& watcher)	// Read exactly size bytes
 bool read_n(int fd, char buffer[], int size)	// Read exactly size bytes
 {
 	int read_count = 0;
@@ -172,18 +141,4 @@ bool read_n(int fd, char buffer[], int size)	// Read exactly size bytes
 	return false;
 }
 //}}}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
