@@ -4,7 +4,7 @@
 #include "getopt_pp.h"
 #include <iomanip>
 #include "socket_watcher.hpp"
-#include "parse_command.hpp"
+#include "commands.hpp"
 
 
 Args args;
@@ -21,9 +21,9 @@ void stdin_cb(ev::io& w, int revent)
 	std::string entry;
 	std::getline(std::cin, entry);
 
-	std::cout<<"|"<<entry<<"|"<<std::endl;
+	//std::cout<<"|"<<entry<<"|"<<std::endl;
 
-	ev::Socket& doodle_ipc = (*static_cast<ev::Socket*>(w.data));
+	Socket_watcher& doodle_ipc = (*static_cast<Socket_watcher*>(w.data));
 	doodle_ipc<<parse_command(entry);
 }
 //}}}
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 
 	ev::default_loop loop;
 
-	ev::Socket socket_watcher(settings.socket_path, loop);
+	Socket_watcher socket_watcher(settings.socket_path, loop);
 
 	//{{{ Create a libev io watcher to respond to terminal input
 
@@ -102,6 +102,7 @@ int main(int argc, char* argv[])
 	stdin_watcher.start();
 	//}}}
 
+	std::cout<<"> "<<std::flush;
 	loop.run();
 
 	return 0;

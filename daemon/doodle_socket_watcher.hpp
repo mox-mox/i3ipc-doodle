@@ -7,17 +7,17 @@ struct Socket_watcher : ev::io
 	Client_watcher* head;
 	std::string socket_path;
 
+	//{{{ Constructors
 
 	Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string& socket_path);
-	void kill_other_daemon(void);
-
+	~Socket_watcher(void);
 	Socket_watcher(void) = delete;
 	Socket_watcher(const Socket_watcher&) = delete;
 	Socket_watcher(Socket_watcher&&) = delete;
 	Socket_watcher& operator=(const Socket_watcher&) = delete;
 	Socket_watcher& operator=(Socket_watcher&&) = delete;
+	//}}}
 
+	void kill_other_daemon(void);
 	void socket_watcher_cb(Socket_watcher& socket_watcher, int revents);
-
-	~Socket_watcher(void);
 };

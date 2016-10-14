@@ -1,13 +1,14 @@
 #pragma once
 // This class is a nested class of doodle. This file may only be included _in_the_body_of_class_Doodle_!
 
-struct Client_watcher : ev::io
+struct Client_watcher// : ev::io
 {
 	Doodle* const doodle;
+	Client_watcher** head;
 	Client_watcher* prev;
 	Client_watcher* next;
-	Client_watcher** head;
 
+	ev::io read_watcher;
 	ev::io write_watcher;
 	std::deque<std::string> write_data;
 
@@ -23,14 +24,12 @@ struct Client_watcher : ev::io
 	//}}}
 
 
-	void write_cb(ev::io& w, int revent);
+	void write_cb(ev::io& watcher, int);
+	void read_cb(ev::io& watcher, int);
 
-	//bool read_n(int fd, char buffer[], int size, Client_watcher& watcher);	// Read exactly size bytes
-
-	void Client_watcher_cb(Client_watcher& watcher, int revents);
 
 	//{{{
-	friend Client_watcher& operator<<(Client_watcher& lhs, const std::string& data)
+	friend Client_watcher& operator<<(Client_watcher& lhs, std::string data)
 	{
 		uint16_t length = data.length();
 		std::string credential(DOODLE_PROTOCOL_VERSION, 0, sizeof(DOODLE_PROTOCOL_VERSION)-1);
