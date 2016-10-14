@@ -37,7 +37,7 @@ struct terminal_t
 		std::string args;
 		std::string description;
 	};
-	std::map < std::string, command_t > commands
+	const std::map<std::string, command_t> commands
 	{
 		{"suspend",          {&terminal_t::suspend,          "none",                  "Suspend operation until resume is called. Called when computer goes to sleep, or for a coffe break ;)"}},
 		{"resume",           {&terminal_t::resume,           "none",                  "Resume suspended operation."}},

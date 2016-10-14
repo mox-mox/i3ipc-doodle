@@ -4,6 +4,7 @@
 
 Doodle::terminal_t::terminal_t(Doodle* doodle) : doodle(doodle) {}
 
+//{{{
 std::string Doodle::terminal_t::operator()(std::string command_line_input)
 {
 	Json::Value command;
@@ -32,7 +33,9 @@ std::string Doodle::terminal_t::operator()(std::string command_line_input)
 		return "{\"response\":\"No command specified\"}";
 	}
 }
+//}}}
 
+//{{{
 Json::Value Doodle::terminal_t::suspend(Json::Value args)
 {
 	logger<<"Suspending"<<std::endl;
@@ -42,6 +45,9 @@ Json::Value Doodle::terminal_t::suspend(Json::Value args)
 
 	return "{\"command\":\"suspend\",\"response\":\"suspended successfully\"}";
 }
+//}}}
+
+//{{{
 Json::Value Doodle::terminal_t::resume(Json::Value)
 {
 	logger<<"Resuming"<<std::endl;
@@ -50,63 +56,100 @@ Json::Value Doodle::terminal_t::resume(Json::Value)
 
 	return "{\"command\":\"resume\",\"response\":\"resumed successfully\"}";
 }
+//}}}
 
-
+//{{{
 Json::Value Doodle::terminal_t::get_config_path(Json::Value)
 {
 	return "";
 }
+//}}}
 
+//{{{
 Json::Value Doodle::terminal_t::get_times_path(Json::Value)
 {
 	return "";
 }
+//}}}
 
+//{{{
 Json::Value Doodle::terminal_t::list_jobs(Json::Value)
 {
 	return "";
 }
+//}}}
+
+//{{{
 Json::Value Doodle::terminal_t::get_times(Json::Value args)
 {
+	Json::Value retval;
+	retval["command"] = "get_times";
 	std::cout<<"=======================args: "<<args<<std::endl;
 	std::string jobname = args[0].asString();
 	if(!jobname.empty())
 	{
-		const Job& job = *std::find_if(std::begin(doodle->jobs), std::end(doodle->jobs), [&](const Job& job) -> bool { return job.get_jobname() == jobname; } );
-		std::cout<<"found job: "<<job<<std::endl;
-
-		return job.get_times(args[1].asUInt64(), args[2].asUInt64());
+		std::_Deque_iterator<Job, Job&, Job*> job = std::find_if(std::begin(doodle->jobs), std::end(doodle->jobs), [&](const Job& job) -> bool { return job.get_jobname() == jobname; } );
+		//const Job& job = *std::find_if(std::begin(doodle->jobs), std::end(doodle->jobs), [&](const Job& job) -> bool { return job.get_jobname() == jobname; } );
+		if(job != std::end(doodle->jobs))
+		{
+			std::cout<<"found job: "<<*job<<std::endl;
+			retval["response"].append( job->get_times(args[1].asUInt64(), args[2].asUInt64()) );
+		}
+		else
+		{
+			retval["response"] = "No job named \""+jobname+"\" found";
+		}
 	}
-	return "";
+	else
+	{
+		retval["response"] = "No job specified";
+	}
+	return retval;
 }
+//}}}
+
+//{{{
 Json::Value Doodle::terminal_t::get_win_names(Json::Value args)
 {
 	(void) args;
 	return "";
 }
+//}}}
+
+//{{{
 Json::Value Doodle::terminal_t::get_ws_names(Json::Value args)
 {
 	(void) args;
 	return "";
 }
+//}}}
+
+//{{{
 Json::Value Doodle::terminal_t::detect_idle(Json::Value args)
 {
 	(void) args;
 	return "";
 }
+//}}}
+
+//{{{
 Json::Value Doodle::terminal_t::detect_ambiguity(Json::Value args)
 {
 	(void) args;
 	return "";
 }
+//}}}
 
+//{{{
 Json::Value Doodle::terminal_t::restart(Json::Value)
 {
 	fork_to_restart = true;
 	doodle->loop.break_loop(ev::ALL);
 	return "{\"command\":\"restart\",\"response\":\"Restarting\"}";
 }
+//}}}
 
+//{{{
 Json::Value Doodle::terminal_t::kill(Json::Value)
 {
 	logger<<"Shutting down..."<<std::endl;
@@ -115,22 +158,22 @@ Json::Value Doodle::terminal_t::kill(Json::Value)
 	return "{\"command\":\"kill\",\"response\":\"Apoptosis started\"}";
 
 }
+//}}}
 
+//{{{
 Json::Value Doodle::terminal_t::help(Json::Value)
 {
 	Json::Value retval;
 	retval["command"] = "help";
+	Json::Value response;
 	for(auto& command : commands)
 	{
-		Json::Value entry;
-		entry[command.first].append(command.second.args);
-		entry[command.first].append(command.second.description);
-		retval["response"].append(entry);
+			response[response.size()][0] = command.first;
+			response[response.size()-1][1] = command.second.args;
+			response[response.size()-1][2] = command.second.description;
 	}
+	retval["response"].append(response);
 	return retval;
-
-
-
-
 }
+//}}}
 

@@ -6,7 +6,6 @@
 #include "sockets.hpp"
 
 //{{{
-
 struct Socket_watcher
 {
 	ev::io read_watcher;

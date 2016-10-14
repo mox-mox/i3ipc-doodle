@@ -345,5 +345,5 @@ int main(int argc, char* argv[])
 
 	if(fork_to_restart) restart_doodle();
 
-	return EXIT_SUCCESS;
+	return retval;
 }
