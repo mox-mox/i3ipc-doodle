@@ -6,8 +6,8 @@ int open_server_socket(std::string& socket_path); // -> <0: FD, -1: socket() err
 
 int open_client_socket(std::string& socket_path);
 
-
 void write_n(int fd, char buffer[], int size);	// Write exactly size bytes
 
-
 bool read_n(int fd, char buffer[], int size);	// Read exactly size bytes
+
+std::string read_socket(int fd);

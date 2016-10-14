@@ -62,9 +62,8 @@ Doodle::Client_watcher::~Client_watcher(void)
 //}}}
 
 //{{{
-void Doodle::Client_watcher::write_cb(ev::io& w, int revent)
+void Doodle::Client_watcher::write_cb(ev::io& w, int)
 {
-	(void) revent;
 	std::deque<std::string>& write_data = static_cast<Client_watcher*>(w.data)->write_data;
 	if(write_data.empty())
 	{
@@ -72,75 +71,27 @@ void Doodle::Client_watcher::write_cb(ev::io& w, int revent)
 	}
 	else while(!write_data.empty())
 	{
-		int write_count = 0;
-		int write_size = write_data.front().length();
-		while(write_count < write_size)
-		{
-			int n;
-			switch((n=write(w.fd, &write_data.front()[write_count], write_size-write_count)))
-			{
-				case -1:
-					throw std::runtime_error("Write error on the connection using fd." + std::to_string(w.fd) + ".");
-				case  0:
-					delete &w;
-					return;
-				default:
-					write_count+=n;
-			}
-		}
+		write_n(w.fd, &write_data.front()[0], write_data.front().length());
 		write_data.pop_front();
 	}
 }
 //}}}
 
-//
-////{{{
-//bool Doodle::Client_watcher::read_n(int fd, char buffer[], int size, Client_watcher& watcher)	// Read exactly size bytes
-//{
-//	int read_count = 0;
-//	while(read_count < size)
-//	{
-//		int n;
-//		switch((n=read(fd, &buffer[read_count], size-read_count)))
-//		{
-//			case -1:
-//				throw std::runtime_error("Read error on the connection using fd." + std::to_string(fd) + ".");
-//			case  0:
-//				delete &watcher;
-//				return false;
-//			default:
-//				read_count+=n;
-//		}
-//	}
-//	return true;
-//}
-////}}}
-//
 
 //{{{
 void Doodle::Client_watcher::Client_watcher_cb(Client_watcher& watcher, int)
 {
 	debug<<"void Doodle::Client_watcher::Client_watcher_cb(Client_watcher& watcher at "<<&watcher<<") at "<<this<<std::endl;
 
-	struct
-	{
-		char doodleversion[sizeof(DOODLE_PROTOCOL_VERSION)-1];
-		uint16_t length;
-	}  __attribute__ ((packed)) header;
+	std::string buffer = read_socket(fd);
 
-	if(read_n(fd, static_cast<char*>(static_cast<void*>(&header)), sizeof(header)))
+	if(buffer.empty())
 	{
 		delete this;
 		return;
 	}
-	debug<<header.doodleversion<<", length: "<<header.length<<": ";
 
-	std::string buffer(header.length, '\0');
-	if(read_n(fd, &buffer[0], header.length))
-	{
-		delete this;
-		return;
-	}
+
 
 	debug<<"\""<<buffer<<"\""<<std::endl;
 

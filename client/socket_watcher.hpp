@@ -23,7 +23,6 @@ namespace ev
 				uint16_t length;
 			}  __attribute__((packed)) header;
 
-			//if( read_n(watcher.fd, (static_cast < char* > (static_cast < void* > (&header))), sizeof(header), watcher))
 			if( read_n(watcher.fd, (static_cast < char* > (static_cast < void* > (&header))), sizeof(header)))
 			{
 				watcher.stop();
@@ -47,9 +46,8 @@ namespace ev
 		//}}}
 
 		//{{{
-		void write_cb(ev::io& w, int revent)
+		void write_cb(ev::io& w, int)
 		{
-			(void) revent;
 			if(write_data.empty())
 			{
 				w.stop();

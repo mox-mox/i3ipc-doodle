@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <cstring>
 #include "console_stream.hpp"
+#include "doodle_config.hpp"
 
 struct Sock
 {
@@ -142,3 +143,26 @@ bool read_n(int fd, char buffer[], int size)	// Read exactly size bytes
 }
 //}}}
 
+
+//{{{
+std::string read_socket(int fd)
+{
+	struct
+	{
+		char doodleversion[sizeof(DOODLE_PROTOCOL_VERSION)-1];
+		uint16_t length;
+	}  __attribute__((packed)) header;
+
+	if( read_n(fd, (static_cast < char* > (static_cast < void* > (&header))), sizeof(header)))
+	{
+		return "";
+	}
+
+	std::string buffer(header.length, '\0');
+	if(read_n(fd, &buffer[0], header.length))
+	{
+		return "";
+	}
+	return buffer;
+}
+//}}}
