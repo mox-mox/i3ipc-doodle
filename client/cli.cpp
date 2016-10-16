@@ -13,80 +13,14 @@ extern "C" {
 }
 
 
-
-
-
-
-
-
-
-  /* This holds all the state for our line editor */
-  EditLine *el;
-
-  /* This holds the info for our history */
-  History *myhistory;
-
-  HistEvent hist_ev;
-
-
-const char* prompt(EditLine *e)
-{
-	(void) e;
-	return "test> ";
-}
-
-int init_editline(void)
-{
-	/* Initialize the EditLine state to use our prompt function and
-	   emacs style editing. */
-
-	el = el_init(DOODLE_PROGRAM_NAME, stdin, stdout, stderr);
-	el_set(el, EL_PROMPT, &prompt);
-	el_set(el, EL_EDITOR, "vi");
-
-	/* Initialize the history */
-	myhistory = history_init();
-	if (myhistory == 0) {
-		fprintf(stderr, "history could not be initialized\n");
-		return 1;
-	}
-
-	/* Set the size of the history */
-	history(myhistory, &hist_ev, H_SETSIZE, 800);
-
-	/* This sets up the call back functions for history functionality */
-	el_set(el, EL_HIST, history, myhistory);
-
-	return 0;
-}
-
 std::string entry;
-
-//
-////{{{
-//void stdin_cb(ev::io& w, int)
-//{
-//	(void) w;
-//	const char *line;
-//	int count;
-//    line = el_gets(el, &count);
-//
-//    if (count > 0) {
-//      history(myhistory, &hist_ev, H_ENTER, line);
-//      printf("You typed \"%s\"\n", line);
-//    }
-//
-//	entry=line;
-//
-//	Socket_watcher& doodle_ipc = (*static_cast<Socket_watcher*>(w.data));
-//	doodle_ipc<<parse_command(entry);
-//}
-////}}}
-//
-
+std::mutex async_watcher_mutex;
+Args args;
+Settings settings;
+ev::default_loop loop;
+ev::async async_watcher(loop);
 
 //{{{
-std::mutex async_watcher_mutex;
 void async_cb(ev::async& w, int)
 {
 	std::unique_lock<std::mutex> lock1(async_watcher_mutex);
@@ -95,40 +29,31 @@ void async_cb(ev::async& w, int)
 }
 //}}}
 
-
-ev::default_loop loop;
-ev::async async_watcher(loop);
-
-
+//{{{
 void loop_thread(void)
 {
 	std::cout<<"Inside loop 2"<<std::endl;;
 
 	Socket_watcher socket_watcher(settings.socket_path, loop);
 
-	////{{{ Create a libev io watcher to respond to terminal input
-
-	//ev::io stdin_watcher(loop);
-	//stdin_watcher.set<stdin_cb>(static_cast<void*>(&socket_watcher));
-	//stdin_watcher.set(STDIN_FILENO, ev::READ);
-	//stdin_watcher.start();
-	////}}}
-
-
-	//{{{ Create a libev async watcher to respond to terminal input
-
-	//ev::async async_watcher(loop);
 	async_watcher.set<async_cb>(static_cast<void*>(&socket_watcher));
 	async_watcher.start();
-	//}}}
 
-
-	std::cout<<"> "<<std::flush;
+	//std::cout<<"> "<<std::flush;
 	loop.run();
 	exit(EXIT_SUCCESS);
 
 	return;
 }
+//}}}
+
+//{{{
+const char* prompt(EditLine *e)
+{
+	(void) e;
+	return "doodle > ";
+}
+//}}}
 
 
 
@@ -137,10 +62,6 @@ void loop_thread(void)
 
 
 
-
-
-Args args;
-Settings settings;
 
 //{{{ Help and version messages
 
@@ -169,7 +90,7 @@ int main(int argc, char* argv[])
 	GetOpt::GetOpt_pp ops(argc, argv);
 
 	ops.exceptions(std::ios::failbit|std::ios::eofbit);
-try
+	try
 	{
 		ops>>GetOpt::OptionPresent('h', "help",       args.show_help);
 		ops>>GetOpt::OptionPresent('v', "version",    args.show_version);
@@ -200,37 +121,52 @@ try
 	}
 	//}}}
 
-
 	settings.socket_path.append(1, '\0');
-
-	init_editline();
-
-
-
 
 	std::thread socket_communication(loop_thread);
 
+	//{{{
+	EditLine *el;
+	HistEvent hist_ev;
+	History *myhistory;
 
+	el = el_init(DOODLE_PROGRAM_NAME, stdin, stdout, stderr);
+	el_set(el, EL_PROMPT, &prompt);
+	el_set(el, EL_EDITOR, "vi");
+
+	/* Initialize the history */
+	myhistory = history_init();
+	if (myhistory == 0)
+	{
+		fprintf(stderr, "history could not be initialized\n");
+		return 1;
+	}
+
+	/* Set the size of the history */
+	history(myhistory, &hist_ev, H_SETSIZE, 800);
+
+	/* This sets up the call back functions for history functionality */
+	el_set(el, EL_HIST, history, myhistory);
 
 	const char *line;
 	int count;
-
-
-
+	//}}}
 
 	while(1)
 	{
-		std::cout<<"*"<<std::endl;
 		line = el_gets(el, &count);
 
-		if (count > 0) {
+		if (count > 0)
+		{
 			history(myhistory, &hist_ev, H_ENTER, line);
-			printf("You typed \"%s\"\n", line);
 		}
 
-		std::unique_lock<std::mutex> lock1(async_watcher_mutex);
-		entry=line;
-		async_watcher.send();
+		{
+			std::unique_lock<std::mutex> lock1(async_watcher_mutex);
+			entry=line;
+			async_watcher.send();
+		}
+		usleep(10000);
 	}
 
 

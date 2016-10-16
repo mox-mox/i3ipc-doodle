@@ -55,7 +55,7 @@ void Socket_watcher::read_cb(ev::io& watcher, int revents)
 	}
 
 	////////////////////////////////////////
-	std::cout<<"	Received: |"<<buffer<<"|"<<std::endl;			// Do something with the received data
+	std::cout<<"	Received: |"<<buffer<<"|"<<std::endl<<std::endl;			// Do something with the received data
 	////////////////////////////////////////
 }
 //}}}
