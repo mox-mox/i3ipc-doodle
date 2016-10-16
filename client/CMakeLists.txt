@@ -10,13 +10,13 @@ set(LIBS ${LIBS} -lstdc++fs)
 #}}}
 
 
-#{{{LIBEV
-
-find_package(LIBEV REQUIRED)
-
-set(LIBS ${LIBS} ${LIBEV_LIBRARIES})
-set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEV_INCLUDE_DIRS})
-#}}}
+##{{{LIBEV
+#
+#find_package(LIBEV REQUIRED)
+#
+#set(LIBS ${LIBS} ${LIBEV_LIBRARIES})
+#set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEV_INCLUDE_DIRS})
+##}}}
 
 
 #{{{LIBEDIT
@@ -27,13 +27,13 @@ set(LIBS ${LIBS} ${LIBEDIT_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEDIT_INCLUDE_DIRS})
 #}}}
 
-#{{{PTHREAD
-
-#find_package(LIBEDIT REQUIRED)
-
-set(LIBS ${LIBS} "pthread") ## TODO
-#set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEDIT_INCLUDE_DIRS})
-#}}}
+##{{{PTHREAD
+#
+##find_package(LIBEDIT REQUIRED)
+#
+#set(LIBS ${LIBS} "pthread") ## TODO
+##set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEDIT_INCLUDE_DIRS})
+##}}}
 
 
 add_executable(doodle_client ${SRCS})

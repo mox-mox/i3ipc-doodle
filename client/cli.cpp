@@ -13,39 +13,40 @@ extern "C" {
 }
 
 
-std::string entry;
-std::mutex async_watcher_mutex;
+//std::string entry;
+//std::mutex async_watcher_mutex;
 Args args;
 Settings settings;
-ev::default_loop loop;
-ev::async async_watcher(loop);
-
-//{{{
-void async_cb(ev::async& w, int)
-{
-	std::unique_lock<std::mutex> lock1(async_watcher_mutex);
-	Socket_watcher& doodle_ipc = (*static_cast<Socket_watcher*>(w.data));
-	doodle_ipc<<parse_command(entry);
-}
-//}}}
-
-//{{{
-void loop_thread(void)
-{
-	std::cout<<"Inside loop 2"<<std::endl;;
-
-	Socket_watcher socket_watcher(settings.socket_path, loop);
-
-	async_watcher.set<async_cb>(static_cast<void*>(&socket_watcher));
-	async_watcher.start();
-
-	//std::cout<<"> "<<std::flush;
-	loop.run();
-	exit(EXIT_SUCCESS);
-
-	return;
-}
-//}}}
+//ev::default_loop loop;
+//ev::async async_watcher(loop);
+//
+////{{{
+//void async_cb(ev::async& w, int)
+//{
+//	std::unique_lock<std::mutex> lock1(async_watcher_mutex);
+//	Socket_watcher& doodle_ipc = (*static_cast<Socket_watcher*>(w.data));
+//	doodle_ipc<<parse_command(entry);
+//}
+////}}}
+//
+////{{{
+//void loop_thread(void)
+//{
+//	std::cout<<"Inside loop 2"<<std::endl;;
+//
+//	Socket_watcher socket_watcher(settings.socket_path, loop);
+//
+//	async_watcher.set<async_cb>(static_cast<void*>(&socket_watcher));
+//	async_watcher.start();
+//
+//	//std::cout<<"> "<<std::flush;
+//	loop.run();
+//	exit(EXIT_SUCCESS);
+//
+//	return;
+//}
+////}}}
+//
 
 //{{{
 const char* prompt(EditLine *e)
@@ -123,7 +124,10 @@ int main(int argc, char* argv[])
 
 	settings.socket_path.append(1, '\0');
 
-	std::thread socket_communication(loop_thread);
+	IPC_socket doodle_sock(settings.socket_path);
+
+	//std::thread socket_communication(loop_thread);
+
 
 	//{{{
 	EditLine *el;
@@ -148,29 +152,40 @@ int main(int argc, char* argv[])
 	/* This sets up the call back functions for history functionality */
 	el_set(el, EL_HIST, history, myhistory);
 
-	const char *line;
-	int count;
 	//}}}
+
+	Input input;
 
 	while(1)
 	{
-		line = el_gets(el, &count);
+		input.line = el_gets(el, &input.count);
 
-		if (count > 0)
+		if (input.count > 0)
 		{
-			history(myhistory, &hist_ev, H_ENTER, line);
+			history(myhistory, &hist_ev, H_ENTER, input.line);
+		}
+		else
+		{
+			std::cout<<"Invalid entry."<<std::endl;
+			continue;
 		}
 
-		{
-			std::unique_lock<std::mutex> lock1(async_watcher_mutex);
-			entry=line;
-			async_watcher.send();
-		}
-		usleep(10000);
+		doodle_sock<<parse_command({input.line, static_cast<unsigned int>(input.count)});
+
+		std::string response;
+		doodle_sock>>response;
+		std::cout<<response;
+
+		//{
+		//	std::unique_lock<std::mutex> lock1(async_watcher_mutex);
+		//	entry=line;
+		//	async_watcher.send();
+		//}
+		//usleep(10000);
 	}
 
 
-	socket_communication.join();
+	//socket_communication.join();
 
 	return 0;
 }

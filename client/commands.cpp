@@ -4,7 +4,7 @@
 //#include <unistd.h>
 
 //{{{
-std::string parse_command(std::string& entry)
+std::string parse_command(std::string entry)
 {
 	std::stringstream ss(entry);
 	std::string token;
