@@ -1,7 +1,40 @@
 #include "commands.hpp"
 #include <string>
 #include <sstream>
-//#include <unistd.h>
+
+
+
+
+Command::Command(void)
+{
+	el = el_init(DOODLE_PROGRAM_NAME, stdin, stdout, stderr);
+	el_set(el, EL_PROMPT, &prompt);
+	el_set(el, EL_EDITOR, "vi");
+
+	/* Initialize the history */
+	myhistory = history_init();
+	if (myhistory == 0)
+	{
+		fprintf(stderr, "history could not be initialized\n");
+		return 1;
+	}
+
+	/* Set the size of the history */
+	history(myhistory, &hist_ev, H_SETSIZE, 800);
+
+	/* This sets up the call back functions for history functionality */
+	el_set(el, EL_HIST, history, myhistory);
+}
+
+
+
+
+
+
+
+
+
+
 
 //{{{
 std::string parse_command(std::string entry)
@@ -25,9 +58,35 @@ std::string parse_command(std::string entry)
 		cmd += token;
 		cmd += "\"";
 		token = "";
-		//usleep(100000);
 	}
 	cmd += "]}";
 	return cmd;
+}
+//}}}
+
+
+
+
+
+//{{{
+Command& Command::operator>>(IPC_socket& sock)
+{
+	line = el_gets(el, &count);
+	std::cout<<"line = "<<line<<std::endl;
+
+	if (count > 0)
+	{
+		history(myhistory, &hist_ev, H_ENTER, line);
+
+	}
+	else
+	{
+		std::cout<<"Invalid entry."<<std::endl;
+	}
+
+
+
+
+	return *this;
 }
 //}}}

@@ -43,9 +43,3 @@ struct Settings
 //}}}
 
 extern Settings settings;
-
-struct Input
-{
-	int count;
-	const char *line;
-};
