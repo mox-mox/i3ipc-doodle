@@ -9,15 +9,7 @@ set(INCDIRS_SYS ${INCDIRS_SYS})
 set(LIBS ${LIBS} -lstdc++fs)
 #}}}
 
-
-##{{{LIBEV
-#
-#find_package(LIBEV REQUIRED)
-#
-#set(LIBS ${LIBS} ${LIBEV_LIBRARIES})
-#set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEV_INCLUDE_DIRS})
-##}}}
-
+#set_property( GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS FALSE )
 
 #{{{LIBEDIT
 
@@ -27,14 +19,15 @@ set(LIBS ${LIBS} ${LIBEDIT_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEDIT_INCLUDE_DIRS})
 #}}}
 
-##{{{PTHREAD
-#
-##find_package(LIBEDIT REQUIRED)
-#
-#set(LIBS ${LIBS} "pthread") ## TODO
-##set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEDIT_INCLUDE_DIRS})
-##}}}
+#{{{JSONCPP
 
+#find_package(JSONCPP REQUIRED)
+set(LIBJSONCPP_LIBRARIES "/usr/lib/libjsoncpp.so")
+set(LIBJSONCPP_INCLUDE_DIRS "/usr/include")
+
+set(LIBS ${LIBS} ${LIBJSONCPP_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBJSONCPP_INCLUDE_DIRS})
+#}}}
 
 add_executable(doodle_client ${SRCS})
 target_link_libraries(doodle_client ${LIBS} )

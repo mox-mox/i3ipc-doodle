@@ -4,6 +4,22 @@
 
 Doodle::terminal_t::terminal_t(Doodle* doodle) : doodle(doodle) {}
 
+
+//{{{
+Json::Value Doodle::terminal_t::run_cmd(std::string cmd, Json::Value args)
+{
+	try{
+		Json::Value (terminal_t::* command_handler)(Json::Value) = commands.at(cmd).func;
+		return (this->*command_handler)(args);
+	}
+	catch (std::out_of_range)
+	{
+		return "{\"response\":\"Unknown command\"}";
+	}
+}
+//}}}
+
+
 //{{{
 std::string Doodle::terminal_t::operator()(std::string command_line_input)
 {
@@ -19,16 +35,8 @@ std::string Doodle::terminal_t::operator()(std::string command_line_input)
 	{
 		if( command.isMember("cmd"))
 		{
-			try{
-				std::string cmd = command.get("cmd", "no cmd").asString();
-				Json::Value (terminal_t::* command_handler)(Json::Value) = commands.at(cmd).func;
-
-				return (this->*command_handler)(command["args"]).toStyledString();
-			}
-			catch (std::out_of_range)
-			{
-				return "{\"response\":\"Unknown command\"}";
-			}
+			Json::FastWriter fastWriter;
+			return fastWriter.write(run_cmd(command.get("cmd", "no cmd").asString(), command["args"]));
 		}
 		return "{\"response\":\"No command specified\"}";
 	}
@@ -75,7 +83,16 @@ Json::Value Doodle::terminal_t::get_times_path(Json::Value)
 //{{{
 Json::Value Doodle::terminal_t::list_jobs(Json::Value)
 {
-	return "";
+	Json::Value retval;
+	retval["command"] = "list_jobs";
+	Json::Value response;
+	for(auto& job : doodle->jobs)
+	{
+			response[response.size()][0] = job.get_jobname();
+			response[response.size()-1][1] = job.get_total_time();
+	}
+	retval["response"]=response;
+	return retval;
 }
 //}}}
 
@@ -172,7 +189,7 @@ Json::Value Doodle::terminal_t::help(Json::Value)
 			response[response.size()-1][1] = command.second.args;
 			response[response.size()-1][2] = command.second.description;
 	}
-	retval["response"].append(response);
+	retval["response"]=response;
 	return retval;
 }
 //}}}

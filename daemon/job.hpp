@@ -80,6 +80,7 @@ class Job
 		inline std::string match(const std::string& current_workspace, const std::string& window_title) const;
 
 		std::string get_jobname(void) const;
+		unsigned int get_total_time(void) const;
 		Json::Value get_times(uint64_t start=0, uint64_t end=0) const;
 
 };

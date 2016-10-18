@@ -3,7 +3,6 @@
 #include "cli.hpp"
 #include "doodle_config.hpp"
 
-//{{{
 class IPC_socket
 {
 	int fd;
@@ -15,6 +14,8 @@ class IPC_socket
 
 	public:
 		IPC_socket(std::string&socket_path);
+		void send(std::string data);
+		std::string receive(void);
 
 
 		//IPC_socket& operator<<(std::string data);
@@ -28,4 +29,3 @@ class IPC_socket
 		//	  return rhs.outputToStream(lhs);
 		//}
 };
-//}}}

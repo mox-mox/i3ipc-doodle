@@ -3,10 +3,8 @@
 #include <unistd.h>
 #include "getopt_pp.h"
 #include <iomanip>
-#include "socket_watcher.hpp"
-#include "commands.hpp"
-#include <thread>
-#include <mutex>
+#include "ipc_socket.hpp"
+#include "command.hpp"
 
 
 
@@ -14,20 +12,12 @@ Args args;
 Settings settings;
 
 //{{{
-const char* prompt(EditLine *e)
+const char* prompt(EditLine* e)
 {
 	(void) e;
 	return "doodle > ";
 }
 //}}}
-
-
-
-
-
-
-
-
 
 //{{{ Help and version messages
 
@@ -91,27 +81,13 @@ int main(int argc, char* argv[])
 
 	IPC_socket doodle_sock(settings.socket_path);
 
-	Command readline;
+	Command readline(prompt);
 
 
 	while(1)
 	{
-		line = el_gets(el, &count);
-
-		if (count > 0)
-		{
-			history(myhistory, &hist_ev, H_ENTER, line);
-		}
-		else
-		{
-			std::cout<<"Invalid entry."<<std::endl;
-			continue;
-		}
-
-		doodle_sock<<parse_command({line, static_cast<unsigned int>(count)});
-
-		doodle_sock>>std::cout;
-
+		readline>>doodle_sock;
+		readline<<doodle_sock;
 	}
 
 	return 0;

@@ -252,6 +252,13 @@ std::string Job::get_jobname(void) const
 //}}}
 
 //{{{
+unsigned int Job::get_total_time(void) const
+{
+	return times.total.count();
+}
+//}}}
+
+//{{{
 Json::Value Job::get_times(uint64_t start, uint64_t end) const
 {
 	Json::Value retval;

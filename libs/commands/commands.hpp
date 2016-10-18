@@ -1,45 +1,12 @@
-#pragma once
-// This class is a nested class of doodle. This file may only be included _in_the_body_of_class_Doodle_!
+// This file is nested inside doodle_terminal.hpp and command.hpp. This file may only be included _in_the_body_of_a_class_!
 
 
-class terminal_t
-{
-
-	Doodle* const doodle;
-
-	//{{{ The terminal functions
-
-	Json::Value suspend(Json::Value);
-	Json::Value resume(Json::Value);
-
-	Json::Value get_config_path(Json::Value);
-	Json::Value get_times_path(Json::Value);
-
-
-
-	Json::Value list_jobs(Json::Value);
-	Json::Value get_times(Json::Value args);
-	Json::Value get_win_names(Json::Value args);
-	Json::Value get_ws_names(Json::Value args);
-	Json::Value detect_idle(Json::Value args);
-	Json::Value detect_ambiguity(Json::Value args);
-	Json::Value restart(Json::Value);
-	Json::Value kill(Json::Value);
-	Json::Value help(Json::Value);
-	//}}}
-
-
-	//{{{
 	struct command_t
 	{
 		Json::Value (terminal_t::* func)(Json::Value);
 		std::string args;
 		std::string description;
 	};
-	//}}}
-
-
-	//{{{
 	const std::map<std::string, command_t> commands
 	{
 		{"suspend",          {&terminal_t::suspend,          "none",                  "Suspend operation until resume is called. Called when computer goes to sleep, or for a coffe break ;)"}},
@@ -58,14 +25,3 @@ class terminal_t
 		{"kill",             {&terminal_t::kill,             "none",                  "Stop the program."}},
 		{"help",             {&terminal_t::help,             "none",                  "Show this help."}},
 	};
-	//}}}
-
-
-	Json::Value run_cmd(std::string, Json::Value);
-
-	public:
-	terminal_t(Doodle* doodle);
-
-	std::string operator()(std::string command_line_input);
-
-};
