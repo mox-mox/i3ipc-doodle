@@ -1,5 +1,26 @@
 // This file is nested inside doodle_terminal.hpp and command.hpp. This file may only be included _in_the_body_of_a_class_!
 
+
+//{{{ The terminal functions
+
+Json::Value suspend(Json::Value);
+Json::Value resume(Json::Value);
+
+Json::Value get_config_path(Json::Value);
+Json::Value get_times_path(Json::Value);
+
+Json::Value list_jobs(Json::Value);
+Json::Value get_times(Json::Value args);
+Json::Value get_win_names(Json::Value args);
+Json::Value get_ws_names(Json::Value args);
+Json::Value detect_idle(Json::Value args);
+Json::Value detect_ambiguity(Json::Value args);
+Json::Value restart(Json::Value);
+Json::Value kill(Json::Value);
+Json::Value help(Json::Value);
+//}}}
+
+
 typedef Json::Value (CLASSNAME::* func)(Json::Value);
 const std::map<std::string, func> commands
 {

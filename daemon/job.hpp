@@ -82,6 +82,7 @@ class Job
 		std::string get_jobname(void) const;
 		unsigned int get_total_time(void) const;
 		Json::Value get_times(uint64_t start=0, uint64_t end=0) const;
+		Json::Value get_win_names(void) const;
 
 };
 

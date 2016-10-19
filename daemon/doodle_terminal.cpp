@@ -48,6 +48,7 @@ Json::Value Doodle::terminal_t::run_cmd(std::string cmd, Json::Value args)
 Json::Value Doodle::terminal_t::suspend(Json::Value args)
 {
 	if(args == "help") return "Suspend operation until resume is called. Called when computer goes to sleep, or for a coffe break ;)";
+	if(args == "args") return "none";
 
 	logger<<"Suspending"<<std::endl;
 	logger<<"Args: "<<args.toStyledString()<<std::endl;
@@ -62,6 +63,7 @@ Json::Value Doodle::terminal_t::suspend(Json::Value args)
 Json::Value Doodle::terminal_t::resume(Json::Value args)
 {
 	if(args == "help") return "Resume suspended operation.";
+	if(args == "args") return "none";
 
 	logger<<"Resuming"<<std::endl;
 	doodle->suspended = false;
@@ -75,8 +77,10 @@ Json::Value Doodle::terminal_t::resume(Json::Value args)
 Json::Value Doodle::terminal_t::get_config_path(Json::Value args)
 {
 	if(args == "help") return "Get the path to the currently used config file.";
+	if(args == "args") return "none";
 
-	return "";
+	std::string config_dir=settings.config_dir;
+	return config_dir;
 }
 //}}}
 
@@ -84,8 +88,10 @@ Json::Value Doodle::terminal_t::get_config_path(Json::Value args)
 Json::Value Doodle::terminal_t::get_times_path(Json::Value args)
 {
 	if(args == "help") return "Get the path to the currently used time files.";
+	if(args == "args") return "none";
 
-	return "";
+	std::string data_dir=settings.data_dir;
+	return data_dir;
 }
 //}}}
 
@@ -93,6 +99,7 @@ Json::Value Doodle::terminal_t::get_times_path(Json::Value args)
 Json::Value Doodle::terminal_t::list_jobs(Json::Value args)
 {
 	if(args == "help") return "List the names of all known jobs with their current total times";
+	if(args == "args") return "none";
 
 	Json::Value retval;
 	retval["command"] = "list_jobs";
@@ -111,6 +118,8 @@ Json::Value Doodle::terminal_t::list_jobs(Json::Value args)
 Json::Value Doodle::terminal_t::get_times(Json::Value args)
 {
 	if(args == "help") return "Get the active times for a job. If start and and are provided, only times in that interval are shown.";
+	if(args == "args") return "jobname, [start, end]";
+
 	Json::Value retval;
 	retval["command"] = "get_times";
 	std::cout<<"=======================args: "<<args<<std::endl;
@@ -141,8 +150,30 @@ Json::Value Doodle::terminal_t::get_times(Json::Value args)
 Json::Value Doodle::terminal_t::get_win_names(Json::Value args)
 {
 	if(args == "help") return "List all window names or regular expressions for a job.";
-	(void) args;
-	return "";
+	if(args == "args") return "jobname";
+
+	Json::Value retval;
+	retval["command"] = "get_win_names";
+	std::cout<<"=======================args: "<<args<<std::endl;
+	std::string jobname = args[0].asString();
+	if(!jobname.empty())
+	{
+		std::_Deque_iterator<Job, Job&, Job*> job = std::find_if(std::begin(doodle->jobs), std::end(doodle->jobs), [&](const Job& job) -> bool { return job.get_jobname() == jobname; } );
+		if(job != std::end(doodle->jobs))
+		{
+			std::cout<<"found job: "<<*job<<std::endl;
+			retval["response"].append( job->get_win_names() );
+		}
+		else
+		{
+			retval["response"] = "No job named \""+jobname+"\" found";
+		}
+	}
+	else
+	{
+		retval["response"] = "No job specified";
+	}
+	return retval;
 }
 //}}}
 
@@ -150,6 +181,8 @@ Json::Value Doodle::terminal_t::get_win_names(Json::Value args)
 Json::Value Doodle::terminal_t::get_ws_names(Json::Value args)
 {
 	if(args == "help") return "List all workspace names or regular expressions for a job.";
+	if(args == "args") return "jobname";
+
 	(void) args;
 	return "";
 }
@@ -159,6 +192,8 @@ Json::Value Doodle::terminal_t::get_ws_names(Json::Value args)
 Json::Value Doodle::terminal_t::detect_idle(Json::Value args)
 {
 	if(args == "help") return "Set whether to watch for idle time. If set to true, uses value set in config file.";
+	if(args == "args") return "true|false|time";
+
 	(void) args;
 	return "";
 }
@@ -168,6 +203,8 @@ Json::Value Doodle::terminal_t::detect_idle(Json::Value args)
 Json::Value Doodle::terminal_t::detect_ambiguity(Json::Value args)
 {
 	if(args == "help") return "Whether to check for ambiguous matching rules. Costs a bit of performance.";
+	if(args == "args") return "true|false";
+
 	(void) args;
 	return "";
 }
@@ -177,6 +214,8 @@ Json::Value Doodle::terminal_t::detect_ambiguity(Json::Value args)
 Json::Value Doodle::terminal_t::restart(Json::Value args)
 {
 	if(args == "help") return "Restart the program to re-read the configuration.";
+	if(args == "args") return "none";
+
 	fork_to_restart = true;
 	doodle->loop.break_loop(ev::ALL);
 	return "{\"command\":\"restart\",\"response\":\"Restarting\"}";
@@ -187,6 +226,8 @@ Json::Value Doodle::terminal_t::restart(Json::Value args)
 Json::Value Doodle::terminal_t::kill(Json::Value args)
 {
 	if(args == "help") return "Stop the program.";
+	if(args == "args") return "none";
+
 	logger<<"Shutting down..."<<std::endl;
 	doodle->loop.break_loop(ev::ALL);
 
@@ -199,6 +240,7 @@ Json::Value Doodle::terminal_t::kill(Json::Value args)
 Json::Value Doodle::terminal_t::help(Json::Value args)
 {
 	if(args == "help") return "Show this help.";
+	if(args == "args") return "none";
 
 	Json::Value retval;
 	retval["command"] = "help";
@@ -206,8 +248,8 @@ Json::Value Doodle::terminal_t::help(Json::Value args)
 	for(auto& command : commands)
 	{
 			response[response.size()][0] = command.first;
-			//response[response.size()-1][1] = command.second.args;
-			//response[response.size()-1][2] = command.second.description;
+			response[response.size()-1][1] = (this->*command.second)("args");
+			response[response.size()-1][2] = (this->*command.second)("help");
 	}
 	retval["response"]=response;
 	return retval;
