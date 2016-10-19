@@ -11,6 +11,9 @@
 
 using window_id = uint64_t;
 
+//void boink(void) {std::cout<<"boink"<<std::endl;}
+//void flip(void) {std::cout<<"flip"<<std::endl;}
+
 class Doodle: public sigc::trackable
 {
 	i3ipc::connection i3_conn;
