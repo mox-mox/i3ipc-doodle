@@ -281,6 +281,11 @@ void check_data_dir(void)
 int main(int argc, char* argv[])
 {
 	int retval = EXIT_FAILURE;
+    if (!getuid())
+	{
+		std::cerr<<"Please never run this program as root. It is not neccessary and poses a security risk."<<std::endl;
+		return EXIT_FAILURE;
+	}
 
 	//{{{ Argument handling
 

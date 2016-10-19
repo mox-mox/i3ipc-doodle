@@ -4,7 +4,6 @@
 
 Doodle::terminal_t::terminal_t(Doodle* doodle) : doodle(doodle) {}
 
-
 //{{{
 std::string Doodle::terminal_t::operator()(std::string command_line_input)
 {
@@ -28,7 +27,6 @@ std::string Doodle::terminal_t::operator()(std::string command_line_input)
 }
 //}}}
 
-
 //{{{
 Json::Value Doodle::terminal_t::run_cmd(std::string cmd, Json::Value args)
 {
@@ -42,7 +40,6 @@ Json::Value Doodle::terminal_t::run_cmd(std::string cmd, Json::Value args)
 	}
 }
 //}}}
-
 
 //{{{
 Json::Value Doodle::terminal_t::suspend(Json::Value args)
@@ -127,11 +124,10 @@ Json::Value Doodle::terminal_t::get_times(Json::Value args)
 	if(!jobname.empty())
 	{
 		std::_Deque_iterator<Job, Job&, Job*> job = std::find_if(std::begin(doodle->jobs), std::end(doodle->jobs), [&](const Job& job) -> bool { return job.get_jobname() == jobname; } );
-		//const Job& job = *std::find_if(std::begin(doodle->jobs), std::end(doodle->jobs), [&](const Job& job) -> bool { return job.get_jobname() == jobname; } );
 		if(job != std::end(doodle->jobs))
 		{
 			std::cout<<"found job: "<<*job<<std::endl;
-			retval["response"].append( job->get_times(args[1].asUInt64(), args[2].asUInt64()) );
+			retval["response"] = job->get_times(args[1].asUInt64(), args[2].asUInt64());
 		}
 		else
 		{
@@ -162,7 +158,7 @@ Json::Value Doodle::terminal_t::get_win_names(Json::Value args)
 		if(job != std::end(doodle->jobs))
 		{
 			std::cout<<"found job: "<<*job<<std::endl;
-			retval["response"].append( job->get_win_names() );
+			retval["response"] = job->get_win_names();
 		}
 		else
 		{
@@ -183,8 +179,28 @@ Json::Value Doodle::terminal_t::get_ws_names(Json::Value args)
 	if(args == "help") return "List all workspace names or regular expressions for a job.";
 	if(args == "args") return "jobname";
 
-	(void) args;
-	return "";
+	Json::Value retval;
+	retval["command"] = "get_win_names";
+	std::cout<<"=======================args: "<<args<<std::endl;
+	std::string jobname = args[0].asString();
+	if(!jobname.empty())
+	{
+		std::_Deque_iterator<Job, Job&, Job*> job = std::find_if(std::begin(doodle->jobs), std::end(doodle->jobs), [&](const Job& job) -> bool { return job.get_jobname() == jobname; } );
+		if(job != std::end(doodle->jobs))
+		{
+			std::cout<<"found job: "<<*job<<std::endl;
+			retval["response"] = job->get_ws_names();
+		}
+		else
+		{
+			retval["response"] = "No job named \""+jobname+"\" found";
+		}
+	}
+	else
+	{
+		retval["response"] = "No job specified";
+	}
+	return retval;
 }
 //}}}
 
@@ -195,7 +211,7 @@ Json::Value Doodle::terminal_t::detect_idle(Json::Value args)
 	if(args == "args") return "true|false|time";
 
 	(void) args;
-	return "";
+	return "TODO";
 }
 //}}}
 
@@ -206,7 +222,7 @@ Json::Value Doodle::terminal_t::detect_ambiguity(Json::Value args)
 	if(args == "args") return "true|false";
 
 	(void) args;
-	return "";
+	return "TODO";
 }
 //}}}
 

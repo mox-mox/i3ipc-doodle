@@ -2,11 +2,11 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include <json/json.h>
 
 
 
 
+//{{{
 Command::Command(const char* (*prompt)(EditLine* e)) : prompt(prompt)
 {
 	if(!prompt) throw std::logic_error("No prompt function defined");
@@ -28,9 +28,47 @@ Command::Command(const char* (*prompt)(EditLine* e)) : prompt(prompt)
 	/* This sets up the call back functions for history functionality */
 	el_set(el, EL_HIST, history, myhistory);
 }
+//}}}
 
 
-
+//
+////{{{
+//std::string Command::parse_response(std::string entry)
+//{
+//	Json::Value command;
+//	Json::Reader reader;
+//
+//	if( !reader.parse(entry, command, false))
+//	{
+//		error<<reader.getFormattedErrorMessages()<<std::endl;
+//		return "Invalid response\n";
+//	}
+//	else
+//	{
+//		if( command.isMember("cmd"))
+//		{
+//			Json::FastWriter fastWriter;
+//			return fastWriter.write(run_cmd(command.get("cmd", "no cmd").asString(), command["args"]));
+//		}
+//		return "{\"response\":\"No command specified\"}";
+//	}
+//}
+////}}}
+//
+////{{{
+//Json::Value Doodle::terminal_t::run_cmd(std::string cmd, Json::Value args)
+//{
+//	try{
+//		Json::Value (terminal_t::* command_handler)(Json::Value) = commands.at(cmd);
+//		return (this->*command_handler)(args);
+//	}
+//	catch (std::out_of_range)
+//	{
+//		return "{\"response\":\"Unknown command\"}";
+//	}
+//}
+////}}}
+//
 
 
 

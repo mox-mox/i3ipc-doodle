@@ -5,6 +5,7 @@
 extern "C" {
 #include <histedit.h>
 }
+#include <json/json.h>
 
 
 
@@ -20,6 +21,18 @@ class Command
 
 	std::string parse_command(std::string entry);
 	std::string parse_response(std::string response);
+
+
+	//#define CLASSNAME Command
+	//#include "commands.hpp"
+	//#undef CLASSNAME
+
+
+
+
+
+
+
 	public:
 		Command(const char* (*prompt)(EditLine* e));
 		Command& operator>>(IPC_socket& sock);

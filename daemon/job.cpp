@@ -298,28 +298,39 @@ Json::Value Job::get_times(uint64_t start, uint64_t end) const
 }
 //}}}
 
-
 //{{{
 Json::Value Job::get_win_names(void) const
 {
 	Json::Value retval;
 	for(auto& win_name : matchers.win_names_include)
 	{
-		retval[retval.size()] = win_name;
+		retval["included"].append(win_name);
 	}
 	for(auto& win_name : matchers.win_names_exclude)
 	{
-		retval[retval.size()] = "!"+win_name;
+		retval["excluded"].append("!"+win_name);
 	}
-
-
-
 
 	return retval;
 }
 //}}}
 
+//{{{
+Json::Value Job::get_ws_names(void) const
+{
+	Json::Value retval;
+	for(auto& ws_name : matchers.ws_names_include)
+	{
+		retval["included"].append(ws_name);
+	}
+	for(auto& ws_name : matchers.ws_names_exclude)
+	{
+		retval["excluded"].append("!"+ws_name);
+	}
 
+	return retval;
+}
+//}}}
 
 
 
