@@ -11,28 +11,16 @@
 
 using window_id = uint64_t;
 
-//void boink(void) {std::cout<<"boink"<<std::endl;}
-//void flip(void) {std::cout<<"flip"<<std::endl;}
-
 class Doodle: public sigc::trackable
 {
 	i3ipc::connection i3_conn;
 	std::string current_workspace;
 
-
-	//{{{
-	struct win_id_lookup_entry
-	{
-		Job* job = nullptr;
-		std::string matching_name = "";
-	};
-	//}}}
-
 	Job nojob;												// Special job that will not match any job. Used to keep track of unaccounted time.
 	Job* current_job;
 	std::deque<Job> jobs;
 
-	std::map<window_id, win_id_lookup_entry> win_id_lookup;
+	std::map<window_id, Job*> win_id_lookup;
 
 	ev::default_loop loop;
 
@@ -54,7 +42,7 @@ class Doodle: public sigc::trackable
 	void on_window_change(const i3ipc::window_event_t& evt);
 	void on_workspace_change(const i3ipc::workspace_event_t& evt);
 
-	inline win_id_lookup_entry find_job(const std::string& window_name);
+	inline Job* find_job(const std::string& window_name);
 
 
 

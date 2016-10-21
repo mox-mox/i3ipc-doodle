@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <map>
 #include <memory>
+#include <algorithm>
+#include <vector>
 
 
 
@@ -86,42 +88,40 @@ Doodle::~Doodle(void)
 //}}}
 
 //{{{
-inline Doodle::win_id_lookup_entry Doodle::find_job(const std::string& window_name)
+inline Job* Doodle::find_job(const std::string& window_name)
 {
-	win_id_lookup_entry retval {
-		&nojob, ""
-	};
-
-	for( Job& j : jobs )					// Search all the jobs to see, if one matches the newly focused window
+	if( !settings.detect_ambiguity )// For normal operation, just report the first match.
 	{
-		if((retval.matching_name = j.match(current_workspace, window_name)) != "" )
+		std::vector<Job*> matches;
+		//std::copy_if(jobs.begin(), jobs.end(), std::back_inserter(matches), [&](Job& j) { return j.match(current_workspace, window_name); });
+		for(Job& j : jobs)
 		{
-			if( !settings.detect_ambiguity )// For normal operation, just report the first match.
-			{
-				retval.job = &j;
-				return retval;
-			}
-			else							// To detect ambiguity, continue searching to see if there are other matches
-			{
-				if( retval.job != &nojob )
-				{
-					error<<"Ambiguity: Window name \""<<window_name<<"\" matched "<<retval.job->get_jobname()<<" and "<<j.get_jobname()<<"."<<std::endl;
-					// TODO: Show an errow window that asks to which job the window belongs to.
-				}
-				else
-				{
-					retval.job = &j;
-				}
-			}
+			if(j.match(current_workspace, window_name)) matches.push_back(&j);
 		}
+		if(matches.size() > 1)
+		{
+			error<<"Ambiguity detected: Window name \""<<window_name<<"\" matched:\n";
+			for(auto j : matches)
+			{
+				error<<'\t'<<j->get_jobname();
+			}
+			error<<std::endl;
+			// TODO: Show an errow window that asks to clarify which job the window belongs to.
+		}
+		return matches.size() ? matches[0] : nullptr;
 	}
-	return retval;
+	else
+	{
+		std::_Deque_iterator<Job, Job&, Job*> it = std::find_if(jobs.begin(), jobs.end(), [&](Job& j) { return j.match(current_workspace, window_name); });
+		return it != jobs.end() ? &*it : nullptr;
+	}
 }
 //}}}
 
 //{{{
 void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 {
+	std::cout<<*this<<std::endl;
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 	//{{{ Print some information about the event
 
@@ -140,13 +140,26 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	if(((evt.type == i3ipc::WindowEventType::FOCUS) || (evt.type == i3ipc::WindowEventType::TITLE)) && (evt.container != nullptr))
 	{
 		Job* old_job = current_job;
-		win_id_lookup_entry& entry = win_id_lookup[evt.container->id];
-
-		if( !entry.job || (entry.matching_name == "") || !std::regex_search(evt.container->name, std::regex(entry.matching_name)))
+		Job* indexed_job;
+		try
 		{
-			entry = find_job(evt.container->name);
+			indexed_job = win_id_lookup.at(evt.container->id);
 		}
-		current_job = entry.job;
+		catch (const std::out_of_range& e)
+		{
+			indexed_job = nullptr;
+		}
+
+		if(!indexed_job || !indexed_job->match(current_workspace, evt.container->name))
+		{
+			indexed_job = find_job(evt.container->name);
+			if(indexed_job)
+			{
+				win_id_lookup[evt.container->id] = indexed_job;
+				debug<<"indexed_job set to "<<*indexed_job<<std::endl;
+			}
+		}
+		current_job = indexed_job ? indexed_job : &nojob;
 		if( old_job != current_job )
 		{
 			if( old_job )
@@ -206,7 +219,7 @@ std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
 	stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_name"<<std::endl;
 	for( auto it : doodle.win_id_lookup )
 	{
-		stream<<"		"<<it.first<<"	"<<it.second.job<<"	"<<it.second.matching_name<<std::endl;
+		stream<<"		"<<it.first<<"	"<<it.second->get_jobname()<<std::endl;
 	}
 	return stream;
 }

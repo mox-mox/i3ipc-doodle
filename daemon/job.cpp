@@ -6,7 +6,7 @@
 //{{{
 Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_path.stem()), jobfile_path(jobfile_path), timefile_path(settings.data_dir/(jobname+".times")), write_time_timer(loop)
 {
-	debug<<". Constructing job "<<jobname<<"."<<std::endl;
+	debug<<"Constructing job "<<jobname<<" at "<<this<<'.'<<std::endl;
 	std::ifstream jobfile(jobfile_path);
 	Json::Value job;
 	Json::Reader reader;
@@ -115,6 +115,7 @@ Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_pat
 //{{{
 Job::Job(Job && other) noexcept : jobname(other.jobname), jobfile_path(other.jobfile_path), timefile_path(other.timefile_path), job_settings(std::move(other.job_settings)), write_time_timer(other.write_time_timer.loop)
 {
+	debug<<"Move-Constructing job "<<jobname<<" at "<<this<<'.'<<std::endl;
 	matchers = std::move(other.matchers);
 	times = std::move(other.times);
 	// Note that the timer is constructed with the original event loop in the intialiser list.

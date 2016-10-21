@@ -60,7 +60,7 @@ class Job
 	inline bool ws_included(const std::string& current_workspace) const;
 
 	inline bool win_excluded(const std::string& window_title) const;
-	inline std::string win_included(const std::string& window_title) const;
+	inline bool win_included(const std::string& window_title) const;
 	//}}}
 
 	public:
@@ -77,7 +77,7 @@ class Job
 
 		friend std::ostream& operator<<(std::ostream&stream, Job const&job);
 
-		inline std::string match(const std::string& current_workspace, const std::string& window_title) const;
+		inline bool match(const std::string& current_workspace, const std::string& window_title) const;
 
 		std::string get_jobname(void) const;
 		unsigned int get_total_time(void) const;
@@ -130,29 +130,29 @@ bool Job::win_excluded(const std::string& window_title) const
 }
 //}}}
 //{{{
-std::string Job::win_included(const std::string& window_title) const
+bool Job::win_included(const std::string& window_title) const
 {
 	for( std::string win_name : matchers.win_names_include )
 	{
 		if( std::regex_search(window_title, std::regex(win_name)))
 		{
-			return win_name;
+			return true;
 		}
 	}
-	return "";
+	return false;
 }
 //}}}
 //{{{
-std::string Job::match(const std::string& current_workspace, const std::string& window_title) const
+bool Job::match(const std::string& current_workspace, const std::string& window_title) const
 {
-	if( !matchers.ws_names_include.empty() || !matchers.ws_names_exclude.empty())					// If there are workspaces specified, then ...
-	{
-		if( ws_excluded(current_workspace)) return "";	// ... the window may not be on an excluded workspace ...
+	std::cout<<"Job::match(this="<<this<<")"<<std::endl;
+	if(!matchers.ws_names_exclude.empty())
+	   	if(ws_excluded(current_workspace))
+			return false;	// ... the window may not be on an excluded workspace ...
 
-		if( !ws_included(current_workspace)) return "";	// ... and it must reside on an included workspace ...
-	}
+	if(!matchers.ws_names_include.empty() && !ws_included(current_workspace)) return false;	// ... and it must reside on an included workspace ...
 
-	if( win_excluded(window_title)) return "";	// If the window matches an excluded name, forget about this job and consider the next one.
+	if( win_excluded(window_title)) return false;	// If the window matches an excluded name, forget about this job and consider the next one.
 
 	return win_included(window_title);
 }
