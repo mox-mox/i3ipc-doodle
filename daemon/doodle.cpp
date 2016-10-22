@@ -140,26 +140,30 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	if(((evt.type == i3ipc::WindowEventType::FOCUS) || (evt.type == i3ipc::WindowEventType::TITLE)) && (evt.container != nullptr))
 	{
 		Job* old_job = current_job;
-		Job* indexed_job;
-		try
-		{
-			indexed_job = win_id_lookup.at(evt.container->id);
-		}
-		catch (const std::out_of_range& e)
-		{
-			indexed_job = nullptr;
-		}
+		//std::_Rb_tree_iterator<std::pair<const long unsigned int, Job*> >
+		std::map<window_id, Job*>::iterator indexed_job = win_id_lookup.find(evt.container->id);
+		//Job* indexed_job = win_id_lookup.find(evt.container->id);
 
-		if(!indexed_job || !indexed_job->match(current_workspace, evt.container->name))
+
+		//try
+		//{
+		//	indexed_job = win_id_lookup.at(evt.container->id);
+		//}
+		//catch (const std::out_of_range& e)
+		//{
+		//	indexed_job = nullptr;
+		//}
+
+		if(indexed_job == win_id_lookup.end() || indexed_job->second == nullptr || !indexed_job->second->match(current_workspace, evt.container->name))
 		{
-			indexed_job = find_job(evt.container->name);
-			if(indexed_job)
-			{
-				win_id_lookup[evt.container->id] = indexed_job;
-				debug<<"indexed_job set to "<<*indexed_job<<std::endl;
-			}
+			indexed_job->second = find_job(evt.container->name);
+			//if(indexed_job)
+			//{
+			//	win_id_lookup[evt.container->id] = indexed_job;
+			//	debug<<"indexed_job set to "<<*indexed_job<<std::endl;
+			//}
 		}
-		current_job = indexed_job ? indexed_job : &nojob;
+		current_job = indexed_job->second ? indexed_job->second : &nojob;
 		if( old_job != current_job )
 		{
 			if( old_job )
