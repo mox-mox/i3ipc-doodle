@@ -19,8 +19,9 @@
 Doodle::Doodle(void) :
 	i3_conn(),
 	current_workspace(""),
-	nojob(),
-	current_job(&nojob),
+	//nojob(),
+	//current_job(&nojob),
+	current_job(nullptr),
 	loop(),
 	idle(true),
 	xcb_conn(xcb_connect(NULL, NULL)),
@@ -46,7 +47,7 @@ Doodle::Doodle(void) :
 		}
 	}
 
-	nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
+	//nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
 	//}}}
 
 	//{{{ Idle time detection
@@ -140,30 +141,14 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	if(((evt.type == i3ipc::WindowEventType::FOCUS) || (evt.type == i3ipc::WindowEventType::TITLE)) && (evt.container != nullptr))
 	{
 		Job* old_job = current_job;
-		//std::_Rb_tree_iterator<std::pair<const long unsigned int, Job*> >
 		std::map<window_id, Job*>::iterator indexed_job = win_id_lookup.find(evt.container->id);
-		//Job* indexed_job = win_id_lookup.find(evt.container->id);
-
-
-		//try
-		//{
-		//	indexed_job = win_id_lookup.at(evt.container->id);
-		//}
-		//catch (const std::out_of_range& e)
-		//{
-		//	indexed_job = nullptr;
-		//}
 
 		if(indexed_job == win_id_lookup.end() || indexed_job->second == nullptr || !indexed_job->second->match(current_workspace, evt.container->name))
 		{
-			indexed_job->second = find_job(evt.container->name);
-			//if(indexed_job)
-			//{
-			//	win_id_lookup[evt.container->id] = indexed_job;
-			//	debug<<"indexed_job set to "<<*indexed_job<<std::endl;
-			//}
+			win_id_lookup[evt.container->id] = find_job(evt.container->name);
 		}
-		current_job = indexed_job->second ? indexed_job->second : &nojob;
+		current_job = win_id_lookup[evt.container->id];
+		//current_job = win_id_lookup[evt.container->id] ? win_id_lookup[evt.container->id] : &nojob;
 		if( old_job != current_job )
 		{
 			if( old_job )
@@ -181,7 +166,7 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 				}
 			}
 		}
-		logger<<"New current_job: "<<current_job->get_jobname()<<std::endl;
+		logger<<"New current_job: "<<current_job<<(current_job?current_job->get_jobname():"nojob")<<std::endl;
 	}
 	else if( evt.type == i3ipc::WindowEventType::CLOSE )
 	{
@@ -213,7 +198,7 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
 {
 	stream<<"Doodle class:"<<std::endl;
-	stream<<"	Current job: "<<doodle.current_job->get_jobname()<<std::endl;
+	stream<<"	Current job: "<<(doodle.current_job?doodle.current_job->get_jobname():"nojob")<<std::endl;
 	stream<<"	Current workspace: "<<doodle.current_workspace<<std::endl;
 	stream<<"	Jobs:"<<std::endl;
 	for( const Job& job : doodle.jobs )
@@ -223,7 +208,7 @@ std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
 	stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_name"<<std::endl;
 	for( auto it : doodle.win_id_lookup )
 	{
-		stream<<"		"<<it.first<<"	"<<it.second->get_jobname()<<std::endl;
+		stream<<"		"<<it.first<<"	"<<(it.second?it.second->get_jobname():"nojob")<<std::endl;
 	}
 	return stream;
 }
@@ -311,13 +296,13 @@ void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
 	{
 		idle = true;
 		logger<<"Going idle"<<std::endl;
-		current_job->stop(std::chrono::steady_clock::now());
+		if(current_job) current_job->stop(std::chrono::steady_clock::now());
 	}
 	else if((idle_time < settings.max_idle_time) && idle )
 	{
 		idle = false;
 		logger<<"Going busy again"<<std::endl;
-		current_job->start(std::chrono::steady_clock::now());
+		if(current_job) current_job->start(std::chrono::steady_clock::now());
 	}
 }
 //}}}

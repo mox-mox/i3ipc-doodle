@@ -16,7 +16,7 @@ class Doodle: public sigc::trackable
 	i3ipc::connection i3_conn;
 	std::string current_workspace;
 
-	Job nojob;												// Special job that will not match any job. Used to keep track of unaccounted time.
+	//Job nojob;												// Special job that will not match any job. Used to keep track of unaccounted time.
 	Job* current_job;
 	std::deque<Job> jobs;
 
