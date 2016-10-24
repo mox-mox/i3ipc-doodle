@@ -1,6 +1,8 @@
 #include "job.hpp"
 #include <fstream>
 
+Job Job::no_job;
+Job* Job::nojob = &Job::no_job;
 
 
 //{{{
