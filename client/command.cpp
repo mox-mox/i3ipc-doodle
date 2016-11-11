@@ -7,7 +7,7 @@
 
 
 //{{{
-Command::Command(const char* (*prompt)(EditLine* e)) : prompt(prompt)
+Terminal::Terminal(const char* (*prompt)(EditLine* e))
 {
 	if(!prompt) throw std::logic_error("No prompt function defined");
 	el = el_init(DOODLE_PROGRAM_NAME, stdin, stdout, stderr);
@@ -25,6 +25,12 @@ Command::Command(const char* (*prompt)(EditLine* e)) : prompt(prompt)
 	/* Set the size of the history */
 	history(myhistory, &hist_ev, H_SETSIZE, 800);
 
+	for(auto& command : commands)
+	{
+		history(myhistory, &hist_ev, H_ENTER, (command.first + " " + command.second.args).c_str());
+	}
+
+
 	/* This sets up the call back functions for history functionality */
 	el_set(el, EL_HIST, history, myhistory);
 }
@@ -33,7 +39,7 @@ Command::Command(const char* (*prompt)(EditLine* e)) : prompt(prompt)
 
 //
 ////{{{
-//std::string Command::parse_response(std::string entry)
+//std::string Terminal::parse_response(std::string entry)
 //{
 //	Json::Value command;
 //	Json::Reader reader;
@@ -56,10 +62,10 @@ Command::Command(const char* (*prompt)(EditLine* e)) : prompt(prompt)
 ////}}}
 //
 ////{{{
-//Json::Value Doodle::terminal_t::run_cmd(std::string cmd, Json::Value args)
+//Json::Value Doodle::Terminal::run_cmd(std::string cmd, Json::Value args)
 //{
 //	try{
-//		Json::Value (terminal_t::* command_handler)(Json::Value) = commands.at(cmd);
+//		Json::Value (Terminal::* command_handler)(Json::Value) = commands.at(cmd);
 //		return (this->*command_handler)(args);
 //	}
 //	catch (std::out_of_range)
@@ -78,7 +84,7 @@ Command::Command(const char* (*prompt)(EditLine* e)) : prompt(prompt)
 
 
 //{{{
-std::string Command::parse_command(std::string entry)
+std::string Terminal::parse_command(std::string entry)
 {
 	std::stringstream ss(entry);
 	std::string token;
@@ -107,7 +113,7 @@ std::string Command::parse_command(std::string entry)
 
 
 //{{{
-std::string Command::parse_response(std::string entry)
+std::string Terminal::parse_response(std::string entry)
 {
 	//for(unsigned int i=0; i<entry.length(); i++)
 	//{
@@ -144,7 +150,7 @@ std::string Command::parse_response(std::string entry)
 
 
 //{{{
-Command& Command::operator>>(IPC_socket& sock)
+Terminal& Terminal::operator>>(IPC_socket& sock)
 {
 	line = el_gets(el, &count);
 	std::cout<<"line = "<<line<<std::endl;
@@ -169,5 +175,18 @@ Command& Command::operator>>(IPC_socket& sock)
 
 
 
+Json::Value Terminal::suspend(Json::Value) { return ""; }
+Json::Value Terminal::resume(Json::Value) { return ""; }
+Json::Value Terminal::get_config_path(Json::Value) { return ""; }
+Json::Value Terminal::get_times_path(Json::Value) { return ""; }
+Json::Value Terminal::list_jobs(Json::Value) { return ""; }
+Json::Value Terminal::get_times(Json::Value) { return ""; }
+Json::Value Terminal::get_win_names(Json::Value) { return ""; }
+Json::Value Terminal::get_ws_names(Json::Value) { return ""; }
+Json::Value Terminal::detect_idle(Json::Value) { return ""; }
+Json::Value Terminal::detect_ambiguity(Json::Value) { return ""; }
+Json::Value Terminal::restart(Json::Value) { return ""; }
+Json::Value Terminal::kill(Json::Value) { return ""; }
+Json::Value Terminal::help(Json::Value) { return ""; }
 
 

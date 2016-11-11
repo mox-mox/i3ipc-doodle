@@ -85,8 +85,8 @@ class Job
 		Json::Value get_win_names(void) const;
 		Json::Value get_ws_names(void) const;
 
-		static Job no_job;												// Special job that will not match any job. Used to keep track of unaccounted time.
-		static Job* nojob;
+		//static Job no_job;												// Special job that will not match any job. Used to keep track of unaccounted time.
+		//static Job* nojob;
 };
 
 

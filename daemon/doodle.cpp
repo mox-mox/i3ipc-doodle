@@ -166,7 +166,7 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 				}
 			}
 		}
-		logger<<"New current_job: "<<current_job<<(current_job?current_job->get_jobname():"nojob")<<std::endl;
+		logger<<"New current_job: "<<current_job<<(current_job?current_job->get_jobname():"none")<<std::endl;
 	}
 	else if( evt.type == i3ipc::WindowEventType::CLOSE )
 	{
@@ -198,7 +198,7 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
 {
 	stream<<"Doodle class:"<<std::endl;
-	stream<<"	Current job: "<<(doodle.current_job?doodle.current_job->get_jobname():"nojob")<<std::endl;
+	stream<<"	Current job: "<<(doodle.current_job?doodle.current_job->get_jobname():"none")<<std::endl;
 	stream<<"	Current workspace: "<<doodle.current_workspace<<std::endl;
 	stream<<"	Jobs:"<<std::endl;
 	for( const Job& job : doodle.jobs )
@@ -208,7 +208,7 @@ std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
 	stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_name"<<std::endl;
 	for( auto it : doodle.win_id_lookup )
 	{
-		stream<<"		"<<it.first<<"	"<<(it.second?it.second->get_jobname():"nojob")<<std::endl;
+		stream<<"		"<<it.first<<"	"<<(it.second?it.second->get_jobname():"none")<<std::endl;
 	}
 	return stream;
 }

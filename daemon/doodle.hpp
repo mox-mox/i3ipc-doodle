@@ -59,8 +59,8 @@ class Doodle: public sigc::trackable
 
 
 
-	#include "doodle_terminal.hpp"       //struct terminal_t;
-	terminal_t terminal;
+	#include "doodle_terminal.hpp"       //struct Terminal;
+	Terminal terminal;
 
 
 

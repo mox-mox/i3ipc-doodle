@@ -9,7 +9,7 @@ extern "C" {
 
 
 
-class Command
+class Terminal
 {
 	int count;
 	const char* line;
@@ -17,15 +17,14 @@ class Command
 	EditLine* el;
 	HistEvent hist_ev;
 	History *myhistory;
-	const char* (*prompt)(EditLine* e);
 
 	std::string parse_command(std::string entry);
 	std::string parse_response(std::string response);
 
 
-	//#define CLASSNAME Command
-	//#include "commands.hpp"
-	//#undef CLASSNAME
+	#define CLASSNAME Terminal
+	#include "commands.hpp"
+	#undef CLASSNAME
 
 
 
@@ -34,10 +33,10 @@ class Command
 
 
 	public:
-		Command(const char* (*prompt)(EditLine* e));
-		Command& operator>>(IPC_socket& sock);
+		Terminal(const char* (*prompt)(EditLine* e));
+		Terminal& operator>>(IPC_socket& sock);
 
-		friend Command& operator<<(Command& lhs, IPC_socket& rhs)
+		friend Terminal& operator<<(Terminal& lhs, IPC_socket& rhs)
 		{
 			std::cout<<lhs.parse_response(rhs.receive());
 			return lhs;

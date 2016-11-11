@@ -21,22 +21,49 @@ Json::Value help(Json::Value);
 //}}}
 
 
-typedef Json::Value (CLASSNAME::* func)(Json::Value);
-const std::map<std::string, func> commands
+//typedef Json::Value (CLASSNAME::* func)(Json::Value);
+//const std::map<std::string, func> commands
+//{
+//	{"suspend",          &CLASSNAME::suspend},
+//	{"resume",           &CLASSNAME::resume},
+//
+//	{"get_config_path",  &CLASSNAME::get_config_path},
+//	{"get_times_path",   &CLASSNAME::get_times_path},
+//
+//	{"list_jobs",        &CLASSNAME::list_jobs},
+//	{"get_times",        &CLASSNAME::get_times},
+//	{"get_win_names",    &CLASSNAME::get_win_names},
+//	{"get_ws_names",     &CLASSNAME::get_ws_names},
+//	{"detect_idle",      &CLASSNAME::detect_idle},
+//	{"detect_ambiguity", &CLASSNAME::detect_ambiguity},
+//	{"restart",          &CLASSNAME::restart},
+//	{"kill",             &CLASSNAME::kill},
+//	{"help",             &CLASSNAME::help},
+//};
+
+
+
+
+
+
+struct command_t
 {
-	{"suspend",          &CLASSNAME::suspend},
-	{"resume",           &CLASSNAME::resume},
-
-	{"get_config_path",  &CLASSNAME::get_config_path},
-	{"get_times_path",   &CLASSNAME::get_times_path},
-
-	{"list_jobs",        &CLASSNAME::list_jobs},
-	{"get_times",        &CLASSNAME::get_times},
-	{"get_win_names",    &CLASSNAME::get_win_names},
-	{"get_ws_names",     &CLASSNAME::get_ws_names},
-	{"detect_idle",      &CLASSNAME::detect_idle},
-	{"detect_ambiguity", &CLASSNAME::detect_ambiguity},
-	{"restart",          &CLASSNAME::restart},
-	{"kill",             &CLASSNAME::kill},
-	{"help",             &CLASSNAME::help},
+	Json::Value (CLASSNAME::* func)(Json::Value);
+	std::string args;
+};
+const std::map<std::string, command_t> commands
+{
+	{"suspend",          {&CLASSNAME::suspend,          ""}},
+	{"resume",           {&CLASSNAME::resume,           ""}},
+	{"get_config_path",  {&CLASSNAME::get_config_path,  ""}},
+	{"get_times_path",   {&CLASSNAME::get_times_path,   ""}},
+	{"list_jobs",        {&CLASSNAME::list_jobs,        ""}},
+	{"get_times",        {&CLASSNAME::get_times,        "<jobname>, [<start>, <end>]"}},
+	{"get_win_names",    {&CLASSNAME::get_win_names,    "<jobname>"}},
+	{"get_ws_names",     {&CLASSNAME::get_ws_names,     "<jobname>"}},
+	{"detect_idle",      {&CLASSNAME::detect_idle,      "true|fale|time"}},
+	{"detect_ambiguity", {&CLASSNAME::detect_ambiguity, "true|false"}},
+	{"restart",          {&CLASSNAME::restart,          ""}},
+	{"kill",             {&CLASSNAME::kill,             ""}},
+	{"help",             {&CLASSNAME::help,             ""}},
 };

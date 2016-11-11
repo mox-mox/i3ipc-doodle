@@ -1,0 +1,4 @@
+1. Create a dummy i3 ipc host which can send sequences of messages
+2. Create test sequences for all fixed bugs
+3. Use some framework to run the sequences
+4. Keep sequences up to date

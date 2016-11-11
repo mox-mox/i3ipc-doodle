@@ -81,13 +81,13 @@ int main(int argc, char* argv[])
 
 	IPC_socket doodle_sock(settings.socket_path);
 
-	Command readline(prompt);
+	Terminal terminal(prompt);
 
 
 	while(1)
 	{
-		readline>>doodle_sock;
-		readline<<doodle_sock;
+		terminal>>doodle_sock;
+		terminal<<doodle_sock;
 	}
 
 	return 0;
