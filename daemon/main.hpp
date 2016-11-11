@@ -21,7 +21,7 @@ struct Args
 	bool socket_set;
 	std::string config_dir;
 	std::string data_dir;
-	std::string socket_path;
+	std::string doodle_socket_path;
 };
 
 extern Args args;
@@ -39,9 +39,11 @@ struct Settings
 
 	fs::path config_dir;
 	fs::path data_dir;
-	std::string socket_path;
+	std::string doodle_socket_path;
+	std::string i3_socket_path;
 };
 //}}}
 
 extern Settings settings;
+
 

@@ -5,11 +5,11 @@ struct Socket_watcher : ev::io
 {
 	Doodle* const doodle;
 	Client_watcher* head;
-	std::string socket_path;
+	std::string doodle_socket_path;
 
 	//{{{ Constructors
 
-	Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string& socket_path);
+	Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string& doodle_socket_path);
 	~Socket_watcher(void);
 	Socket_watcher(void) = delete;
 	Socket_watcher(const Socket_watcher&) = delete;

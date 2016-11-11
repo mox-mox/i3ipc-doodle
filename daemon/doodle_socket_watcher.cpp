@@ -10,13 +10,13 @@
 
 
 //{{{
-Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string& socket_path) : ev::io(loop), doodle(doodle), head(nullptr), socket_path(socket_path)
+Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string& doodle_socket_path) : ev::io(loop), doodle(doodle), head(nullptr), doodle_socket_path(doodle_socket_path)
 {
-	debug<<"Doodle::Socket_watcher::Socket_watcher() at "<<this<<": Socket path = "<<socket_path<<'.'<<std::endl;
+	debug<<"Doodle::Socket_watcher::Socket_watcher() at "<<this<<": Socket path = "<<doodle_socket_path<<'.'<<std::endl;
 
-	//fd=open_server_socket(socket_path);
+	//fd=open_server_socket(doodle_socket_path);
 
-	while((fd=open_server_socket(socket_path))<=0)
+	while((fd=open_server_socket(doodle_socket_path))<=0)
 	{
 		if(errno == EADDRINUSE)
 		{
@@ -29,12 +29,12 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 			}
 			else
 			{
-				error<<"Doodle daemon seems to be running. If you are sure it is not runnung, remove the socket file: "<<socket_path<<'.'<<std::endl;
+				error<<"Doodle daemon seems to be running. If you are sure it is not runnung, remove the socket file: "<<doodle_socket_path<<'.'<<std::endl;
 				exit(EXIT_FAILURE);
 			}
 		}
-		error<<"Cannot create socket in \"" + socket_path + "\" because of a system error. Please report this as a bug."<<std::endl;
-		throw std::runtime_error("Cannot create socket in \"" + socket_path + "\" because of a system error. Please report this as a bug.");
+		error<<"Cannot create socket in \"" + doodle_socket_path + "\" because of a system error. Please report this as a bug."<<std::endl;
+		throw std::runtime_error("Cannot create socket in \"" + doodle_socket_path + "\" because of a system error. Please report this as a bug.");
 	}
 
 	set(fd, ev::READ);
@@ -45,7 +45,7 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 //{{{
 void Doodle::Socket_watcher::kill_other_daemon(void)
 {
-	int fd = open_client_socket(socket_path);
+	int fd = open_client_socket(doodle_socket_path);
 
 	std::string cmd = "{\"cmd\":\"kill\",\"args\":[]}";
 
@@ -85,7 +85,7 @@ Doodle::Socket_watcher::~Socket_watcher(void)
 	}
 
 	close(fd);
-	unlink(&socket_path[0]);
+	unlink(&doodle_socket_path[0]);
 }
 //}}}
 

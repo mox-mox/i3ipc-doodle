@@ -27,7 +27,7 @@ Doodle::Doodle(void) :
 	xcb_conn(xcb_connect(NULL, NULL)),
 	screen(xcb_setup_roots_iterator(xcb_get_setup(xcb_conn)).data),
 	idle_watcher_timer(loop),
-	socket_watcher(loop, this, settings.socket_path),
+	socket_watcher(loop, this, settings.doodle_socket_path),
 	terminal(this)
 {
 	//{{{ Create the individual jobs

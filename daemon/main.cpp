@@ -65,7 +65,7 @@ void restart_doodle(void)
 					args.nofork?"-n":"",
 					"-r",
 					"-c", settings.config_dir.c_str(),
-					"-s", settings.socket_path.c_str(),
+					"-s", settings.doodle_socket_path.c_str(),
 				   	static_cast<char*>(nullptr));
 			error<< "Uh-Oh! execl() failed!"<<std::endl; /* execl doesn't return unless there's an error */
 			exit(EXIT_FAILURE);
@@ -104,10 +104,10 @@ void parse_config(void)
 	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
 	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
 	if(!args.socket_set)
-		settings.socket_path = config.get("socket_path", DOODLE_SOCKET_PATH).asString();
+		settings.doodle_socket_path = config.get("doodle_socket_path", DOODLE_SOCKET_PATH).asString();
 	else
-		settings.socket_path = args.socket_path;
-	settings.socket_path.append(1, '\0');
+		settings.doodle_socket_path = args.doodle_socket_path;
+	settings.doodle_socket_path.append(1, '\0');
 	//}}}
 }
 //}}}
@@ -305,7 +305,7 @@ int main(int argc, char* argv[])
 		ops>>GetOpt::OptionPresent('s', "socket",     args.socket_set);
 		ops>>GetOpt::Option('c',        "config",     args.config_dir, "");
 		ops>>GetOpt::Option('d',        "data",       args.data_dir, "");
-		ops>>GetOpt::Option('s',        "socket",     args.socket_path, DOODLE_SOCKET_PATH);
+		ops>>GetOpt::Option('s',        "socket",     args.doodle_socket_path, DOODLE_SOCKET_PATH);
 	}
 	catch(GetOpt::GetOptEx ex)
 	{
