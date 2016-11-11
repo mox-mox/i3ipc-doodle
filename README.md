@@ -2,6 +2,7 @@
 Work time accounting for i3.
 Monitors which window is focused and counts up the time clock for the job the window belongs to.
 
+
 ## Idioms
  - Job: A certain thing you want to do and keep track of how much time you spend doing it. For example, you want to know, just how long you worked on that assignment. A job has a number of windows pertaining to it and while one of those is focused, a check clock for that job counts up. See [Defining a job](https://github.com/mox-mox/i3ipc-doodle#defining-a-job)
  - job file: The file used to define a job
@@ -27,24 +28,12 @@ A job is defined in a job file in $DOODLE_CONFIG_DIR/jobs/. The file MYJOB.job d
  - granularity: The accounting period, that is the maximum amount of seconds before a new timestamp is placed in the times file. Example: If set to 86400 (one day) you would end up with an entry for each day, telling you how long you worked on that job this day.
  - window_names: A list of strings used to match windows to the job. Each string is treated as a regular expression and matched against the name of the focussed window. If at least one string matches, the job is considered the active one. However, strings can be prepended with a bang (!) to make it a must-not-match entry. If such a string matches, the job can not be active.
  - workspace_names: Much like the window names. The current workspace is matched against the list of strings and at least one has to match. Similarily, no string prepended with a bang may match for the job to be active.
+
 If the granularity is omitted, a default of 3600 (one hour) is assumed. If either the window- or workspace names are left out, they are not considered. So, to have a job that traces how much time you spend on workspace "foobar" leave out the window_names and set workspace_names to "foobar".
-
-
-
-
-
 
 
 ## TODO
  - Implement an "action" list for jobs: When a job becomes active, the active workspace and window name is matched to a second list in the job file and if it matches, the corresponding action/system command is started.
-
-
-
-
-
-
-
-
 
 
 ## Window matching tricks
