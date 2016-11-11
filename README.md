@@ -56,7 +56,7 @@ For some programs, the neccessary configuration options are shown to configure t
 	```
  - ranger (file manager):
 	```bash
-	# Set a title for the window?
+	C&#35 Set a title for the window?
 	set update_title true
 	# Set the title to "ranger" in the tmux program?
 	set update_tmux_title true
