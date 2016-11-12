@@ -17,7 +17,7 @@
 
 //{{{
 Doodle::Doodle(void) :
-	i3_conn(),
+	i3_conn(settings.i3_socket_path),
 	current_workspace(""),
 	//nojob(),
 	//current_job(&nojob),
@@ -32,7 +32,7 @@ Doodle::Doodle(void) :
 {
 	//{{{ Create the individual jobs
 
-	for( auto&f: fs::directory_iterator(settings.config_dir/"jobs"))
+	for( auto&f: fs::directory_iterator(fs::path(settings.config_dir)/"jobs"))
 	{
 		if(f.path().extension() == ".job")
 		{

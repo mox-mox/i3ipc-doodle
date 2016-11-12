@@ -33,6 +33,7 @@ If the granularity is omitted, a default of 3600 (one hour) is assumed. If eithe
 
 
 ## TODO
+ - Create unit tests with cxxtest
  - Implement an "action" list for jobs: When a job becomes active, the active workspace and window name is matched to a second list in the job file and if it matches, the corresponding action/system command is started.
 
 

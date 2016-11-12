@@ -9,22 +9,23 @@
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
-struct Args
-{
-	bool show_help;
-	bool show_version;
-	bool nofork;
-	bool replace;
+//struct Args
+//{
+//	bool show_help;
+//	bool show_version;
+//	bool nofork;
+//	bool replace;
+//
+//	//bool config_set;
+//	//bool data_set;
+//	//bool socket_set;
+//	//std::string config_dir;
+//	//std::string data_dir;
+//	//std::string doodle_socket_path;
+//	//std::string i3_socket_path;
+//};
 
-	bool config_set;
-	bool data_set;
-	bool socket_set;
-	std::string config_dir;
-	std::string data_dir;
-	std::string doodle_socket_path;
-};
-
-extern Args args;
+//extern Args args;
 
 extern bool fork_to_restart;
 
@@ -32,13 +33,16 @@ extern bool fork_to_restart;
 //{{{
 struct Settings
 {
+	bool replace;
+
 	static constexpr unsigned int MAX_IDLE_TIME_DEFAULT_VALUE = 60;
 	unsigned int max_idle_time = MAX_IDLE_TIME_DEFAULT_VALUE;
 	static constexpr bool DETECT_AMBIGUITY_DEFAULT_VALUE = false;
 	bool detect_ambiguity = DETECT_AMBIGUITY_DEFAULT_VALUE;
 
-	fs::path config_dir;
-	fs::path data_dir;
+	//std::string testval;
+	std::string config_dir;
+	std::string data_dir;
 	std::string doodle_socket_path;
 	std::string i3_socket_path;
 };

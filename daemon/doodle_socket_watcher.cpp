@@ -20,7 +20,7 @@ Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::s
 	{
 		if(errno == EADDRINUSE)
 		{
-			if(args.replace)
+			if(settings.replace)
 			{
 				debug<<"Other doodle daemon detected -> Try to kill it."<<std::endl;
 				kill_other_daemon();

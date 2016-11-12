@@ -6,7 +6,7 @@
 
 
 //{{{
-Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_path.stem()), jobfile_path(jobfile_path), timefile_path(settings.data_dir/(jobname+".times")), write_time_timer(loop)
+Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_path.stem()), jobfile_path(jobfile_path), timefile_path(fs::path(settings.data_dir)/(jobname+".times")), write_time_timer(loop)
 {
 	debug<<"Constructing job "<<jobname<<" at "<<this<<'.'<<std::endl;
 	std::ifstream jobfile(jobfile_path);
