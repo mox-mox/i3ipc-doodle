@@ -12,13 +12,12 @@
 
 
 bool fork_to_restart=false;
-//Args args;
-Settings settings;
+bool show_help;
+bool show_version;
+bool nofork;
+bool replace;
 
-	bool show_help;
-	bool show_version;
-	bool nofork;
-	bool replace;
+Settings settings;
 
 
 //{{{ Help and version messages
@@ -274,6 +273,8 @@ void parse_config(void)
 
 int main(int argc, char* argv[])
 {
+	int retval = EXIT_FAILURE;
+
 	//{{{ Check that we are not root.
 
     if (!getuid())
@@ -282,8 +283,6 @@ int main(int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 	//}}}
-
-	int retval = EXIT_FAILURE;
 
 	//{{{ Argument handling
 
@@ -321,7 +320,6 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 	//}}}
-
 
 	//{{{ Validate settings path
 

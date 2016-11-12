@@ -9,23 +9,6 @@
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
-//struct Args
-//{
-//	bool show_help;
-//	bool show_version;
-//	bool nofork;
-//	bool replace;
-//
-//	//bool config_set;
-//	//bool data_set;
-//	//bool socket_set;
-//	//std::string config_dir;
-//	//std::string data_dir;
-//	//std::string doodle_socket_path;
-//	//std::string i3_socket_path;
-//};
-
-//extern Args args;
 
 extern bool fork_to_restart;
 
