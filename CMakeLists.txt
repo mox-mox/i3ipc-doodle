@@ -22,6 +22,7 @@ SET (NOTIFICATION_LEVEL 1) # Show desktop notifications about program operation?
 #option (USE_NOTIFICATIONS "Print debugging information to notification popup instead of console." ON)
 option (USE_SYSLOG "Enable logging to syslog." OFF)
 
+option(DOODLE_WITH_TESTS "Build unit tests executables" ON)
 
 
 #{{{
@@ -80,27 +81,7 @@ add_subdirectory("${LIBS_PATH}/notify_stream"  "libs/notify_stream")
 add_subdirectory("${LIBS_PATH}/sockets"        "libs/sockets")
 add_subdirectory("${LIBS_PATH}/commands"       "libs/commands")
 
-subdirs(daemon client)
+add_subdirectory(test)
+add_subdirectory(daemon)
+add_subdirectory(client)
 
-
-
-option(DOODLE_WITH_TESTS "Build unit tests executables" ON)
-
-if(DOODLE_WITH_TESTS)
-	find_package(CxxTest)
-	if(CXXTEST_FOUND)
-		include_directories(${CXXTEST_INCLUDE_DIR})
-		include_directories(src/)
-		add_definitions( -DTEST_SRC_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/test")
-
-		enable_testing()
-		file(GLOB SRC_TEST test/*.hpp)
-		CXXTEST_ADD_TEST(doodle_check test.cpp ${SRC_TEST})
-		target_link_libraries(doodle_check ${I3IPCpp_LIBRARIES})
-        ADD_CUSTOM_COMMAND( TARGET doodle_check
-                            POST_BUILD
-                            COMMAND $<TARGET_FILE:doodle_check>)
-	else()
-		message(WARNING "CxxTest not found. Unable to run unit-tests")
-	endif()
-endif()
