@@ -84,4 +84,3 @@ add_subdirectory("${LIBS_PATH}/commands"       "libs/commands")
 add_subdirectory(test)
 add_subdirectory(daemon)
 add_subdirectory(client)
-

@@ -1,86 +1,33 @@
 #include "job.hpp"
 #include <fstream>
 
-//Job Job::no_job;
-//Job* Job::nojob = &Job::no_job;
-
 
 //{{{
-Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_path.stem()), jobfile_path(jobfile_path), timefile_path(fs::path(settings.data_dir)/(jobname+".times")), write_time_timer(loop)
+Job Job::create_from_jobfile(const fs::path& jobfile_path, ev::loop_ref& loop)
 {
-	debug<<"Constructing job "<<jobname<<" at "<<this<<'.'<<std::endl;
 	std::ifstream jobfile(jobfile_path);
 	Json::Value job;
 	Json::Reader reader;
 	if( !reader.parse(jobfile, job, false))
 	{
 		error<<reader.getFormattedErrorMessages()<<std::endl;
-		throw std::runtime_error("Cannot parse job file");
+		throw std::runtime_error("Cannot parse job file for job "+jobfile_path.stem().string()+".");
 	}
 
-	job_settings.granularity = job.get("granularity", job_settings.GRANULARITY_DEFAULT_VALUE).asInt64();
+	return Job(jobfile_path.stem(), job, loop);
+}
+//}}}
 
-	//{{{ Get window names
 
-	if(job.isMember("window_names"))
-	{
-		for( auto&window_name : job.get("window_names", "no window_names"))
-		{
-			std::string win_name = window_name.asString();
-			if( win_name == "no window_names" )
-			{
-				error<<"Job "<<jobname<<": Invalid window name."<<std::endl;
-			}
-			else
-			{
-				if( '!' == win_name[0] )	// Window name segments prepended with '!' mean that the job may not
-				{							// have windows whose title matches the given name segment.
-					win_name.erase(0, 1);		// Remove the leading '!'
-					matchers.win_names_exclude.push_back(win_name);
-				}
-				else
-				{
-					matchers.win_names_include.push_back(win_name);
-				}
-			}
-		}
-	}
-	else
-	{
-		error<<"Job "<<jobname<<": No window name segments specified."<<std::endl;
-	}
-	//}}}
-
-	//{{{ Get workspace names
-
-	if(job.isMember("workspace_names"))
-	{
-		for( auto&workspace_name : job.get("workspace_names", "no workspace_names"))
-		{
-			std::string ws_name = workspace_name.asString();
-			if( ws_name == "no workspace_names" )
-			{
-				error<<"Job "<<jobname<<": Invalid workspace name."<<std::endl;
-			}
-			else
-			{
-				if( '!' == ws_name[0] )		// Workspace name segments prepended with '!' mean that the job may not
-				{							// have windows on workspaces matching the given name segment.
-					ws_name.erase(0, 1);	// Remove the leading '!'
-					matchers.ws_names_exclude.push_back(ws_name);
-				}
-				else
-				{
-					matchers.ws_names_include.push_back(ws_name);
-				}
-			}
-		}
-	}
-	else
-	{
-		error<<"Job "<<jobname<<": No workspace name segments specified."<<std::endl;
-	}
-	//}}}
+//{{{
+Job::Job(const std::string& jobname, Json::Value job, ev::loop_ref& loop) :
+	Window_matching(job),
+	jobname(jobname),
+	timefile_path(fs::path(settings.data_dir)/(jobname+".times")),
+	job_settings{job.get("granularity", job_settings.GRANULARITY_DEFAULT_VALUE).asUInt()},
+	write_time_timer(loop)
+{
+	debug<<"Constructing job "<<jobname<<" at "<<this<<'.'<<std::endl;
 
 	//{{{ Time file
 
@@ -115,11 +62,15 @@ Job::Job(const fs::path& jobfile_path, ev::loop_ref& loop) : jobname(jobfile_pat
 //}}}
 
 //{{{
-Job::Job(Job && other) noexcept : jobname(other.jobname), jobfile_path(other.jobfile_path), timefile_path(other.timefile_path), job_settings(std::move(other.job_settings)), write_time_timer(other.write_time_timer.loop)
+Job::Job(Job&& other) noexcept :
+	Window_matching(std::move(other)),
+	jobname(std::move(other.jobname)),
+	timefile_path(std::move(other.timefile_path)),
+	job_settings(std::move(other.job_settings)),
+	times(std::move(other.times)),
+	write_time_timer(other.write_time_timer.loop)
 {
 	debug<<"Move-Constructing job "<<jobname<<" at "<<this<<'.'<<std::endl;
-	matchers = std::move(other.matchers);
-	times = std::move(other.times);
 	// Note that the timer is constructed with the original event loop in the intialiser list.
 	// There is no real copy (or move) constructor for ev::timer, so this hack is used to re-initialise the timer
 	write_time_timer.set < Job, &Job::write_time_cb > (this);
@@ -129,12 +80,11 @@ Job::Job(Job && other) noexcept : jobname(other.jobname), jobfile_path(other.job
 
 //{{{
 Job::Job(void) :
+	Window_matching(),
 	jobname("NOJOB"),
-	jobfile_path(),
 	timefile_path(),
-	times{std::chrono::seconds(0), std::chrono::steady_clock::time_point(), false,  std::chrono::seconds(0), std::chrono::system_clock::time_point(), true},
-	matchers{{}, { "!" }, {}, { "!" }}
-{ }
+	times{std::chrono::seconds(0), std::chrono::steady_clock::time_point(), false,  std::chrono::seconds(0), std::chrono::system_clock::time_point(), true}
+{}
 //}}}
 
 //{{{
@@ -147,6 +97,8 @@ Job::~Job(void)
 	}
 }
 //}}}
+
+
 
 //{{{
 void Job::start(std::chrono::steady_clock::time_point start_time)
@@ -220,29 +172,11 @@ void Job::write_time_cb(void)
 //}}}
 
 //{{{
-std::ostream& operator<<(std::ostream&stream, Job const&job)
+std::ostream& operator<<(std::ostream&stream, const Job& job)
 {
 	stream<<"Job \""<<job.jobname<<"\": ";
 	stream<<(job.times.total+(job.times.running ? (std::chrono::duration_cast < std::chrono::seconds > (std::chrono::steady_clock::now()-job.times.job_start)) : std::chrono::seconds(0))).count()<<" seconds.";
-	stream<<" Names:";
-	for( const std::string& n : job.matchers.win_names_include )
-	{
-		stream<<" |"<<n<<"|";
-	}
-	for( const std::string& n : job.matchers.win_names_exclude )
-	{
-		stream<<" |!"<<n<<"|";
-	}
-	stream<<" workspaces:";
-	for( const std::string& w : job.matchers.ws_names_include )
-	{
-		stream<<" |"<<w<<"|";
-	}
-	for( const std::string& w : job.matchers.ws_names_exclude )
-	{
-		stream<<" |!"<<w<<"|";
-	}
-	stream<<std::endl;
+	stream<<static_cast<const Window_matching&>(job);
 	return stream;
 }
 //}}}
@@ -301,39 +235,6 @@ Json::Value Job::get_times(uint64_t start, uint64_t end) const
 }
 //}}}
 
-//{{{
-Json::Value Job::get_win_names(void) const
-{
-	Json::Value retval;
-	for(auto& win_name : matchers.win_names_include)
-	{
-		retval["included"].append(win_name);
-	}
-	for(auto& win_name : matchers.win_names_exclude)
-	{
-		retval["excluded"].append("!"+win_name);
-	}
-
-	return retval;
-}
-//}}}
-
-//{{{
-Json::Value Job::get_ws_names(void) const
-{
-	Json::Value retval;
-	for(auto& ws_name : matchers.ws_names_include)
-	{
-		retval["included"].append(ws_name);
-	}
-	for(auto& ws_name : matchers.ws_names_exclude)
-	{
-		retval["excluded"].append("!"+ws_name);
-	}
-
-	return retval;
-}
-//}}}
 
 
 

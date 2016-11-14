@@ -12,5 +12,19 @@
 		"1",				// would be difficult by name, but with this feature, windows can be placed at
 		"3",				// specific workspaces. Uses the same matching logic as described for the window
 		"!private"			// titles. With an empty list, windows in all workspaces are matched.
-	]
+	],
+	"actions" :
+	{
+		"mplayer /etc/acpi/r2d2_battery_low.mp3 < /dev/null > /dev/null &" :
+		{
+			"stop_on_change_focus" : "yes",
+			"win_names" : [ "Vimperator", "~/projects" ],
+			"ws_ames"   : [ "1" ]
+		},
+		"mplayer /home/mox/Eric Burdon - The Animals - We Gotta Get Out Of This Place.mp3 < /dev/null > /dev/null &" :
+		{
+			"stop_on_change_focus" : "no",
+			"win_names" : [ "!Vimperator" ]
+		}
+	}
 }

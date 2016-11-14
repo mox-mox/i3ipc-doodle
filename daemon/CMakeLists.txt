@@ -63,3 +63,4 @@ target_compile_options(doodle_daemon PUBLIC $<$<CONFIG:RELEASE>:-DNOTIFY_LEVEL=1
 add_custom_command(TARGET doodle_daemon POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                    ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle_daemon>/.config)
+

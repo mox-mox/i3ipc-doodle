@@ -38,7 +38,8 @@ Doodle::Doodle(void) :
 		{
 			try
 			{
-				jobs.push_back({ f.path(), loop });
+				//jobs.push_back({ f.path(), loop });
+				jobs.push_back( Job::create_from_jobfile(f.path(), loop) );
 			}
 			catch(std::runtime_error&e)
 			{

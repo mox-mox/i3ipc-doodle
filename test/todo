@@ -2,3 +2,13 @@
 2. Create test sequences for all fixed bugs
 3. Use some framework to run the sequences
 4. Keep sequences up to date
+
+
+
+Tests:
+- Create program i3_dummy, that iterates over lines in a sequence file (using libev to catch messages while waiting), returning on error
+- Line format: send|receive, wait[min|max], message string // for sending, the min delay is used
+- Errors:
+	+ wrong message received
+	+ message received out of the time interval
+	+ no message received when one is expected
