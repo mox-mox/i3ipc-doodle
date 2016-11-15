@@ -1,6 +1,7 @@
 #pragma once
 #include "window_matching.hpp"
 #include <experimental/filesystem>
+#include <unistd.h>
 
 
 class Job : public Window_matching
@@ -35,6 +36,9 @@ class Job : public Window_matching
 	ev::timer write_time_timer;
 	void write_time_cb(void);
 
+	#include "job_action.hpp"
+	std::deque<Action> actions;
+
 
 	public:
 		//{{{ Constructors
@@ -46,7 +50,7 @@ class Job : public Window_matching
 		~Job(void);
 		//}}}
 
-		void start(std::chrono::steady_clock::time_point now);
+		void start(std::chrono::steady_clock::time_point now, const std::string& current_workspace, const std::string& window_title);
 		void stop(std::chrono::steady_clock::time_point now);
 
 		friend std::ostream& operator<<(std::ostream&stream, const Job& job);

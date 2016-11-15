@@ -58,6 +58,15 @@ Job::Job(const std::string& jobname, Json::Value job, ev::loop_ref& loop) :
 	//}}}
 
 	write_time_timer.set < Job, &Job::write_time_cb > (this);
+
+
+	//{{{ Actions
+
+	for(auto& action : job.get("actions", "no actions"))
+	{
+		actions.push_back( action );
+	}
+	//}}}
 }
 //}}}
 
@@ -68,13 +77,13 @@ Job::Job(Job&& other) noexcept :
 	timefile_path(std::move(other.timefile_path)),
 	job_settings(std::move(other.job_settings)),
 	times(std::move(other.times)),
-	write_time_timer(other.write_time_timer.loop)
+	write_time_timer(other.write_time_timer.loop),
+	actions(std::move(other.actions))
 {
 	debug<<"Move-Constructing job "<<jobname<<" at "<<this<<'.'<<std::endl;
 	// Note that the timer is constructed with the original event loop in the intialiser list.
 	// There is no real copy (or move) constructor for ev::timer, so this hack is used to re-initialise the timer
 	write_time_timer.set < Job, &Job::write_time_cb > (this);
-
 }
 //}}}
 
@@ -83,7 +92,8 @@ Job::Job(void) :
 	Window_matching(),
 	jobname("NOJOB"),
 	timefile_path(),
-	times{std::chrono::seconds(0), std::chrono::steady_clock::time_point(), false,  std::chrono::seconds(0), std::chrono::system_clock::time_point(), true}
+	times{std::chrono::seconds(0), std::chrono::steady_clock::time_point(), false,  std::chrono::seconds(0), std::chrono::system_clock::time_point(), true},
+	actions()
 {}
 //}}}
 
@@ -101,29 +111,47 @@ Job::~Job(void)
 
 
 //{{{
-void Job::start(std::chrono::steady_clock::time_point start_time)
+void Job::start(std::chrono::steady_clock::time_point start_time, const std::string& current_workspace, const std::string& window_title)
 {
-	times.job_start = start_time;
-	times.running = true;
-
-	if(!times.timer_active)
+	if(!times.running)
 	{
+		times.job_start = start_time;
+		times.running = true;
+
+		if(!times.timer_active)
+		{
 			times.slot_start = std::chrono::system_clock::now();
 			times.slot = std::chrono::seconds(0);
 			times.timer_active = true;
 			write_time_timer.start(job_settings.granularity);
+		}
+
+		for(Action& action : actions)
+		{
+			action(current_workspace, window_title);
+		}
 	}
+	else error<<"Job "<<jobname<<": Trying to start already running process."<<std::endl;
 }
 //}}}
 
 //{{{
 void Job::stop(std::chrono::steady_clock::time_point now)
 {
-	std::chrono::seconds elapsed = std::chrono::duration_cast < std::chrono::seconds > (now-times.job_start);
-	times.total     += elapsed;
-	times.slot      += elapsed;
-	times.job_start  = std::chrono::steady_clock::time_point();	// reset to 'zero'
-	times.running = false;
+	if(times.running)
+	{
+		std::chrono::seconds elapsed = std::chrono::duration_cast < std::chrono::seconds > (now-times.job_start);
+		times.total     += elapsed;
+		times.slot      += elapsed;
+		times.job_start  = std::chrono::steady_clock::time_point();	// reset to 'zero'
+		times.running = false;
+
+		for(Action& action : actions)
+		{
+			action.stop();
+		}
+	}
+	else error<<"Job "<<jobname<<": Trying to stop already stopped process."<<std::endl;
 }
 //}}}
 

@@ -15,12 +15,13 @@ class Doodle: public sigc::trackable
 {
 	i3ipc::connection i3_conn;
 	std::string current_workspace;
+	std::string current_window_name;
 
 	//Job nojob;												// Special job that will not match any job. Used to keep track of unaccounted time.
 	Job* current_job;
 	std::deque<Job> jobs;
 
-	std::map<window_id, Job*> win_id_lookup;
+	std::map<window_id, Job*> win_id_cache;
 
 	ev::default_loop loop;
 
@@ -42,7 +43,8 @@ class Doodle: public sigc::trackable
 	void on_window_change(const i3ipc::window_event_t& evt);
 	void on_workspace_change(const i3ipc::workspace_event_t& evt);
 
-	inline Job* find_job(const std::string& window_name);
+	//inline Job* find_job(const std::string& window_name);
+	inline Job* find_job(void);
 
 
 

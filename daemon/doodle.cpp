@@ -48,7 +48,6 @@ Doodle::Doodle(void) :
 		}
 	}
 
-	//nojob.start(std::chrono::steady_clock::now());										// Account for time spent on untracked jobs
 	//}}}
 
 	//{{{ Idle time detection
@@ -90,19 +89,19 @@ Doodle::~Doodle(void)
 //}}}
 
 //{{{
-inline Job* Doodle::find_job(const std::string& window_name)
+//inline Job* Doodle::find_job(const std::string& window_name)
+inline Job* Doodle::find_job(void)
 {
 	if( !settings.detect_ambiguity )// For normal operation, just report the first match.
 	{
 		std::vector<Job*> matches;
-		//std::copy_if(jobs.begin(), jobs.end(), std::back_inserter(matches), [&](Job& j) { return j.match(current_workspace, window_name); });
 		for(Job& j : jobs)
 		{
-			if(j.match(current_workspace, window_name)) matches.push_back(&j);
+			if(j.match(current_workspace, current_window_name)) matches.push_back(&j);
 		}
 		if(matches.size() > 1)
 		{
-			error<<"Ambiguity detected: Window name \""<<window_name<<"\" matched:\n";
+			error<<"Ambiguity detected: Window name \""<<current_window_name<<"\" matched:\n";
 			for(auto j : matches)
 			{
 				error<<'\t'<<j->get_jobname();
@@ -114,7 +113,8 @@ inline Job* Doodle::find_job(const std::string& window_name)
 	}
 	else
 	{
-		std::_Deque_iterator<Job, Job&, Job*> it = std::find_if(jobs.begin(), jobs.end(), [&](Job& j) { return j.match(current_workspace, window_name); });
+		std::_Deque_iterator<Job, Job&, Job*> it =
+			std::find_if(jobs.begin(), jobs.end(), [&](Job& j) { return j.match(current_workspace, current_window_name); });
 		return it != jobs.end() ? &*it : nullptr;
 	}
 }
@@ -125,6 +125,8 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 {
 	std::cout<<*this<<std::endl;
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	// A window change may imply user activity, so if the user is considered idle, update that status
+	if( idle ) idle_time_watcher_cb(idle_watcher_timer, 2);
 	//{{{ Print some information about the event
 
 	//#ifdef DEBUG
@@ -139,39 +141,41 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	//	}
 	//#endif
 	//}}}
+
+	current_window_name = evt.container->name;
+
 	if(((evt.type == i3ipc::WindowEventType::FOCUS) || (evt.type == i3ipc::WindowEventType::TITLE)) && (evt.container != nullptr))
 	{
 		Job* old_job = current_job;
-		std::map<window_id, Job*>::iterator indexed_job = win_id_lookup.find(evt.container->id);
+		std::map<window_id, Job*>::iterator indexed_job = win_id_cache.find(evt.container->id);
 
-		if(indexed_job == win_id_lookup.end() || indexed_job->second == nullptr || !indexed_job->second->match(current_workspace, evt.container->name))
+		if(indexed_job == win_id_cache.end() || indexed_job->second == nullptr || !indexed_job->second->match(current_workspace, current_window_name))
 		{
-			win_id_lookup[evt.container->id] = find_job(evt.container->name);
+			//win_id_cache[evt.container->id] = find_job(current_window_name);
+			win_id_cache[evt.container->id] = find_job();
 		}
-		current_job = win_id_lookup[evt.container->id];
-		//current_job = win_id_lookup[evt.container->id] ? win_id_lookup[evt.container->id] : &nojob;
+		current_job = win_id_cache[evt.container->id];
 		if( old_job != current_job )
 		{
-			if( old_job )
+			if(old_job && current_job)
 			{
-				old_job->stop(now);
-			}
-			if( current_job )
-			{
-				// A window change may imply user activity, so if the user is considered idle, update that status
-				if( idle ) idle_time_watcher_cb(idle_watcher_timer, 2);
-
-				if( !idle )
+				if(old_job != current_job)
 				{
-					current_job->start(now);
+					old_job->stop(now);
+					current_job->start(now, current_workspace, current_window_name);
 				}
+			}
+			else
+			{
+				if(old_job) old_job->stop(now);
+				if(current_job && !idle) current_job->start(now, current_workspace, current_window_name);
 			}
 		}
 		logger<<"New current_job: "<<current_job<<(current_job?current_job->get_jobname():"none")<<std::endl;
 	}
 	else if( evt.type == i3ipc::WindowEventType::CLOSE )
 	{
-		win_id_lookup.erase(evt.container->id);
+		win_id_cache.erase(evt.container->id);
 		simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
 	}
 }
@@ -207,7 +211,7 @@ std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
 		stream<<"		"<<job<<std::endl;
 	}
 	stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_name"<<std::endl;
-	for( auto it : doodle.win_id_lookup )
+	for( auto it : doodle.win_id_cache )
 	{
 		stream<<"		"<<it.first<<"	"<<(it.second?it.second->get_jobname():"none")<<std::endl;
 	}
@@ -303,7 +307,7 @@ void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
 	{
 		idle = false;
 		logger<<"Going busy again"<<std::endl;
-		if(current_job) current_job->start(std::chrono::steady_clock::now());
+		if(current_job) current_job->start(std::chrono::steady_clock::now(), current_workspace, current_window_name);
 	}
 }
 //}}}

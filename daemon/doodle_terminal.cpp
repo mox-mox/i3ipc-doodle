@@ -64,7 +64,7 @@ Json::Value Doodle::Terminal::resume(Json::Value args)
 
 	logger<<"Resuming"<<std::endl;
 	doodle->suspended = false;
-	doodle->current_job->start(std::chrono::steady_clock::now());
+	doodle->current_job->start(std::chrono::steady_clock::now(), doodle->current_workspace, doodle->current_window_name);
 
 	return "{\"command\":\"resume\",\"response\":\"resumed successfully\"}";
 }

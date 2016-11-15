@@ -80,11 +80,7 @@ Window_matching::Window_matching(const Json::Value& matcher)
 
 Window_matching::Window_matching(Window_matching && other) : matchers(std::move(other.matchers)) {}
 
-//{{{
-Window_matching::Window_matching(void) :
-	matchers{ { {}, {"!"} }, { {}, {"!"} } }
-{}
-//}}}
+Window_matching::Window_matching(void) : matchers{ { {}, {"!"} }, { {}, {"!"} } }                {}
 
 
 //{{{
