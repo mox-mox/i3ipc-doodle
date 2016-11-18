@@ -65,7 +65,7 @@ Job::Job(const std::string& jobname, Json::Value job, ev::loop_ref& loop) :
 
 	for(auto& action : job.get("actions", "no actions"))
 	{
-		actions.push_back( action );
+		actions.push_back({this, action});
 	}
 	//}}}
 }

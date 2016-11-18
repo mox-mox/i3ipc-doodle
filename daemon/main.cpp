@@ -367,4 +367,12 @@ int main(int argc, char* argv[])
 	if(fork_to_restart) restart_doodle();
 
 	return retval;
+
+
+
+	//TODO: Catch all exceptions here
+	//	- Write to error
+	//	- Write to syslog/journal
+	//	- Write desktop notification
+	//	- exit(EXIT_FAILURE);
 }
