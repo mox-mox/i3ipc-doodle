@@ -5,6 +5,7 @@
 //{{{
 Job Job::create_from_jobfile(const fs::path& jobfile_path, ev::loop_ref& loop)
 {
+	debug<<"Job::create_from_jobfile(jobfile_path = "<<jobfile_path<<" );"<<std::endl;
 	std::ifstream jobfile(jobfile_path);
 	Json::Value job;
 	Json::Reader reader;

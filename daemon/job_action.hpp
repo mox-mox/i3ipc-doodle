@@ -4,7 +4,7 @@
 
 class Action : private Window_matching
 {
-	std::string command;
+	std::vector<char*> args;
 	bool kill_on_focus_loss;
 	pid_t pid;
 

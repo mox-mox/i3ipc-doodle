@@ -43,7 +43,6 @@ class Doodle: public sigc::trackable
 	void on_window_change(const i3ipc::window_event_t& evt);
 	void on_workspace_change(const i3ipc::workspace_event_t& evt);
 
-	//inline Job* find_job(const std::string& window_name);
 	inline Job* find_job(void);
 
 
