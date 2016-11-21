@@ -3,6 +3,7 @@
 #include <signal.h>
 
 
+//{{{
 Job::Action::Action(const Job* job, Json::Value action) :
 	Window_matching(action),
 	job(job),
@@ -76,8 +77,10 @@ Job::Action::Action(const Job* job, Json::Value action) :
 	//}}}
 	command.push_back(nullptr);
 }
+//}}}
 
 
+//{{{
 Job::Action::Action(Action && other) :
 	Window_matching(std::move(other)),
 	job(std::move(other.job)),
@@ -85,7 +88,10 @@ Job::Action::Action(Action && other) :
 	kill_on_focus_loss(other.kill_on_focus_loss),
 	pid(other.pid)
 {}
+//}}}
 
+
+//{{{
 void Job::Action::operator()(const std::string&current_workspace, const std::string&window_title)
 {
 	if( match(current_workspace, window_title))
@@ -93,26 +99,31 @@ void Job::Action::operator()(const std::string&current_workspace, const std::str
 		switch((pid = fork()))
 		{
 			case -1:/* Error */
-				error<<"Job::Action: fork() failed. Error:"<<strerror(errno)<<std::endl;
+				error<<"Job \""<<job->get_jobname()<<"\"::Action: fork() failed. Error:"<<strerror(errno)<<std::endl;
 				exit(EXIT_FAILURE);
 			case 0:	/* Child process */
 				execvp(command[0], command.data());
-				error<<"Job::Action: execl() failed. Error: "<<strerror(errno)<<std::endl;	/* execl doesn't return unless there's an error */
+				error<<"Job \""<<job->get_jobname()<<"\"::Action: execl() failed. Error: "<<strerror(errno)<<std::endl;	/* execl doesn't return unless there's an error */
 				exit(EXIT_FAILURE);
 			default:/* Parent process */
 				debug<<"Job::Action: Started command "<<command[0]<<" with pid "<<pid<<'.'<<std::endl;
 		}
 	}
 }
+//}}}
 
 
+//{{{
 void Job::Action::stop(void)
 {
 	if( pid && kill_on_focus_loss )
 	{
 		if( kill(pid, SIGINT))
 		{
-			error<<"Could not kill child program "<<command[0]<<". Error code: "<<strerror(errno)<<'.'<<std::endl;
+			if(errno != ESRCH) // ESRCH = Job does not exist, which is normal for actions that have terminated
+			error<<""Job \""<<job->get_jobname()<<"\"::Action: Could not kill child program "<<command[0]<<". Error code: "<<strerror(errno)<<'.'<<std::endl;
+			else
+			debug<<""Job \""<<job->get_jobname()<<"\"::Action: Could not kill child program "<<command[0]<<". Error code: "<<strerror(errno)<<'.'<<std::endl;
 		}
 		else
 		{
@@ -120,3 +131,7 @@ void Job::Action::stop(void)
 		}
 	}
 }
+//}}}
+
+
+
