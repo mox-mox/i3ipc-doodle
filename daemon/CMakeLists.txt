@@ -9,14 +9,13 @@ set(INCDIRS_SYS ${INCDIRS_SYS})
 set(LIBS ${LIBS} -lstdc++fs)
 #}}}
 
-#
-##{{{I3IPCPP
-#
-#add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/i3ipcpp "libs/i3ipcpp")
-#set(LIBS ${LIBS} ${I3IPCpp_LIBRARIES})
-#set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
-##}}}
-#
+
+#{{{I3IPCPP
+
+add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/i3ipcpp "libs/i3ipcpp")
+set(LIBS ${LIBS} ${I3IPCpp_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
+#}}}
 
 #{{{SIGCPP
 
@@ -57,12 +56,20 @@ add_executable(doodle_daemon ${SRCS})
 target_link_libraries(doodle_daemon ${LIBS})
 target_include_directories(doodle_daemon PUBLIC ${INCDIRS})
 target_include_directories(doodle_daemon SYSTEM PUBLIC ${INCDIRS_SYS})
-target_compile_options(doodle_daemon PUBLIC -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors -DNOTIFY_PROGRAM_NAME="${DOODLE_PROGRAM_NAME}")
-target_compile_options(doodle_daemon PUBLIC $<$<CONFIG:DEBUG>:-DNOTIFY_LEVEL=3 -DLOGGING_LEVEL=3 -O0 -ggdb -save-temps>)
-target_compile_options(doodle_daemon PUBLIC $<$<CONFIG:RELEASE>:-DNOTIFY_LEVEL=1 -DLOGGING_LEVEL=1 -O3>)
+target_compile_options(    doodle_daemon PUBLIC -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors)
+target_compile_options(    doodle_daemon PUBLIC $<$<CONFIG:DEBUG>:-O0 -ggdb -save-temps>)
+target_compile_options(    doodle_daemon PUBLIC $<$<CONFIG:RELEASE>:-O3>)
+target_compile_definitions(doodle_daemon PUBLIC NOTIFY_PROGRAM_NAME="${DOODLE_PROGRAM_NAME}" ENABLE_MAIN)
+target_compile_definitions(doodle_daemon PUBLIC $<$<CONFIG:DEBUG>:NOTIFY_LEVEL=3 LOGGING_LEVEL=3>)
+target_compile_definitions(doodle_daemon PUBLIC $<$<CONFIG:RELEASE>:NOTIFY_LEVEL=1 LOGGING_LEVEL=1>)
 # Set build type when generating the Makefile like: cmake -DCMAKE_BUILD_TYPE=Debug ../i3ipc-doodle
 
 add_custom_command(TARGET doodle_daemon POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                    ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle_daemon>/.config)
+
+
+
+
+add_subdirectory(test)
 

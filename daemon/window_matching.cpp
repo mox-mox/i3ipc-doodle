@@ -9,29 +9,6 @@ Window_matching::Window_matching(const Json::Value& matcher)
 	if(matcher.isMember("window_names"))
 	{
 		parse_names(matchers.win_names, matcher.get("window_names", "no window_names"));
-		//{{{
-		//
-		//for( auto&window_name : matcher.get("window_names", "no window_names"))
-		//{
-		//	std::string win_name = window_name.asString();
-		//	if( win_name == "no window_names" )
-		//	{
-		//		error<<"Job "<<jobname<<": Invalid window name."<<std::endl;
-		//	}
-		//	else
-		//	{
-		//		if( '!' == win_name[0] )	// Window name segments prepended with '!' mean that the job may not
-		//		{							// have windows whose title matches the given name segment.
-		//			win_name.erase(0, 1);		// Remove the leading '!'
-		//			matchers.win_names.exclude.push_back(win_name);
-		//		}
-		//		else
-		//		{
-		//			matchers.win_names.include.push_back(win_name);
-		//		}
-		//	}
-		//}
-		//}}}
 	}
 	else
 	{
@@ -45,29 +22,6 @@ Window_matching::Window_matching(const Json::Value& matcher)
 	if(matcher.isMember("workspace_names"))
 	{
 		parse_names(matchers.ws_names, matcher.get("workspace_names", "no workspace_names"));
-		//{{{
-		//
-		//for( auto&workspace_name : matcher.get("workspace_names", "no workspace_names"))
-		//{
-		//	std::string ws_name = workspace_name.asString();
-		//	if( ws_name == "no workspace_names" )
-		//	{
-		//		error<<"Job "<<jobname<<": Invalid workspace name."<<std::endl;
-		//	}
-		//	else
-		//	{
-		//		if( '!' == ws_name[0] )		// Workspace name segments prepended with '!' mean that the job may not
-		//		{							// have windows on workspaces matching the given name segment.
-		//			ws_name.erase(0, 1);	// Remove the leading '!'
-		//			matchers.ws_names.exclude.push_back(ws_name);
-		//		}
-		//		else
-		//		{
-		//			matchers.ws_names.include.push_back(ws_name);
-		//		}
-		//	}
-		//}
-		//}}}
 	}
 	else
 	{

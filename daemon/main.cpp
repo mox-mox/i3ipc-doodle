@@ -270,7 +270,7 @@ void parse_config(void)
 
 
 
-
+#ifdef ENABLE_MAIN
 int main(int argc, char* argv[])
 {
 	int retval = EXIT_FAILURE;
@@ -376,3 +376,4 @@ int main(int argc, char* argv[])
 	//	- Write desktop notification
 	//	- exit(EXIT_FAILURE);
 }
+#endif
