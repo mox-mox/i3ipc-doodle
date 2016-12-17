@@ -19,8 +19,6 @@
 Doodle::Doodle(void) :
 	i3_conn(settings.i3_socket_path),
 	current_workspace(""),
-	//nojob(),
-	//current_job(&nojob),
 	current_job(nullptr),
 	loop(),
 	idle(true),
@@ -38,7 +36,6 @@ Doodle::Doodle(void) :
 		{
 			try
 			{
-				//jobs.push_back({ f.path(), loop });
 				jobs.push_back( Job::create_from_jobfile(f.path(), loop) );
 			}
 			catch(std::runtime_error&e)
@@ -89,7 +86,6 @@ Doodle::~Doodle(void)
 //}}}
 
 //{{{
-//inline Job* Doodle::find_job(const std::string& window_name)
 inline Job* Doodle::find_job(void)
 {
 	if( !settings.detect_ambiguity )// For normal operation, just report the first match.

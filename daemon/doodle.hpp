@@ -48,22 +48,25 @@ class Doodle: public sigc::trackable
 
 
 
-	#include "doodle_client_watcher.hpp" //struct Client_watcher;
+	#include "doodle_client_watcher.hpp" 		//struct Client_watcher;
 
 	void SIGUSR1_cb(void);
 	void SIGTERM_cb(void);
 
 
-	#include "doodle_socket_watcher.hpp" //struct socket_watcher;
+	#include "doodle_socket_watcher.hpp" 		//struct socket_watcher;
 	Socket_watcher socket_watcher;
 
 
 
 
-	#include "doodle_terminal.hpp"       //struct Terminal;
+	#include "doodle_terminal.hpp"       		//struct Terminal;
 	Terminal terminal;
 
 
+	#ifdef COMPILE_UNIT_TESTS
+		#include "doodle_diagnostics.hpp"		// all the testing functions for the doodle class
+	#endif
 
 	public:
 		//{{{ Constructor

@@ -121,9 +121,9 @@ void Job::Action::stop(void)
 		if( kill(pid, SIGINT))
 		{
 			if(errno != ESRCH) // ESRCH = Job does not exist, which is normal for actions that have terminated
-			error<<""Job \""<<job->get_jobname()<<"\"::Action: Could not kill child program "<<command[0]<<". Error code: "<<strerror(errno)<<'.'<<std::endl;
+			error<<"Job \""<<job->get_jobname()<<"\"::Action: Could not kill child program "<<command[0]<<". Error code: "<<strerror(errno)<<'.'<<std::endl;
 			else
-			debug<<""Job \""<<job->get_jobname()<<"\"::Action: Could not kill child program "<<command[0]<<". Error code: "<<strerror(errno)<<'.'<<std::endl;
+			debug<<"Job \""<<job->get_jobname()<<"\"::Action: Could not kill child program "<<command[0]<<". Error code: "<<strerror(errno)<<'.'<<std::endl;
 		}
 		else
 		{

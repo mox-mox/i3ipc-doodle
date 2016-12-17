@@ -202,3 +202,14 @@ std::ostream& operator<<(std::ostream&stream, const Window_matching& job)
 	return stream;
 }
 //}}}
+
+
+
+bool Window_matching::operator==(const Window_matching& other)
+{
+	if(matchers.win_names.include != other.matchers.win_names.include) return false;
+	if(matchers.win_names.exclude != other.matchers.win_names.exclude) return false;
+	if(matchers.ws_names.include  != other.matchers.ws_names.include)  return false;
+	if(matchers.ws_names.exclude  != other.matchers.ws_names.exclude)  return false;
+	return true;
+}

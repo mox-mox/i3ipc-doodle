@@ -1,4 +1,0 @@
-#pragma once
-
-#define DOODLE_DAEMON_EXE "@DOODLE_DAEMON_EXE@"
-//#define DOODLE_DAEMON_EXE "@$<TARGET_FILE:doodle_test>@"

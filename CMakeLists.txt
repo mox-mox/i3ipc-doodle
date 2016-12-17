@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(i3ipc-doodle)
+find_package( PythonLibs 3 REQUIRED )
+find_package( PythonInterp 3 REQUIRED )
 
 
 #set(DOODLE_CONFIG_PATH ".config/doodle")
@@ -80,6 +82,12 @@ add_subdirectory("${LIBS_PATH}/console_stream" "libs/console_stream")
 add_subdirectory("${LIBS_PATH}/notify_stream"  "libs/notify_stream")
 add_subdirectory("${LIBS_PATH}/sockets"        "libs/sockets")
 add_subdirectory("${LIBS_PATH}/commands"       "libs/commands")
+#{{{I3IPCPP
+
+add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/i3ipcpp "libs/i3ipcpp")
+set(LIBS ${LIBS} ${I3IPCpp_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
+#}}}
 
 add_subdirectory(test)
 add_subdirectory(daemon)

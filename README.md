@@ -34,19 +34,23 @@ A job is defined in a job file in $DOODLE_CONFIG_DIR/jobs/. The file MYJOB.job d
   - command: A string that can be executed by entering it into a shell (actually, execvp is used).
 
 ### Matchers
-Matchers are entries that determine if a window "matches". Overall "matching" is achieved when all given matchers match. A left-out matcher is treated like it matches. So, to have a job that traces how much time you spend on workspace "foobar" leave out the window_names and set workspace_names to "foobar".
+Matchers are entries that determine if a window "matches". Overall "matching" is achieved when all given matchers --for example the window name-- match. A left-out matcher is treated like it matches. The following matchers are currently implemented:
  - window_names: A list of strings used to match windows. Each string is treated as a regular expression and matched against the name of the focussed window. Strings prepended with a bang (!) is a must-not-match entry. If at least one normal string fits and none of the must-not-match strings fit the current window title, the window_names matcher matches.
  - workspace_names: Much like the window names. The current workspace is matched against the list of strings and at least one has to match. Similarily, no string prepended with a bang may match for the workspace_names matcher to match.
  - times: todo
-
+So, to have a job that traces how much time you spend on workspace "foobar" leave out the window_names and set workspace_names to "foobar".
 
 ## TODO
+ - [ ] Instead of erroring out when run as root print a warning message and just disable all actions. This prevents the security leak associated with running actions as root but allows doodle to be run as a system task that users cannot influence.
  - [ ] Create unit tests with cxxtest
+  - [ ] Include test diagnostics in the code to have a succeed/fail criterion for the unit tests
   - [ ] Add a unit test file
   - [ ] Write an i3 dummy program that can send and receive messages to doodle_daemon and check the received messages
   - [ ] Write tests for each known bug
  - [x] Implement an "action" list for jobs: When a job becomes active, the active workspace and window name is matched to a second list in the job file and if it matches, the corresponding action/system command is started.
   - [ ] Add a time interval field to the actions, to only trigger during certain times of the day.
+  - [ ] Implement further criterions for matching
+  - [ ] allow running actions when a job is left and when a window is changed but the job stays active
 
 
 ## Window matching tricks

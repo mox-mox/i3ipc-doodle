@@ -30,6 +30,7 @@ class Window_matching
 		//}}}
 
 		bool match(const std::string& current_workspace, const std::string& window_title) const;
+		bool operator==(const Window_matching& other);
 
 		//{{{ Functions for terminal
 

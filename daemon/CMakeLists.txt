@@ -4,17 +4,19 @@
 
 file(GLOB SRCS_LOCAL *.cpp)
 set(SRCS ${SRCS} ${SRCS_LOCAL})
-set(INCDIRS ${INCDIRS} "${PROJECT_BINARY_DIR}" "${PROJECT_BINARY_DIR}/..")
+set(INCDIRS ${INCDIRS} "${PROJECT_BINARY_DIR}" "${PROJECT_BINARY_DIR}/daemon")
 set(INCDIRS_SYS ${INCDIRS_SYS})
 set(LIBS ${LIBS} -lstdc++fs)
 #}}}
 
-#{{{I3IPCPP
-
-add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/i3ipcpp "libs/i3ipcpp")
-set(LIBS ${LIBS} ${I3IPCpp_LIBRARIES})
-set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
-#}}}
+#
+##{{{I3IPCPP
+#
+#add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/i3ipcpp "libs/i3ipcpp")
+#set(LIBS ${LIBS} ${I3IPCpp_LIBRARIES})
+#set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
+##}}}
+#
 
 #{{{SIGCPP
 
