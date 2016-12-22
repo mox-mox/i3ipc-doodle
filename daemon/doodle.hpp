@@ -7,7 +7,7 @@
 #include <i3ipc++/ipc.hpp>
 #include "job.hpp"
 #include <xcb/screensaver.h>
-#include <json/json.h>
+//#include <json/json.h>
 
 using window_id = uint64_t;
 
@@ -64,9 +64,6 @@ class Doodle: public sigc::trackable
 	Terminal terminal;
 
 
-	#ifdef COMPILE_UNIT_TESTS
-		#include "doodle_diagnostics.hpp"		// all the testing functions for the doodle class
-	#endif
 
 	public:
 		//{{{ Constructor
@@ -81,6 +78,9 @@ class Doodle: public sigc::trackable
 
 		int operator()(void);
 		friend std::ostream& operator<<(std::ostream&stream, Doodle const&doodle);
+		#ifdef COMPILE_UNIT_TESTS
+			#include "doodle_diagnostics.hpp"		// all the testing functions for the doodle class
+		#endif
 };
 
 #endif /* DOODLE_HPP */

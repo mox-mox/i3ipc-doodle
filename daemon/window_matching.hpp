@@ -30,7 +30,6 @@ class Window_matching
 		//}}}
 
 		bool match(const std::string& current_workspace, const std::string& window_title) const;
-		bool operator==(const Window_matching& other);
 
 		//{{{ Functions for terminal
 
@@ -38,4 +37,8 @@ class Window_matching
 		Json::Value get_ws_names(void) const;
 		friend std::ostream& operator<<(std::ostream&stream, const Window_matching& job);
 		//}}}
+
+		#ifdef COMPILE_UNIT_TESTS
+			#include "window_matching_diagnostics.hpp"		// all the testing functions for the window_matching class
+		#endif
 };
