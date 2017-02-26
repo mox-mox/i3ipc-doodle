@@ -113,8 +113,8 @@ class doodle_daemon_test : public CxxTest::TestSuite
 
 			std::deque<std::string> win_include{{"~/projects", "home/mox/projects", "Vimperator"}};
 			std::deque<std::string> win_exclude{{"special_project"}};
-			std::deque<std::string>  ws_include{{{"1"}, {"3"}}};
-			std::deque<std::string>  ws_exclude{{"private"}};
+			std::deque<std::string>  ws_include{};
+			std::deque<std::string>  ws_exclude{};
 
 			TS_ASSERT_EQUALS(matchers.win_names.include, win_include);
 			TS_ASSERT_EQUALS(matchers.win_names.exclude, win_exclude);
@@ -122,14 +122,17 @@ class doodle_daemon_test : public CxxTest::TestSuite
 			TS_ASSERT_EQUALS(matchers.ws_names.exclude, ws_exclude);
 			//}}}
 
+
 			//{{{ Test the actual matching
 
 			TS_ASSERT( winmatch.match("1", "/home/mox/projects/foobar"));
 			TS_ASSERT(!winmatch.match("1", "/home/mox/scratch/foobar"));
-			TS_ASSERT(!winmatch.match("private", "/home/mox/projects/foobar"));
+			TS_ASSERT( winmatch.match("private", "/home/mox/projects/foobar"));
 			//}}}
+
 		}
 		//}}}
+
 
 		//{{{
 		void test_window_matching_no_wn()
@@ -145,8 +148,8 @@ class doodle_daemon_test : public CxxTest::TestSuite
 			Window_matching winmatch(testval);
 			auto& matchers = winmatch.get_matchers();
 
-			std::deque<std::string> win_include{{"~/projects", "home/mox/projects", "Vimperator"}};
-			std::deque<std::string> win_exclude{{"special_project"}};
+			std::deque<std::string> win_include{};
+			std::deque<std::string> win_exclude{};
 			std::deque<std::string>  ws_include{{{"1"}, {"3"}}};
 			std::deque<std::string>  ws_exclude{{"private"}};
 
@@ -159,10 +162,11 @@ class doodle_daemon_test : public CxxTest::TestSuite
 			//{{{ Test the actual matching
 
 			TS_ASSERT( winmatch.match("1", "/home/mox/projects/foobar"));
-			TS_ASSERT(!winmatch.match("1", "/home/mox/scratch/foobar"));
+			TS_ASSERT( winmatch.match("1", "/home/mox/scratch/foobar"));
 			TS_ASSERT(!winmatch.match("private", "/home/mox/projects/foobar"));
 			//}}}
 		}
 		//}}}
+
 
 };
