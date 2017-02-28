@@ -3,9 +3,12 @@
 #include <experimental/filesystem>
 #include <unistd.h>
 
-
 class Job : public Window_matching
 {
+	using seconds = std::chrono::seconds;
+	using steady_clock = std::chrono::steady_clock;
+	using system_clock = std::chrono::system_clock;
+
 	const std::string jobname;
 	const fs::path timefile_path;
 
@@ -23,13 +26,13 @@ class Job : public Window_matching
 
 	struct timekeeping
 	{
-		std::chrono::seconds total;								// The total elapsed time of the job
-		std::chrono::steady_clock::time_point job_start;		// For calculation of the passed time since the job was started
-		bool running = false;
+		seconds total;                          // The total elapsed time of the job
+		steady_clock::time_point job_start;     // For calculation of the passed time since the job was started
+		bool running;                           // = false
 
-		std::chrono::seconds slot;								// The elapsed time in the current time slot is this + (now-job_start)
-		std::chrono::system_clock::time_point slot_start;	// = std::chrono::system_clock::now();
-		bool timer_active = false;
+		seconds slot;                           // The elapsed time in the current time slot is this + (now-job_start)
+		system_clock::time_point slot_start;    // = system_clock::now();
+		bool timer_active;                      // = false
 	} times;
 	//}}}
 
@@ -50,8 +53,8 @@ class Job : public Window_matching
 		~Job(void);
 		//}}}
 
-		void start(std::chrono::steady_clock::time_point now, const std::string& current_workspace, const std::string& window_title);
-		void stop(std::chrono::steady_clock::time_point now);
+		void start(steady_clock::time_point now, const std::string& current_workspace, const std::string& window_title);
+		void stop(steady_clock::time_point now);
 
 		friend std::ostream& operator<<(std::ostream&stream, const Job& job);
 

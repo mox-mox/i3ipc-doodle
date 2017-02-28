@@ -314,7 +314,7 @@ int Doodle::operator()(void)
 {
 	int retval = 0;
 
-	i3_conn.prepare_to_event_handling();
+	i3_conn.connect_event_socket();
 
 	logger<<"---------------Starting the event loop---------------"<<std::endl;
 
@@ -322,7 +322,8 @@ int Doodle::operator()(void)
 
 	ev::io i3_watcher;
 	i3_watcher.set < i3ipc::connection, &i3ipc::connection::handle_event > (&i3_conn);
-	i3_watcher.set(i3_conn.get_file_descriptor(), ev::READ);
+	i3_watcher.set(i3_conn.get_event_socket_fd(), ev::READ);
+
 	i3_watcher.start();
 	//}}}
 

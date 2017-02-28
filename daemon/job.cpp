@@ -26,6 +26,7 @@ Job::Job(const std::string& jobname, Json::Value job, ev::loop_ref& loop) :
 	jobname(jobname),
 	timefile_path(fs::path(settings.data_dir)/(jobname+".times")),
 	job_settings{job.get("granularity", job_settings.GRANULARITY_DEFAULT_VALUE).asUInt()},
+	times{seconds(0), steady_clock::time_point(), false,  seconds(0), system_clock::time_point(), false},
 	write_time_timer(loop)
 {
 	debug<<"Constructing job "<<jobname<<" at "<<this<<'.'<<std::endl;
@@ -55,7 +56,7 @@ Job::Job(const std::string& jobname, Json::Value job, ev::loop_ref& loop) :
 	timefile.ignore(std::numeric_limits<std::streamsize>::max(), ' ');	// is stored.
 	uint64_t temp;
 	timefile>>temp;
-	times.total = std::chrono::seconds(temp);
+	times.total = seconds(temp);
 	//}}}
 
 	write_time_timer.set < Job, &Job::write_time_cb > (this);
@@ -93,7 +94,7 @@ Job::Job(void) :
 	Window_matching(),
 	jobname("NOJOB"),
 	timefile_path(),
-	times{std::chrono::seconds(0), std::chrono::steady_clock::time_point(), false,  std::chrono::seconds(0), std::chrono::system_clock::time_point(), true},
+	times{seconds(0), steady_clock::time_point(), false,  seconds(0), system_clock::time_point(), true},
 	actions()
 {}
 //}}}
@@ -112,7 +113,7 @@ Job::~Job(void)
 
 
 //{{{
-void Job::start(std::chrono::steady_clock::time_point start_time, const std::string& current_workspace, const std::string& window_title)
+void Job::start(steady_clock::time_point start_time, const std::string& current_workspace, const std::string& window_title)
 {
 	if(!times.running)
 	{
@@ -121,8 +122,8 @@ void Job::start(std::chrono::steady_clock::time_point start_time, const std::str
 
 		if(!times.timer_active)
 		{
-			times.slot_start = std::chrono::system_clock::now();
-			times.slot = std::chrono::seconds(0);
+			times.slot_start = system_clock::now();
+			times.slot = seconds(0);
 			times.timer_active = true;
 			write_time_timer.start(job_settings.granularity);
 		}
@@ -137,14 +138,14 @@ void Job::start(std::chrono::steady_clock::time_point start_time, const std::str
 //}}}
 
 //{{{
-void Job::stop(std::chrono::steady_clock::time_point now)
+void Job::stop(steady_clock::time_point now)
 {
 	if(times.running)
 	{
-		std::chrono::seconds elapsed = std::chrono::duration_cast < std::chrono::seconds > (now-times.job_start);
+		seconds elapsed = std::chrono::duration_cast < seconds > (now-times.job_start);
 		times.total     += elapsed;
 		times.slot      += elapsed;
-		times.job_start  = std::chrono::steady_clock::time_point();	// reset to 'zero'
+		times.job_start  = steady_clock::time_point();	// reset to 'zero'
 		times.running = false;
 
 		for(Action& action : actions)
@@ -159,11 +160,11 @@ void Job::stop(std::chrono::steady_clock::time_point now)
 //{{{
 void Job::write_time_cb(void)
 {
-	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	steady_clock::time_point now = steady_clock::now();
 
 	if( times.running )							// Account for a currently running job.
 	{
-		std::chrono::seconds elapsed = std::chrono::duration_cast < std::chrono::seconds > (now-times.job_start);
+		seconds elapsed = std::chrono::duration_cast < seconds > (now-times.job_start);
 		times.total     += elapsed;
 		times.slot      += elapsed;
 		times.job_start  = now;
@@ -181,7 +182,7 @@ void Job::write_time_cb(void)
 		timefile.seekg(0, std::ios_base::end);	// Go to the end of the jobfile
 		timefile<<times.slot_start.time_since_epoch().count()<<"\t"<<times.slot.count()<<std::endl;
 		timefile.close();
-		times.slot = std::chrono::seconds(0);
+		times.slot = seconds(0);
 	}
 	else
 	{
@@ -190,7 +191,7 @@ void Job::write_time_cb(void)
 
 	if( times.running ) // If the job is currently not running
 	{
-		times.slot_start = std::chrono::system_clock::now();
+		times.slot_start = system_clock::now();
 		write_time_timer.start(job_settings.granularity);
 	}
 	else
