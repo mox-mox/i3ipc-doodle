@@ -272,6 +272,7 @@ void parse_config(void)
 
 #ifdef ENABLE_MAIN
 int main(int argc, char* argv[])
+try
 {
 	int retval = EXIT_FAILURE;
 
@@ -375,5 +376,8 @@ int main(int argc, char* argv[])
 	//	- Write to syslog/journal
 	//	- Write desktop notification
 	//	- exit(EXIT_FAILURE);
+}
+catch (const std::exception& e) { // caught by reference to base
+	std::cout << " a standard exception was caught, with message '" << e.what() << "'\n";
 }
 #endif

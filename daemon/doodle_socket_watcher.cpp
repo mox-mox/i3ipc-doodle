@@ -10,7 +10,11 @@
 
 
 //{{{
-Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string& doodle_socket_path) : ev::io(loop), doodle(doodle), head(nullptr), doodle_socket_path(doodle_socket_path)
+Doodle::Socket_watcher::Socket_watcher(ev::loop_ref loop, Doodle* doodle, std::string& doodle_socket_path) :
+	ev::io(loop),
+	doodle(doodle),
+	head(nullptr),
+	doodle_socket_path(doodle_socket_path)
 {
 	debug<<"Doodle::Socket_watcher::Socket_watcher() at "<<this<<": Socket path = "<<doodle_socket_path<<'.'<<std::endl;
 

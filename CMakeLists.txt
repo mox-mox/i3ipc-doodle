@@ -1,4 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
+# Set a default build type if none was specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Debug' as none was specified.")
+  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
+endif()
 project(i3ipc-doodle)
 find_package( PythonLibs 3 REQUIRED )
 find_package( PythonInterp 3 REQUIRED )
@@ -62,6 +69,10 @@ configure_file (
   "${PROJECT_BINARY_DIR}/doodle_config.hpp"
   )
 #}}}
+
+
+
+
 
 
 

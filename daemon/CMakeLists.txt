@@ -51,6 +51,7 @@ set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
 #}}}
 
 add_subdirectory("${LIBS_PATH}/parse_date" "libs/parse_date")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 add_executable(doodle_daemon ${SRCS})
 target_link_libraries(doodle_daemon ${LIBS})
