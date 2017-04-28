@@ -4,9 +4,15 @@
 
 file(GLOB SRCS_LOCAL *.cpp)
 set(SRCS ${SRCS} ${SRCS_LOCAL})
+#message(STATUS "SRCS: ${SRCS}")
 set(INCDIRS ${INCDIRS} "${PROJECT_BINARY_DIR}" "${PROJECT_BINARY_DIR}/daemon")
 set(INCDIRS_SYS ${INCDIRS_SYS})
 set(LIBS ${LIBS} -lstdc++fs)
+
+set(SRCS /tmp/asd-mox/home/mox/projects/software/i3ipc-doodle/daemon/main.cpp)
+#set(INCDIRS "${PROJECT_BINARY_DIR}")
+#set(INCDIRS_SYS "")
+#set(LIBS -lstdc++fs)
 #}}}
 
 
@@ -17,12 +23,14 @@ set(LIBS ${LIBS} ${I3IPCpp_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
 #}}}
 
-#{{{SIGCPP
-
-find_package(SIGCPP REQUIRED)
-set(LIBS ${LIBS} ${SIGCPP_LIBRARIES})
-set(INCDIRS_SYS ${INCDIRS_SYS} ${SIGCPP_INCLUDE_DIRS})
-#}}}
+#
+##{{{SIGCPP
+#
+#find_package(SIGCPP REQUIRED)
+#set(LIBS ${LIBS} ${SIGCPP_LIBRARIES})
+#set(INCDIRS_SYS ${INCDIRS_SYS} ${SIGCPP_INCLUDE_DIRS})
+##}}}
+#
 
 #{{{SYSLOG
 
@@ -34,13 +42,38 @@ if (USE_SYSLOG)
 endif (USE_SYSLOG)
 #}}}
 
-#{{{LIBEV
 
-find_package(LIBEV REQUIRED)
+#{{{LIBUV + UVW
 
-set(LIBS ${LIBS} ${LIBEV_LIBRARIES})
-set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEV_INCLUDE_DIRS})
+find_package(LIBUV REQUIRED)
+
+set(LIBS ${LIBS} ${LIBUV_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBUV_INCLUDE_DIRS} "${LIBS_PATH}/uvw/src")
 #}}}
+
+#
+##{{{LIBEV
+#
+#find_package(LIBEV REQUIRED)
+#
+#set(LIBS ${LIBS} ${LIBEV_LIBRARIES})
+#set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEV_INCLUDE_DIRS})
+##}}}
+#
+#
+##{{{LIBUV + UVW
+##
+###set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/libs/uvw/cmake/modules/")
+###message(STATUS "==============CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+###find_package(UV REQUIRED)
+###message(STATUS "==============1")
+##
+##set(LIBS ${LIBS} "${LIBS_PATH}/uvw/deps/libuv/.libs/")
+##message(STATUS "==============2")
+##set(INCDIRS_SYS ${INCDIRS_SYS} "${LIBS_PATH}/uvw/deps/libuv/.libs/)
+##message(STATUS "==============3")
+##}}}
+#
 
 #{{{XCB
 
@@ -58,6 +91,7 @@ target_link_libraries(doodle_daemon ${LIBS})
 target_include_directories(doodle_daemon PUBLIC ${INCDIRS})
 target_include_directories(doodle_daemon SYSTEM PUBLIC ${INCDIRS_SYS})
 target_compile_options(    doodle_daemon PUBLIC -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors)
+#target_compile_options(    doodle_daemon PUBLIC -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors             -luv -lrt -lpthread -lnsl -ldl -I"/home/mox/projects/software/i3ipc-doodle/libs/uvw/src")
 target_compile_options(    doodle_daemon PUBLIC $<$<CONFIG:DEBUG>:-O0 -ggdb -save-temps>)
 target_compile_options(    doodle_daemon PUBLIC $<$<CONFIG:RELEASE>:-O3>)
 target_compile_definitions(doodle_daemon PUBLIC NOTIFY_PROGRAM_NAME="${DOODLE_PROGRAM_NAME}" ENABLE_MAIN)
@@ -69,6 +103,8 @@ add_custom_command(TARGET doodle_daemon POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                    ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle_daemon>/.config)
 
+add_custom_command(TARGET doodle_daemon PRE_BUILD COMMAND notify-send "Starting build for Doodle Daemon")
+add_custom_command(TARGET doodle_daemon POST_BUILD COMMAND notify-send "Finished build for Doodle Daemon")
 
 
 

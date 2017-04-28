@@ -94,5 +94,6 @@ add_subdirectory("${LIBS_PATH}/notify_stream"  "libs/notify_stream")
 add_subdirectory("${LIBS_PATH}/sockets"        "libs/sockets")
 add_subdirectory("${LIBS_PATH}/commands"       "libs/commands")
 
+
 add_subdirectory(daemon)
 add_subdirectory(client)

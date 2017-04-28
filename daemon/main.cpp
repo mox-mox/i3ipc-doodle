@@ -7,6 +7,10 @@
 
 #include <sys/types.h>
 #include <pwd.h>
+#include <json/json.h>
+#include <i3ipc++/ipc.hpp>
+#include <uvw.hpp>
+#include <iostream>
 
 
 
@@ -158,224 +162,254 @@ std::string get_config_dir(void)
 }
 //}}}
 
-
-//{{{
-std::string get_data_dir(void)
-{
-	// Check order: User set value -> $XDG_DATA_HOME/doodle -> $HOME/.local/doodle
-	// Note that $XDG_DATA_DIRS is not checked. There would be no sense in doing so as doodle MUST have a user configuration specifying the jobs anyway.
-
-	fs::path data_dir = settings.data_dir;
-	//data_dir = args.data_dir;
-
-	////{{{
-	//if(args.data_set)
-	//{
-	//	if(!fs::exists(data_dir))
-	//	{
-	//		debug<<"No data directory found at "<<settings.data_dir<<'.'<<std::endl;
-	//		std::error_code fs_error;
-	//		if(!fs::create_directory(data_dir, fs_error))
-	//		{
-	//			error<<"Could not create data directory $XDG_DATA_HOME/doodle = "<<data_dir<<": "<<fs_error.message()<<'.'<<std::endl;
-	//		}
-	//		debug<<"Created data directory $XDG_DATA_HOME/doodle = "<<data_dir<<'.'<<std::endl;
-	//	}
-	//	return;
-	//}
-	////}}}
-
-	const char* data_dir_temp;
-
-	//{{{ Check $XDG_DATA_HOME
-
-	debug<<"No data directory set => checking $XDG_DATA_HOME"<<std::endl;
-	if((data_dir_temp=getenv("XDG_DATA_HOME")))
-	{
-		debug<<"$XDG_DATA_HOME set => data directory should be at $XDG_DATA_HOME/doodle"<<std::endl;
-		if(!fs::exists((data_dir=data_dir_temp)/="doodle"))
-		{
-			debug<<"No data directory found at $XDG_DATA_HOME/doodle => Create it and set it as data dir"<<std::endl;
-			std::error_code fs_error;
-			if(!fs::create_directory(data_dir, fs_error))
-			{
-				error<<"Could not create data directory $XDG_DATA_HOME/doodle = "<<data_dir<<": "<<fs_error.message()<<'.'<<std::endl;
-			}
-			debug<<"Created data directory $XDG_DATA_HOME/doodle = "<<data_dir<<'.'<<std::endl;
-		}
-		debug<<"Data directory found at "<<data_dir<<std::endl;
-		return data_dir;
-	}
-	//}}}
-
-
-	//{{{ Check $HOME/.local/share
-
-	debug<<"$XDG_DATA_HOME not set => checking $HOME/.local/share/doodle"<<std::endl;
-
-	if(!(data_dir_temp = getenv("HOME")))
-	{
-		data_dir_temp = getpwuid(getuid())->pw_dir;
-	}
-
-	if(!fs::exists((data_dir=data_dir_temp)/=".local/share/doodle"))
-	{
-		debug<<"No data directory found in $HOME/.local/share/doodle => create it and set it as data dir"<<std::endl;
-		std::error_code fs_error;
-		if(!fs::create_directory(data_dir, fs_error))
-		{
-			error<<"Could not create data directory $HOME/.local/share/doodle = "<<data_dir<<": "<<fs_error.message()<<'.'<<std::endl;
-		}
-		debug<<"Created data directory $HOME/.local/share/doodle = "<<data_dir<<'.'<<std::endl;
-	}
-	//}}}
-	return data_dir;
-}
-//}}}
-
-
-//{{{
-void parse_config(void)
-{
-	std::ifstream config_file(fs::path(settings.config_dir)/"doodlerc");
-
-	Json::Value configuration_root;
-	Json::Reader reader;
-
-	if( !reader.parse(config_file, configuration_root, false))
-	{
-		error<<reader.getFormattedErrorMessages()<<std::endl;
-	}
-
-	//{{{ Get the configuration options
-
-	debug<<"retrieving config"<<std::endl;
-	Json::Value config;
-	if( configuration_root.isMember("config"))
-	{
-		config = configuration_root.get("config", "no config");
-	}
-	else
-	{
-		config = configuration_root;
-	}
-	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
-	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
-	settings.doodle_socket_path.append(1, '\0');
-	//}}}
-}
-//}}}
-
-
-
-
-
+//
+////{{{
+//std::string get_data_dir(void)
+//{
+//	// Check order: User set value -> $XDG_DATA_HOME/doodle -> $HOME/.local/doodle
+//	// Note that $XDG_DATA_DIRS is not checked. There would be no sense in doing so as doodle MUST have a user configuration specifying the jobs anyway.
+//
+//	fs::path data_dir = settings.data_dir;
+//	//data_dir = args.data_dir;
+//
+//	////{{{
+//	//if(args.data_set)
+//	//{
+//	//	if(!fs::exists(data_dir))
+//	//	{
+//	//		debug<<"No data directory found at "<<settings.data_dir<<'.'<<std::endl;
+//	//		std::error_code fs_error;
+//	//		if(!fs::create_directory(data_dir, fs_error))
+//	//		{
+//	//			error<<"Could not create data directory $XDG_DATA_HOME/doodle = "<<data_dir<<": "<<fs_error.message()<<'.'<<std::endl;
+//	//		}
+//	//		debug<<"Created data directory $XDG_DATA_HOME/doodle = "<<data_dir<<'.'<<std::endl;
+//	//	}
+//	//	return;
+//	//}
+//	////}}}
+//
+//	const char* data_dir_temp;
+//
+//	//{{{ Check $XDG_DATA_HOME
+//
+//	debug<<"No data directory set => checking $XDG_DATA_HOME"<<std::endl;
+//	if((data_dir_temp=getenv("XDG_DATA_HOME")))
+//	{
+//		debug<<"$XDG_DATA_HOME set => data directory should be at $XDG_DATA_HOME/doodle"<<std::endl;
+//		if(!fs::exists((data_dir=data_dir_temp)/="doodle"))
+//		{
+//			debug<<"No data directory found at $XDG_DATA_HOME/doodle => Create it and set it as data dir"<<std::endl;
+//			std::error_code fs_error;
+//			if(!fs::create_directory(data_dir, fs_error))
+//			{
+//				error<<"Could not create data directory $XDG_DATA_HOME/doodle = "<<data_dir<<": "<<fs_error.message()<<'.'<<std::endl;
+//			}
+//			debug<<"Created data directory $XDG_DATA_HOME/doodle = "<<data_dir<<'.'<<std::endl;
+//		}
+//		debug<<"Data directory found at "<<data_dir<<std::endl;
+//		return data_dir;
+//	}
+//	//}}}
+//
+//
+//	//{{{ Check $HOME/.local/share
+//
+//	debug<<"$XDG_DATA_HOME not set => checking $HOME/.local/share/doodle"<<std::endl;
+//
+//	if(!(data_dir_temp = getenv("HOME")))
+//	{
+//		data_dir_temp = getpwuid(getuid())->pw_dir;
+//	}
+//
+//	if(!fs::exists((data_dir=data_dir_temp)/=".local/share/doodle"))
+//	{
+//		debug<<"No data directory found in $HOME/.local/share/doodle => create it and set it as data dir"<<std::endl;
+//		std::error_code fs_error;
+//		if(!fs::create_directory(data_dir, fs_error))
+//		{
+//			error<<"Could not create data directory $HOME/.local/share/doodle = "<<data_dir<<": "<<fs_error.message()<<'.'<<std::endl;
+//		}
+//		debug<<"Created data directory $HOME/.local/share/doodle = "<<data_dir<<'.'<<std::endl;
+//	}
+//	//}}}
+//	return data_dir;
+//}
+////}}}
+//
+//
+////{{{
+//void parse_config(void)
+//{
+//	std::ifstream config_file(fs::path(settings.config_dir)/"doodlerc");
+//
+//	Json::Value configuration_root;
+//	Json::Reader reader;
+//
+//	if( !reader.parse(config_file, configuration_root, false))
+//	{
+//		error<<reader.getFormattedErrorMessages()<<std::endl;
+//	}
+//
+//	//{{{ Get the configuration options
+//
+//	debug<<"retrieving config"<<std::endl;
+//	Json::Value config;
+//	if( configuration_root.isMember("config"))
+//	{
+//		config = configuration_root.get("config", "no config");
+//	}
+//	else
+//	{
+//		config = configuration_root;
+//	}
+//	settings.max_idle_time = config.get("max_idle_time", settings.MAX_IDLE_TIME_DEFAULT_VALUE).asUInt();
+//	settings.detect_ambiguity = config.get("detect_ambiguity", settings.DETECT_AMBIGUITY_DEFAULT_VALUE).asBool();
+//	settings.doodle_socket_path.append(1, '\0');
+//	//}}}
+//}
+////}}}
+//
+//
+//
+//
+//
 #ifdef ENABLE_MAIN
 int main(int argc, char* argv[])
 try
 {
-	int retval = EXIT_FAILURE;
-
-	//{{{ Check that we are not root.
-
-    if (!getuid())
-	{	// Doodle can run external programs. It reads from a world-writable config file which program to run. An attacker gaining access to this file could run arbitrary programs as root.
-		std::cerr<<"Please never run this program as root. It is not neccessary and poses a severe security risk."<<std::endl;
-		return EXIT_FAILURE;
-	}
-	//}}}
-
-	//{{{ Argument handling
-
-	GetOpt::GetOpt_pp ops(argc, argv);
-
-	ops.exceptions(std::ios::failbit|std::ios::eofbit);
-	try
+//	int retval = EXIT_FAILURE;
+//
+//	//{{{ Check that we are not root.
+//
+//    if (!getuid())
+//	{	// Doodle can run external programs. It reads from a world-writable config file which program to run. An attacker gaining access to this file could run arbitrary programs as root.
+//		std::cerr<<"Please never run this program as root. It is not neccessary and poses a severe security risk."<<std::endl;
+//		return EXIT_FAILURE;
+//	}
+//	//}}}
+//
+//	//{{{ Argument handling
+//
+//	GetOpt::GetOpt_pp ops(argc, argv);
+//
+//	ops.exceptions(std::ios::failbit|std::ios::eofbit);
+//	try
+//	{
+//		ops>>GetOpt::OptionPresent('h', "help",       show_help);
+//		ops>>GetOpt::OptionPresent('v', "version",    show_version);
+//		ops>>GetOpt::OptionPresent('n', "nofork",     nofork);
+//		ops>>GetOpt::OptionPresent('r', "replace",    settings.replace);
+//		//ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
+//
+//		ops>>GetOpt::Option('c',        "config",     settings.config_dir,         get_config_dir);
+//		ops>>GetOpt::Option('d',        "data",       settings.data_dir,           get_data_dir);
+//		ops>>GetOpt::Option('s',        "socket",     settings.doodle_socket_path, DOODLE_SOCKET_PATH);
+//		ops>>GetOpt::Option('i',        "i3socket",   settings.i3_socket_path,     i3ipc::get_socketpath());
+//	}
+//	catch(GetOpt::GetOptEx ex)
+//	{
+//		std::cerr<<"Error in arguments"<<std::endl;
+//
+//		std::cerr<<help_message(argv[0])<<std::endl;
+//		return -1;
+//	}
+//	if( show_help )
+//	{
+//		std::cout<<help_message(argv[0])<<std::endl;
+//		return 0;
+//	}
+//	if( show_version )
+//	{
+//		version_message();
+//		return 0;
+//	}
+//	//}}}
+//
+//	//{{{ Validate settings path
+//
+//	if(!fs::exists(fs::path(settings.config_dir)/"/doodlerc"))
+//	{
+//		error<<"No config found in "<<settings.config_dir<<" set by command line switch. Aborting..."<<std::endl;
+//		//TODO: Copy some default config file
+//		exit(EXIT_FAILURE);
+//	}
+//	debug<<"Config found in "<<settings.config_dir<<'.'<<std::endl;
+//	//}}}
+//
+//	//{{{ Validate data dir
+//
+//	if(!fs::exists(fs::path(settings.data_dir)))
+//	{
+//		debug<<"No data directory found at "<<settings.data_dir<<'.'<<std::endl;
+//		std::error_code fs_error;
+//		if(!fs::create_directory(settings.data_dir, fs_error))
+//		{
+//			error<<"Could not create data directory $XDG_DATA_HOME/doodle = "<<settings.data_dir<<": "<<fs_error.message()<<'.'<<std::endl;
+//			exit(EXIT_FAILURE);
+//		}
+//		debug<<"Created data directory $XDG_DATA_HOME/doodle = "<<settings.data_dir<<'.'<<std::endl;
+//	}
+//	//}}}
+//
+//	parse_config();
+//
+//	//{	// Restrict life time of the doodle object
+//	//	Doodle doodle;
+//
+//	//	if(!nofork)
+//	//	{
+//	//		if(daemon(1, 0))
+//	//		{
+//	//			error<<"Could not daemonize."<<std::endl;
+//	//			return EXIT_FAILURE;
+//	//		}
+//	//	}
+//
+//	//	retval = doodle();
+//	//}
+//
+//
 	{
-		ops>>GetOpt::OptionPresent('h', "help",       show_help);
-		ops>>GetOpt::OptionPresent('v', "version",    show_version);
-		ops>>GetOpt::OptionPresent('n', "nofork",     nofork);
-		ops>>GetOpt::OptionPresent('r', "replace",    settings.replace);
-		//ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
+		(void) argc;
+		(void) argv;
+		// Create a loop
+		auto loop = uvw::Loop::getDefault();
 
-		ops>>GetOpt::Option('c',        "config",     settings.config_dir,         get_config_dir);
-		ops>>GetOpt::Option('d',        "data",       settings.data_dir,           get_data_dir);
-		ops>>GetOpt::Option('s',        "socket",     settings.doodle_socket_path, DOODLE_SOCKET_PATH);
-		ops>>GetOpt::Option('i',        "i3socket",   settings.i3_socket_path,     i3ipc::get_socketpath());
+		// Create a resource that will listen to STDIN
+		auto console = loop->resource<uvw::TTYHandle>(uvw::StdIN, true);
+
+		// Set the callback function
+		console->on<uvw::DataEvent>([](auto& evt, auto&){
+				std::cout<<"Got something: "<<std::endl;
+				// The event argument is a struct with only two members: A unique_ptr
+				// to a char array and an integer with the length.
+				std::cout<<'	'<<std::string(&evt.data[0], evt.length)<<std::endl;
+				});
+		console->read();
+
+		loop->run();
 	}
-	catch(GetOpt::GetOptEx ex)
-	{
-		std::cerr<<"Error in arguments"<<std::endl;
-
-		std::cerr<<help_message(argv[0])<<std::endl;
-		return -1;
-	}
-	if( show_help )
-	{
-		std::cout<<help_message(argv[0])<<std::endl;
-		return 0;
-	}
-	if( show_version )
-	{
-		version_message();
-		return 0;
-	}
-	//}}}
-
-	//{{{ Validate settings path
-
-	if(!fs::exists(fs::path(settings.config_dir)/"/doodlerc"))
-	{
-		error<<"No config found in "<<settings.config_dir<<" set by command line switch. Aborting..."<<std::endl;
-		//TODO: Copy some default config file
-		exit(EXIT_FAILURE);
-	}
-	debug<<"Config found in "<<settings.config_dir<<'.'<<std::endl;
-	//}}}
-
-	//{{{ Validate data dir
-
-	if(!fs::exists(fs::path(settings.data_dir)))
-	{
-		debug<<"No data directory found at "<<settings.data_dir<<'.'<<std::endl;
-		std::error_code fs_error;
-		if(!fs::create_directory(settings.data_dir, fs_error))
-		{
-			error<<"Could not create data directory $XDG_DATA_HOME/doodle = "<<settings.data_dir<<": "<<fs_error.message()<<'.'<<std::endl;
-			exit(EXIT_FAILURE);
-		}
-		debug<<"Created data directory $XDG_DATA_HOME/doodle = "<<settings.data_dir<<'.'<<std::endl;
-	}
-	//}}}
-
-	parse_config();
-
-	{	// Restrict life time of the doodle object
-		Doodle doodle;
-
-		if(!nofork)
-		{
-			if(daemon(1, 0))
-			{
-				error<<"Could not daemonize."<<std::endl;
-				return EXIT_FAILURE;
-			}
-		}
-
-		retval = doodle();
-	}
-
-	if(fork_to_restart) restart_doodle();
-
-	return retval;
-
-
-
-	//TODO: Catch all exceptions here
-	//	- Write to error
-	//	- Write to syslog/journal
-	//	- Write desktop notification
-	//	- exit(EXIT_FAILURE);
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//	if(fork_to_restart) restart_doodle();
+//
+//	return retval;
+//
+//
+//
+//	//TODO: Catch all exceptions here
+//	//	- Write to error
+//	//	- Write to syslog/journal
+//	//	- Write desktop notification
+//	//	- exit(EXIT_FAILURE);
 }
 catch (const std::exception& e) { // caught by reference to base
 	std::cout << " a standard exception was caught, with message '" << e.what() << "'\n";
