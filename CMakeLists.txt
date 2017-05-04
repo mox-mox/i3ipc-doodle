@@ -88,7 +88,7 @@ set(INCDIRS_SYS "")
 set(LIBS "")
 #}}}
 
-add_subdirectory("${LIBS_PATH}/getoptpp"       "libs/getoptpp")
+#add_subdirectory("${LIBS_PATH}/getoptpp"       "libs/getoptpp")
 add_subdirectory("${LIBS_PATH}/console_stream" "libs/console_stream")
 add_subdirectory("${LIBS_PATH}/notify_stream"  "libs/notify_stream")
 add_subdirectory("${LIBS_PATH}/sockets"        "libs/sockets")

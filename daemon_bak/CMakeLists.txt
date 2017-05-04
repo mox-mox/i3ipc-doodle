@@ -8,6 +8,11 @@ set(SRCS ${SRCS} ${SRCS_LOCAL})
 set(INCDIRS ${INCDIRS} "${PROJECT_BINARY_DIR}" "${PROJECT_BINARY_DIR}/daemon")
 set(INCDIRS_SYS ${INCDIRS_SYS})
 set(LIBS ${LIBS} -lstdc++fs)
+
+set(SRCS /tmp/asd-mox/home/mox/projects/software/i3ipc-doodle/daemon/main.cpp)
+#set(INCDIRS "${PROJECT_BINARY_DIR}")
+#set(INCDIRS_SYS "")
+#set(LIBS -lstdc++fs)
 #}}}
 
 
@@ -78,7 +83,7 @@ set(LIBS ${LIBS} ${XCB_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
 #}}}
 
-#add_subdirectory("${LIBS_PATH}/parse_date" "libs/parse_date")
+add_subdirectory("${LIBS_PATH}/parse_date" "libs/parse_date")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 add_executable(doodle_daemon ${SRCS})
@@ -86,6 +91,7 @@ target_link_libraries(doodle_daemon ${LIBS})
 target_include_directories(doodle_daemon PUBLIC ${INCDIRS})
 target_include_directories(doodle_daemon SYSTEM PUBLIC ${INCDIRS_SYS})
 target_compile_options(    doodle_daemon PUBLIC -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors)
+#target_compile_options(    doodle_daemon PUBLIC -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors             -luv -lrt -lpthread -lnsl -ldl -I"/home/mox/projects/software/i3ipc-doodle/libs/uvw/src")
 target_compile_options(    doodle_daemon PUBLIC $<$<CONFIG:DEBUG>:-O0 -ggdb -save-temps>)
 target_compile_options(    doodle_daemon PUBLIC $<$<CONFIG:RELEASE>:-O3>)
 target_compile_definitions(doodle_daemon PUBLIC NOTIFY_PROGRAM_NAME="${DOODLE_PROGRAM_NAME}" ENABLE_MAIN)
@@ -97,9 +103,10 @@ add_custom_command(TARGET doodle_daemon POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                    ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle_daemon>/.config)
 
+add_custom_command(TARGET doodle_daemon PRE_BUILD COMMAND notify-send "Starting build for Doodle Daemon")
 add_custom_command(TARGET doodle_daemon POST_BUILD COMMAND notify-send "Finished build for Doodle Daemon")
 
 
 
-#add_subdirectory(test)
+add_subdirectory(test)
 

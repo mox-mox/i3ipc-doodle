@@ -1,0 +1,5 @@
+{
+	"granularity" : 10,
+	"window_names" :[ "home/mox/scratch", "~/scratch", "okular" ],
+	"workspace_names" :[ "" ]
+}
