@@ -95,4 +95,4 @@ add_subdirectory("${LIBS_PATH}/sockets"        "libs/sockets")
 add_subdirectory("${LIBS_PATH}/commands"       "libs/commands")
 
 add_subdirectory(daemon)
-add_subdirectory(client)
+#add_subdirectory(client)
