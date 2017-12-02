@@ -7,12 +7,12 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-//#include <libnotify/notify.h>
 
 #include "confuse.h"
 
 #include "doodle_config.hpp"
 
+#include "notify_stream.hpp"
 
 
 
@@ -205,9 +205,6 @@ std::string get_data_dir(void)
 
 int main(int argc, char* argv[])
 {
-	//(void) argc;
-	//(void) argv;
-
 	int retval = EXIT_SUCCESS;
 	//int retval = EXIT_FAILURE;
 
@@ -219,7 +216,6 @@ int main(int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 	//}}}
-
 
 	//{{{ Argument handling
 
@@ -290,18 +286,15 @@ int main(int argc, char* argv[])
 
 
 
-//
-//	//{{{ Notifications
-//
-//	notify_init("doodle");
-//	NotifyNotification* vi3failed = notify_notification_new("Doodle", "Hello World!", "dialog-information");
-//	//notify_notification_set_urgency(vi3failed, NOTIFY_URGENCY_CRITICAL);
-//	notify_notification_set_timeout(vi3failed, 10000);
-//	notify_notification_show(vi3failed, NULL);
-//	g_object_unref(G_OBJECT(vi3failed));
-//	notify_uninit();
-//	//}}}
-//
+
+
+
+
+	//{{{
+	notify_low<<"LOW"<<"low"<<std::endl;
+	notify_normal<<sett(5000)<<"NORMAL"<<"normal"<<99<<std::endl;
+	notify_critical<<sett(10000)<<"CRITICAL"<<"critical"<<std::setw(10)<<99<<'.'<<std::endl;
+	//}}}
 
 	return retval;
 }
