@@ -122,7 +122,8 @@ target_compile_definitions(doodle_daemon PUBLIC $<$<CONFIG:RELEASE>:NOTIFY_LEVEL
 #add_custom_command(TARGET doodle_daemon POST_BUILD COMMAND notify-send "Finished build for vi3")
 #add_custom_command(TARGET doodle_daemon POST_BUILD COMMAND notify-send "Finished build for vi3")
 
-add_custom_target(do_always ALL COMMAND echo "nop")
+#add_custom_target(do_always ALL COMMAND echo "nop")
+add_custom_target(do_always ALL)
 add_custom_target(notify_end ALL COMMAND notify-send "Finished build for doodle-daemon" DEPENDS do_always doodle_daemon)
 
 #add_subdirectory(test)
