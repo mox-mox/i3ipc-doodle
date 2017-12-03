@@ -14,9 +14,10 @@ set(LIBS ${LIBS} -lstdc++fs)
 find_package(LIBUV REQUIRED)
 
 set(LIBS ${LIBS} ${LIBUV_LIBRARIES})
-set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBUV_INCLUDE_DIRS} "${LIBS_PATH}/uvw/src")
+set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBUV_INCLUDE_DIRS} "${LIBS_PATH}/uvw/src" "${LIBS_PATH}/uvw/deps/libuv/src/include")
 #}}}
 
+#MESSAGE( STATUS "INCDIRS_LIBUV: " "${LIBS_PATH}/uvw/deps/libuv/src/include" )
 
 #{{{I3IPCPP
 
@@ -143,7 +144,7 @@ add_custom_target(notify_end ALL COMMAND notify-send "Finished build for doodle-
 
 
 add_custom_target(run_doodle_daemon
-	COMMAND ./doodle_daemon
+	COMMAND ./doodle_daemon; read -p "Press [Enter] key to close..."
     DEPENDS doodle_daemon
     WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}
 )

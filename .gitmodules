@@ -13,3 +13,6 @@
 [submodule "libs/parse_date"]
 	path = libs/parse_date
 	url = git@github.com:mox-mox/parse_date.git
+[submodule "libs/uvw"]
+	path = libs/uvw
+	url = git@github.com:skypjack/uvw.git
