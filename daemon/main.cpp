@@ -1,25 +1,6 @@
-#include <iostream>
-#include "getopt_pp.h"
+#include "main.hpp"
 
-#include "console_stream.hpp"
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
-
-
-#include "confuse.h"
-
-#include "doodle_config.hpp"
-
-#include "notify_stream.hpp"
-
-
-
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-
-
+#include <doodle.hpp>
 
 
 bool show_help;
@@ -31,6 +12,9 @@ std::string config_dir;
 std::string data_dir;
 std::string doodle_socket_path;
 std::string i3_socket_path;
+
+
+
 
 
 
@@ -254,14 +238,6 @@ int main(int argc, char* argv[])
 	//}
 	//}}}
 
-
-
-
-
-
-
-
-
 	//{{{ Config parsing
 
 	std::cout<<"Hello world!"<<std::endl;
@@ -283,18 +259,24 @@ int main(int argc, char* argv[])
 	//}}}
 
 
+	{
+		Doodle doodle;
+		std::cout<<"asdfasdfasdafafs"<<std::endl;
+		retval = doodle();
+	}
 
 
 
 
 
 
-
-	//{{{
-	notify_low<<"LOW"<<"low"<<std::endl;
-	notify_normal<<sett(5000)<<"NORMAL"<<"normal"<<99<<std::endl;
-	notify_critical<<sett(10000)<<"CRITICAL"<<"critical"<<std::setw(10)<<99<<'.'<<std::endl;
-	//}}}
+//
+//	//{{{
+//	notify_low<<"LOW"<<"low"<<std::endl;
+//	notify_normal<<sett(5000)<<"NORMAL"<<"normal"<<99<<std::endl;
+//	notify_critical<<sett(10000)<<"CRITICAL"<<"critical"<<std::setw(10)<<99<<'.'<<std::endl;
+//	//}}}
+//
 
 	return retval;
 }

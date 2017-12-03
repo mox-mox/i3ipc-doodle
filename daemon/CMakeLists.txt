@@ -9,13 +9,22 @@ set(INCDIRS_SYS ${INCDIRS_SYS})
 set(LIBS ${LIBS} -lstdc++fs)
 #}}}
 
-#
-##{{{I3IPCPP
-#
-#add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/i3ipcpp "libs/i3ipcpp")
-#set(LIBS ${LIBS} ${I3IPCpp_LIBRARIES})
-#set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
-##}}}
+#{{{LIBUV + UVW
+
+find_package(LIBUV REQUIRED)
+
+set(LIBS ${LIBS} ${LIBUV_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBUV_INCLUDE_DIRS} "${LIBS_PATH}/uvw/src")
+#}}}
+
+
+#{{{I3IPCPP
+
+add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/i3ipcpp "libs/i3ipcpp")
+set(LIBS ${LIBS} ${I3IPCpp_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
+#}}}
+
 #
 ##{{{SIGCPP
 #
@@ -122,10 +131,7 @@ target_compile_definitions(doodle_daemon PUBLIC $<$<CONFIG:RELEASE>:NOTIFY_LEVEL
 #                   COMMAND ${CMAKE_COMMAND} -E copy_directory
 #                   ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle_daemon>/.config)
 
-#add_custom_command(TARGET doodle_daemon POST_BUILD COMMAND notify-send "Finished build for vi3")
-#add_custom_command(TARGET doodle_daemon POST_BUILD COMMAND notify-send "Finished build for vi3")
 
-#add_custom_target(do_always ALL COMMAND echo "nop")
 add_custom_target(do_always ALL)
 add_custom_target(notify_end ALL COMMAND notify-send "Finished build for doodle-daemon" DEPENDS do_always doodle_daemon)
 
@@ -133,4 +139,11 @@ add_custom_target(notify_end ALL COMMAND notify-send "Finished build for doodle-
 
 
 
-#add_custom_target(run COMMAND notify-send "Running program")
+
+
+
+add_custom_target(run_doodle_daemon
+	COMMAND ./doodle_daemon
+    DEPENDS doodle_daemon
+    WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}
+)
