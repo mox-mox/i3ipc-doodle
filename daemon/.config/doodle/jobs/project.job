@@ -1,38 +1,58 @@
+# Configuration file for job "project"
 
+[window-names]
 
+# A list of regular expressions to match the window titles of the job.
+# Matching uses std::regex_search() so "~/projects" will also match "ZSH: ~/projects/software/i3ipc-doodle/build"
+include= "~/projects" , home/mox/projects, "Vimperator""another"
 
+# When searching which job a window/window-title might belong to, the first matching job is selected.
+# !! Avoid matching the same window name in different jobs as there is no guarantee which job it will be accounted to!!
+# You can set "detect_ambiguity" to true to check for ambigous matches at runtime.
+# exclude allows to give a list of regular expressions to exclude all windows matching that regex from the job.
+exclude= "*special_project*"
 
+[workspace-names]
 
+# A list of workspaces where the windows for the job may reside for cases where
+# matching by window title does not suffice. For example matching browser windows
+# would be difficult by name, but with this feature, windows can be placed at
+# specific workspaces. Uses the same matching logic as described for the window
+# titles. With an empty list, windows in all workspaces are matched.
+include=1, 3
+exclude=private
 
+# The timefile is where all times are acoounted for. The first line contains the total seconds spent on that job,
+# the remaining lines list when the user was working on the job.
+[timefile]
+# Where to store the timefile. The timefile will always be named <jobname>.times
+# If set to "default" or omitted the files will be stored in doodles data directory, usually ~/.local/share/doodle/
+#filename=/home/mox/doodle_timefiles/
 
+# How often the time should be written to disk.
+# When the job becomes active, a down timer is started with this value. When the timer runs out, the time the user spent
+# on the job since the timer was started is appended to the timefile. Smaller values allows tracking more exactly when
+# the user was working on a job, but will create more data. A value no smaller than 1 hour is recommended.
+granularity=1h
 
-#{
-#	"granularity" : 10,
-#    "window_names" :		// A list of regular expressions to match the window titles of the job. Matching
-#	[						// uses std::regex_search() so "~/projects" will also match
-#		"~/projects",		// "ZSH: ~/projects/software/i3ipc-doodle/build"
-#		"!special_project",	// Prepend a regex with '!' to exclude all windows matching that regex from the job.
-#		"home/mox/projects",// !! Avoid matching the same window name in different jobs !!
-#		"Vimperator"		// You can set "detect_ambiguity" to true to check for ambigous matches at runtime.
-#	],
-#    "workspace_names" :		// A list of workspaces where the windows for the job may reside for cases where
-#	[						// matching by window title does not suffice. For example matching browser windows
-#		"1",				// would be difficult by name, but with this feature, windows can be placed at
-#		"3",				// specific workspaces. Uses the same matching logic as described for the window
-#		"!private"			// titles. With an empty list, windows in all workspaces are matched.
-#	],
+[actions]
+
+# TODO
+
 #	"actions" :
-#	{
-#		"mplayer /etc/acpi/r2d2_battery_low.mp3 < /dev/null > /dev/null &" :
+#	[
 #		{
-#			"stop_on_change_focus" : "yes",
-#			"win_names" : [ "Vimperator", "~/projects" ],
-#			"ws_ames"   : [ "1" ]
-#		},
-#		"mplayer /home/mox/Eric Burdon - The Animals - We Gotta Get Out Of This Place.mp3 < /dev/null > /dev/null &" :
-#		{
-#			"stop_on_change_focus" : "no",
-#			"win_names" : [ "!Vimperator" ]
-#		}
-#	}
-#}
+#			//"command" : "mplayer \"battery_low.mp3\"",
+#			//"command" : "mplayer \"/etc/acpi/r2d2_battery_low.mp3\"",
+#			"command" : "/uusr/bin/ls -la",
+#			"kill_on_focus_loss" : 1,
+#			"window_names" : [ "Vimperator", "projects" ],
+#			"workspace_names"   : [ "1", "3" ]
+#		}//,
+#		//{
+#		//	//"command" : "mplayer \"/home/mox/Eric Burdon - The Animals - We Gotta Get Out Of This Place.mp3\" < /dev/null > /dev/null &",
+#		//	"command" : "ls -la",
+#		//	"kill_on_focus_loss" : 0,
+#		//	"window_names" : [ "!Vimperator" ]
+#		//}
+#	]

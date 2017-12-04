@@ -11,7 +11,7 @@ Doodle::Doodle(void) :
 
 	//{{{ Create the individual jobs
 
-	logger<<"Config dir: "<<config_dir<<std::endl;
+	debug<<"Config dir: "<<config_dir<<std::endl;
 	for( auto&f: fs::directory_iterator(fs::path(config_dir)/"jobs"))
 	{
 		if(f.path().extension() == ".job")

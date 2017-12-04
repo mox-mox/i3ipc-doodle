@@ -1,27 +1,16 @@
-# Configuration file for job scratch
+# Configuration file for job "scratch"
 
 [window-names]
-include="foo*", "bar", "baz" # Regular expressions that are used to match the window title
-exclude="foo", "bar", "baz"
+include= home/mox/scratch, ~/scratch, okular
+exclude=
 
 [workspace-names]
-include="füüüü", "bar", "baz"
-exclude="foo", "flönk", "áßßßßß"
+include=
+exclude=
 
 [timefile]
-filename=/path/to/file
+filename=default
 granularity=1h
 
 [actions]
 # TODO
-
-
-
-
-
-
-#{
-#	"granularity" : 10,
-#	"window_names" :[ "home/mox/scratch", "~/scratch", "okular" ],
-#	"workspace_names" :[ "" ]
-#}

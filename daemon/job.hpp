@@ -20,6 +20,7 @@
 //
 
 
+constexpr uint32_t default_timefile_granularity = 3600;
 
 
 
@@ -30,7 +31,7 @@
 class Job
 {
 	std::shared_ptr<uvw::Loop> loop;
-	std::string jobname;
+	const std::string jobname;
 
 
 	std::vector<std::string> window_include;
@@ -38,6 +39,10 @@ class Job
 
 	std::vector<std::string> workspace_include;
 	std::vector<std::string> workspace_exclude;
+
+	fs::path timefile_path;
+	uint32_t timefile_granularity;
+
 
 	public:
 	Job(const fs::path& jobfile_path, std::shared_ptr<uvw::Loop> loop);
