@@ -5,13 +5,13 @@
 
 bool show_help;
 bool show_version;
-bool nofork;
-bool allow_idle;
+//bool nofork;
+//bool allow_idle;
 
 std::string config_dir;
 std::string data_dir;
-std::string doodle_socket_path;
-std::string i3_socket_path;
+//std::string doodle_socket_path;
+//std::string i3_socket_path;
 
 
 
@@ -32,7 +32,8 @@ std::string help_message(std::string progname)
 	message += "	-n|--nofork         : Do not fork off into the background.\n";
 	message += "	-r|--restart        : Wait for already running daemon to finish instead of aborting when another daemon is already running.\n";
 	//message += "	-a|--allow_idle     : Disable idle time checking.\n";
-	message += "	-c|--config  <path> : The path to the config file. Default: \"$XDG_CONFIG_HOME/doodle/\".\n";
+	message += "	-c|--config  <path> : The path to the config files. Default: \"$XDG_CONFIG_HOME/doodle/\".\n";
+	message += "	-d|--data  <path>   : The path to the data files. Default: \"$XDG_DATA_HOME/doodle/\".\n";
 	//message += "	-s|--socket  <path> : Where to store the socket for user communication. Default: \"" + DOODLE_SOCKET_PATH + "\".\n";
 	return message;
 }
@@ -210,13 +211,13 @@ int main(int argc, char* argv[])
 	{
 		ops>>GetOpt::OptionPresent('h', "help",       show_help);
 		ops>>GetOpt::OptionPresent('v', "version",    show_version);
-		ops>>GetOpt::OptionPresent('n', "nofork",     nofork);
+		//ops>>GetOpt::OptionPresent('n', "nofork",     nofork);
 		//ops>>GetOpt::OptionPresent('r', "replace",    settings.replace);
-		ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
+		//ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
 
 		ops>>GetOpt::Option('c',        "config",     config_dir,         get_config_dir);
 		ops>>GetOpt::Option('d',        "data",       data_dir,           get_data_dir);
-		ops>>GetOpt::Option('s',        "socket",     doodle_socket_path, DOODLE_SOCKET_PATH);
+		//ops>>GetOpt::Option('s',        "socket",     doodle_socket_path, DOODLE_SOCKET_PATH);
 		//ops>>GetOpt::Option('i',        "i3socket",   i3_socket_path,     i3ipc::get_socketpath());
 	}
 	catch(GetOpt::GetOptEx ex)
@@ -226,47 +227,30 @@ int main(int argc, char* argv[])
 		std::cerr<<help_message(argv[0])<<std::endl;
 		return -1;
 	}
-	//if( show_help )
-	//{
-	//	std::cout<<help_message(argv[0])<<std::endl;
-	//	return 0;
-	//}
-	//if( show_version )
-	//{
-	//	version_message();
-	//	return 0;
-	//}
-	//}}}
-
-	//{{{ Config parsing
-
-	std::cout<<"Hello world!"<<std::endl;
-
-	cfg_opt_t opts[] =
+	if( show_help )
 	{
-		CFG_STR("target", "No One", CFGF_NONE),
-		CFG_END()
-	};
-	cfg_t *cfg;
-
-	cfg = cfg_init(opts, CFGF_NONE);
-	if(cfg_parse(cfg, "hello.conf") == CFG_PARSE_ERROR)
-		return 1;
-
-	//printf("Hello, %s!\n", cfg_getstr(cfg, "target"));
-
-	cfg_free(cfg);
+		std::cout<<help_message(argv[0])<<std::endl;
+		return 0;
+	}
+	if( show_version )
+	{
+		version_message();
+		return 0;
+	}
 	//}}}
+
+//
+//	//{{{ Config parsing
+//
+//
+//	//}}}
+//
 
 
 	{
 		Doodle doodle;
-		std::cout<<"asdfasdfasdafafs"<<std::endl;
 		retval = doodle();
 	}
-
-
-
 
 
 

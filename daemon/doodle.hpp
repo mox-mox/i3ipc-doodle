@@ -4,12 +4,19 @@
 
 
 #include <i3ipc++/ipc.hpp>
+#include <uvw.hpp>
+#include <deque>
+#include "job.hpp"
 
 using window_id = uint64_t;
 
 class Doodle: public sigc::trackable
 {
 	i3ipc::connection i3_conn;
+	std::shared_ptr<uvw::Loop> loop;
+
+	std::deque<Job> jobs;
+
 	void on_window_change(const i3ipc::window_event_t& evt);
 	void on_workspace_change(const i3ipc::workspace_event_t& evt);
 
@@ -17,11 +24,11 @@ class Doodle: public sigc::trackable
 		//{{{ Constructor
 
 		explicit Doodle(void);	// Todo: use xdg_config_path
-		//Doodle(const Doodle&) = delete;
-		//Doodle(Doodle &&) = delete;
-		//Doodle& operator = (const Doodle&) = delete;
-		//Doodle& operator = (Doodle &&) = delete;
-		//~Doodle(void);
+		Doodle(const Doodle&) = delete;
+		Doodle(Doodle &&) = delete;
+		Doodle& operator = (const Doodle&) = delete;
+		Doodle& operator = (Doodle &&) = delete;
+		~Doodle(void);
 		//}}}
 
 		int operator()(void);

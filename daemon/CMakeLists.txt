@@ -128,9 +128,9 @@ target_compile_definitions(doodle_daemon PUBLIC $<$<CONFIG:DEBUG>:NOTIFY_LEVEL=3
 target_compile_definitions(doodle_daemon PUBLIC $<$<CONFIG:RELEASE>:NOTIFY_LEVEL=1 LOGGING_LEVEL=1>)
 # Set build type when generating the Makefile like: cmake -DCMAKE_BUILD_TYPE=Debug ../i3ipc-doodle
 
-#add_custom_command(TARGET doodle_daemon POST_BUILD
-#                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-#                   ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle_daemon>/.config)
+add_custom_command(TARGET doodle_daemon POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                   ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle_daemon>/.config)
 
 
 add_custom_target(do_always ALL)
