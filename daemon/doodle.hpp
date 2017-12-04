@@ -4,7 +4,6 @@
 
 
 #include <i3ipc++/ipc.hpp>
-#include <uvw.hpp>
 #include <deque>
 #include "job.hpp"
 

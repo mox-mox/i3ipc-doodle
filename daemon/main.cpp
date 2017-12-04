@@ -1,4 +1,8 @@
 #include "main.hpp"
+#include "getopt_pp.h"
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include <doodle.hpp>
 
@@ -12,12 +16,6 @@ std::string config_dir;
 std::string data_dir;
 //std::string doodle_socket_path;
 //std::string i3_socket_path;
-
-
-
-
-
-
 
 
 

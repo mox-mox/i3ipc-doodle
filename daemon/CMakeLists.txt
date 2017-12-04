@@ -96,11 +96,9 @@ set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
 
 
 
-#{{{LIBCONFUSE
+#{{{INIH
 
-find_package(CONFUSE REQUIRED)
-
-set(LIBS ${LIBS} ${CONFUSE_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBUV_INCLUDE_DIRS} "${LIBS_PATH}/inih")
 #}}}
 
 
@@ -128,9 +126,16 @@ target_compile_definitions(doodle_daemon PUBLIC $<$<CONFIG:DEBUG>:NOTIFY_LEVEL=3
 target_compile_definitions(doodle_daemon PUBLIC $<$<CONFIG:RELEASE>:NOTIFY_LEVEL=1 LOGGING_LEVEL=1>)
 # Set build type when generating the Makefile like: cmake -DCMAKE_BUILD_TYPE=Debug ../i3ipc-doodle
 
-add_custom_command(TARGET doodle_daemon POST_BUILD
+
+add_custom_target(copy_doodle_config DEPENDS ${CMAKE_SOURCE_DIR}/daemon/.config
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                    ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle_daemon>/.config)
+
+
+
+			   #add_custom_command(TARGET doodle_daemon POST_BUILD
+			   #                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+			   #                   ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle_daemon>/.config)
 
 
 add_custom_target(do_always ALL)
@@ -145,6 +150,6 @@ add_custom_target(notify_end ALL COMMAND notify-send "Finished build for doodle-
 
 add_custom_target(run_doodle_daemon
 	COMMAND ./doodle_daemon; read -p "Press [Enter] key to close..."
-    DEPENDS doodle_daemon
+    DEPENDS doodle_daemon copy_doodle_config
     WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}
 )
