@@ -6,7 +6,11 @@
 //{{{
 Doodle::Doodle(void) :
 	i3_conn(),
-	loop(uvw::Loop::getDefault())
+	loop(uvw::Loop::getDefault()),
+	idle(true),
+	suspended(false),
+	xcb_conn(xcb_connect(NULL, NULL)),
+	screen(xcb_setup_roots_iterator(xcb_get_setup(xcb_conn)).data)
 {
 
 	//{{{ Create the individual jobs
@@ -18,7 +22,6 @@ Doodle::Doodle(void) :
 		{
 			try
 			{
-				//jobs.push_back( Job::create_from_jobfile(f.path(), loop) );
 				jobs.push_back({f.path(), loop});
 			}
 			catch(std::runtime_error&e)
@@ -40,7 +43,8 @@ Doodle::Doodle(void) :
 
 	if( !i3_conn.subscribe(i3ipc::ET_WORKSPACE|i3ipc::ET_WINDOW))
 	{
-		error<<"could not connect"<<std::endl;
+		notify_critical<<"Doodle"<<"Could not connect to i3"<<std::endl;
+		error<<"Could not subscribe to the workspace- and window change events."<<std::endl;
 		throw "Could not subscribe to the workspace- and window change events.";
 	}
 	i3_conn.connect_event_socket();
@@ -52,6 +56,7 @@ Doodle::Doodle(void) :
 //{{{
 Doodle::~Doodle(void)
 {
+	xcb_disconnect(xcb_conn);
 }
 //}}}
 
@@ -72,6 +77,50 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 	}
 }
 //}}}
+
+////{{{
+//void Doodle::idle_time_watcher_cb(ev::timer& timer, int revents)
+//{
+//	(void) revents;
+//	xcb_screensaver_query_info_cookie_t cookie = xcb_screensaver_query_info(xcb_conn, screen->root);
+//	xcb_screensaver_query_info_reply_t* info = xcb_screensaver_query_info_reply(xcb_conn, cookie, NULL);
+//
+//	uint32_t idle_time = info->ms_since_user_input/1000;// use seconds
+//
+//	debug<<"Checking idle time("<<revents<<"): "<<idle_time<<"."<<std::endl;
+//	free(info);
+//
+//	uint32_t repeat_value = 1;
+//	if( !idle )
+//	{
+//		// Restart the watcher to trigger when idle_time might reach max_idle_time for the first time.
+//		// See solution 2 of http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Be_smart_about_timeouts
+//		uint32_t repeat_value = settings.max_idle_time-idle_time;
+//		// If the value was allowed to become zero (because of truncation), the watcher would never be started again
+//		repeat_value = repeat_value ? repeat_value : 1;
+//	}
+//	timer.repeat = repeat_value;
+//	timer.again();
+//
+//	if((idle_time >= settings.max_idle_time) && !idle )
+//	{
+//		idle = true;
+//		logger<<"Going idle"<<std::endl;
+//		if(current_job) current_job->stop(std::chrono::steady_clock::now());
+//	}
+//	else if((idle_time < settings.max_idle_time) && idle )
+//	{
+//		idle = false;
+//		logger<<"Going busy again"<<std::endl;
+//		if(current_job) current_job->start(std::chrono::steady_clock::now(), current_workspace, current_window_name);
+//	}
+//}
+////}}}
+
+
+
+
+
 
 //{{{
 int Doodle::operator()(void)

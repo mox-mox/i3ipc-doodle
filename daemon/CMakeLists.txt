@@ -17,14 +17,27 @@ set(LIBS ${LIBS} ${LIBUV_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBUV_INCLUDE_DIRS} "${LIBS_PATH}/uvw/src" "${LIBS_PATH}/uvw/deps/libuv/src/include")
 #}}}
 
-#MESSAGE( STATUS "INCDIRS_LIBUV: " "${LIBS_PATH}/uvw/deps/libuv/src/include" )
-
 #{{{I3IPCPP
 
 add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/i3ipcpp "libs/i3ipcpp")
 set(LIBS ${LIBS} ${I3IPCpp_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
 #}}}
+
+#{{{INIH
+
+set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBUV_INCLUDE_DIRS} "${LIBS_PATH}/inih")
+#}}}
+
+#{{{XCB
+
+find_package(XCB REQUIRED)
+
+set(LIBS ${LIBS} ${XCB_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
+#}}}
+
+
 
 #
 ##{{{SIGCPP
@@ -44,62 +57,9 @@ set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
 #endif (USE_SYSLOG)
 ##}}}
 #
-##{{{LIBEV
-#
-#find_package(LIBEV REQUIRED)
-#
-#set(LIBS ${LIBS} ${LIBEV_LIBRARIES})
-#set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEV_INCLUDE_DIRS})
-##}}}
-#
-##{{{XCB
-#
-#find_package(XCB REQUIRED)
-#
-#set(LIBS ${LIBS} ${XCB_LIBRARIES})
-#set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
-##}}}
-#
-
-#
-##{{{GDK-PIXBUF
-#
-#find_package(GDK-PIXBUF REQUIRED)
-#
-#set(LIBS ${LIBS} ${GDK-PIXBUF_LIBRARIES})
-#set(INCDIRS_SYS ${INCDIRS_SYS} ${GDK-PIXBUF_INCLUDE_DIRS})
-##}}}
-#
-##{{{GOBJECT
-#
-#find_package(GOBJECT REQUIRED)
-#
-#set(LIBS ${LIBS} ${GOBJECT_LIBRARIES})
-#set(INCDIRS_SYS ${INCDIRS_SYS} ${GOBJECT_INCLUDE_DIRS})
-##}}}
-#
-##{{{GDK-PIXBUF
-#
-#find_package(GDK-PIXBUF REQUIRED)
-#
-#set(LIBS ${LIBS} ${GDK-PIXBUF_LIBRARIES})
-#set(INCDIRS_SYS ${INCDIRS_SYS} ${GDK-PIXBUF_INCLUDE_DIRS})
-##}}}
-#
-##{{{LIBNOTIFY
-#
-#find_package(NOTIFY REQUIRED)
-#
-#set(LIBS ${LIBS} ${NOTIFY_LIBRARIES})
-##}}}
-#
 
 
 
-#{{{INIH
-
-set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBUV_INCLUDE_DIRS} "${LIBS_PATH}/inih")
-#}}}
 
 
 

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include "INIReader.h"
 
 #include <doodle.hpp>
 
@@ -14,9 +15,12 @@ bool show_version;
 
 std::string config_dir;
 std::string data_dir;
-//std::string doodle_socket_path;
+std::string doodle_socket_path;
 //std::string i3_socket_path;
 
+uint32_t max_idle_time;
+bool stop_on_suspend;
+bool detect_ambiguity;
 
 
 //{{{ Help and version messages
@@ -103,9 +107,9 @@ std::string get_config_dir(void)
 	if(fs::exists((config_dir=config_dir_temp)/=".config/doodle"))
 	{
 		debug<<"Config directory found at $HOME/.config/doodle"<<std::endl;
-		if(!fs::exists(config_dir/"doodlerc"))
+		if(!fs::exists(config_dir/"doodle.conf"))
 		{
-			error<<"No config found in $HOME/.doodle. Aborting..."<<std::endl;
+			error<<"No config found in $HOME/.config/doodle.conf. Aborting..."<<std::endl;
 			//TODO: Copy some default config file
 			exit(EXIT_FAILURE);
 		}
@@ -180,6 +184,132 @@ std::string get_data_dir(void)
 }
 //}}}
 
+//{{{ Parsing functions
+
+// Performance really is no concern here, so prefer simple to read code
+
+//{{{ std::vector<std::string> tokenise(std::string input)
+
+//{{{
+bool is_whitespace(char ch)
+{
+	const std::array<char, 2> whitespaces = {' ', ','};
+	for(char c : whitespaces)
+	{
+		if(ch == c) return true;
+	}
+	return false;
+}
+//}}}
+
+//{{{
+char is_token_delimiter(char ch)
+{
+	const std::array<char, 2> token_delimiters = {'\'', '"' };
+	for(char c : token_delimiters)
+	{
+		if(ch == c) return c;
+	}
+	return '\0';
+}
+//}}}
+
+//{{{
+std::vector<std::string> tokenise(std::string input)
+{
+	const char escape = '\\';
+	std::vector<std::string> tokens;
+	std::string current_token;
+	char current_delimiter = '\0';
+
+	bool in_token = false;
+	bool escaped  = false;
+
+	for(char c : input)
+	{
+		if(!in_token)
+		{
+			if(c=='#') break;
+			if(is_whitespace(c)) continue;
+
+			in_token=true;
+			if((current_delimiter = is_token_delimiter(c))) continue;
+		}
+
+		if(escaped || (current_delimiter && c!=current_delimiter) || (!current_delimiter && !is_whitespace(c))) // We got a valid char
+		{
+			if(c == escape)
+			{
+				escaped = true;
+				continue;
+			}
+			else
+			{
+				current_token.push_back(c);
+				escaped = false;
+			}
+		}
+		else
+		{
+			tokens.push_back(current_token);
+			current_token = "";
+			in_token=false;
+		}
+	}
+	if(current_token != "")
+	{
+		tokens.push_back(current_token);
+	}
+
+	return tokens;
+}
+//}}}
+//}}}
+
+//{{{
+uint32_t time_string_to_seconds(std::string input)
+{
+	uint32_t seconds = 0;
+	uint32_t temp_number = 0;
+
+	bool in_number = false;
+	for(char c : input)
+	{
+		if(std::isdigit(c))
+		{
+			if(!in_number)
+			{
+				temp_number = (c-'0');
+				in_number = true;
+			}
+			else
+			{
+				temp_number = temp_number*10 + (c-'0');
+			}
+		}
+		else
+		{
+			if(!in_number) continue;
+			in_number = false;
+			switch(c)
+			{
+				case 'y': seconds += temp_number*365*24*60*60; break;
+				case 'd': seconds += temp_number    *24*60*60; break;
+				case 'h': seconds += temp_number       *60*60; break;
+				case 'm': seconds += temp_number          *60; break;
+				default:
+				case 's': seconds += temp_number           *1;
+			}
+			temp_number = 0;
+		}
+	}
+	seconds += temp_number;
+
+	return seconds;
+}
+//}}}
+
+//}}}
 
 
 
@@ -193,7 +323,7 @@ int main(int argc, char* argv[])
 
 	//{{{ Check that we are not root.
 
-    if (!getuid())
+	if (!getuid())
 	{	// Doodle can run external programs. It reads from a world-writable config file which program to run. An attacker gaining access to this file could run arbitrary programs as root.
 		std::cerr<<"Please never run this program as root. It is not neccessary and poses a severe security risk."<<std::endl;
 		return EXIT_FAILURE;
@@ -237,13 +367,30 @@ int main(int argc, char* argv[])
 	}
 	//}}}
 
-//
-//	//{{{ Config parsing
-//
-//
-//	//}}}
-//
 
+	//{{{ Read the configuration file
+
+	INIReader reader(config_dir + "/doodle.conf");
+	if (reader.ParseError() < 0)
+	{
+		error<<"Cannot parse doodle config at "<< (config_dir + "/doodle.conf") <<"."<<std::endl;
+		notify_critical<<"Cannot parse doodle config file"<<(config_dir + "/doodle.conf")<<std::endl;
+		throw std::runtime_error("Cannot parse doodle config file at " + (config_dir + "/doodle.conf") +".");
+	}
+
+	max_idle_time = time_string_to_seconds(reader.Get("", "max_idle_time", ""));
+	debug<<"max_idle_time = "<<max_idle_time<<std::endl;
+
+	stop_on_suspend = reader.GetBoolean("", "stop_on_suspend", true);
+	debug<<"stop_on_suspend = "<<stop_on_suspend<<std::endl;
+
+	detect_ambiguity = reader.GetBoolean("", "detect_ambiguity", false);
+	debug<<"detect_ambiguity = "<<detect_ambiguity<<std::endl;
+
+	doodle_socket_path = reader.Get("", "doodle_socket_path", "");
+	debug<<"doodle_socket_path = "<<doodle_socket_path<<std::endl;
+
+	//}}}
 
 	{
 		Doodle doodle;
@@ -252,13 +399,13 @@ int main(int argc, char* argv[])
 
 
 
-//
-//	//{{{
-//	notify_low<<"LOW"<<"low"<<std::endl;
-//	notify_normal<<sett(5000)<<"NORMAL"<<"normal"<<99<<std::endl;
-//	notify_critical<<sett(10000)<<"CRITICAL"<<"critical"<<std::setw(10)<<99<<'.'<<std::endl;
-//	//}}}
-//
+	//
+	//	//{{{
+	//	notify_low<<"LOW"<<"low"<<std::endl;
+	//	notify_normal<<sett(5000)<<"NORMAL"<<"normal"<<99<<std::endl;
+	//	notify_critical<<sett(10000)<<"CRITICAL"<<"critical"<<std::setw(10)<<99<<'.'<<std::endl;
+	//	//}}}
+	//
 
 	return retval;
 }

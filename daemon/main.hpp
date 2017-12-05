@@ -16,3 +16,12 @@ extern std::string data_dir;
 //extern std::string doodle_socket_path;
 //extern std::string i3_socket_path;
 
+
+
+
+
+
+
+std::vector<std::string> tokenise(std::string input);
+
+uint32_t time_string_to_seconds(std::string input);

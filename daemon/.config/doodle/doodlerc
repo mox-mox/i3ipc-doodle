@@ -6,7 +6,6 @@ max_idle_time = 10
 # Halt the current job when to computer goes to suspend. Usually, there is very little sense in diabling this.
 stop_on_suspend = false
 
-
 # Detect ambigous job definitions at runtime, e.g. if more than one job matches the current workspace/window title combination
 detect_ambiguity = false
 
