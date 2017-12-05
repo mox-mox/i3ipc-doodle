@@ -17,6 +17,9 @@ extern std::string data_dir;
 //extern std::string i3_socket_path;
 
 
+extern uint32_t max_idle_time_ms;
+extern bool stop_on_suspend;
+extern bool detect_ambiguity;
 
 
 

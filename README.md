@@ -41,7 +41,9 @@ Matchers are entries that determine if a window "matches". Overall "matching" is
 So, to have a job that traces how much time you spend on workspace "foobar" leave out the window_names and set workspace_names to "foobar".
 
 ## TODO
- - [ ] Instead of erroring out when run as root print a warning message and just disable all actions. This prevents the security leak associated with running actions as root but allows doodle to be run as a system task that users cannot influence.
+ - [ ] Merge doodle_daemon and doodle_client: If running => start client console else start daemon.
+ - [ ] Add ipc command to add a certain window to a job (for the lifetime of that window or until the title changes)
+ - [ ] Add feature to open popup asking what job a window belongs to for unrecognized or ambigous windows (changes config?)
  - [ ] Create unit tests with cxxtest
   - [ ] Include test diagnostics in the code to have a succeed/fail criterion for the unit tests
   - [ ] Add a unit test file

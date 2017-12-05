@@ -23,15 +23,14 @@ class Doodle: public sigc::trackable
 	bool suspended;
 	xcb_connection_t * xcb_conn;
 	xcb_screen_t * screen;
-	//ev::timer idle_watcher_timer;
-	//void idle_time_watcher_cb(ev::timer& io_watcher, int revents);
+	void on_idle_timer(const uvw::TimerEvent &, uvw::TimerHandle &);
 	//}}}
 
 
 
-
-
-
+	std::shared_ptr<uvw::TimerHandle> idle_timer;
+	std::shared_ptr<uvw::SignalHandle> sigint;
+	std::shared_ptr<uvw::PipeHandle> i3_pipe;
 
 
 	void on_window_change(const i3ipc::window_event_t& evt);

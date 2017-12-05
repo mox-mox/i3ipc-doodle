@@ -10,6 +10,7 @@
 
 bool show_help;
 bool show_version;
+bool copy_config;
 //bool nofork;
 //bool allow_idle;
 
@@ -18,12 +19,12 @@ std::string data_dir;
 std::string doodle_socket_path;
 //std::string i3_socket_path;
 
-uint32_t max_idle_time;
+uint32_t max_idle_time_ms;
 bool stop_on_suspend;
 bool detect_ambiguity;
 
 
-//{{{ Help and version messages
+//{{{ Help and version messages, config copy function
 
 std::string help_message(std::string progname)
 {
@@ -44,6 +45,13 @@ void version_message()
 {
 	std::cout<<DOODLE_PROGRAM_NAME<<":"<<std::endl;
 	std::cout<<"Git branch: "<<GIT_BRANCH<<", git commit hash: "<<GIT_COMMIT_HASH<<", Version: "<<DOODLE_VERSION_MAJOR<<":"<<DOODLE_VERSION_MINOR<<"."<<std::endl<<std::endl;
+}
+
+
+void config_copy()
+{
+	std::cout<<"copy_config is not yet implemented."<<std::endl;
+
 }
 //}}}
 
@@ -339,6 +347,7 @@ int main(int argc, char* argv[])
 	{
 		ops>>GetOpt::OptionPresent('h', "help",       show_help);
 		ops>>GetOpt::OptionPresent('v', "version",    show_version);
+		ops>>GetOpt::OptionPresent("copy-config",    copy_config);
 		//ops>>GetOpt::OptionPresent('n', "nofork",     nofork);
 		//ops>>GetOpt::OptionPresent('r', "replace",    settings.replace);
 		//ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
@@ -365,6 +374,11 @@ int main(int argc, char* argv[])
 		version_message();
 		return 0;
 	}
+	if( copy_config )
+	{
+		config_copy();
+		return 0;
+	}
 	//}}}
 
 
@@ -378,8 +392,8 @@ int main(int argc, char* argv[])
 		throw std::runtime_error("Cannot parse doodle config file at " + (config_dir + "/doodle.conf") +".");
 	}
 
-	max_idle_time = time_string_to_seconds(reader.Get("", "max_idle_time", ""));
-	debug<<"max_idle_time = "<<max_idle_time<<std::endl;
+	max_idle_time_ms = 1000*time_string_to_seconds(reader.Get("", "max_idle_time", ""));
+	debug<<"max_idle_time_ms = "<<max_idle_time_ms<<std::endl;
 
 	stop_on_suspend = reader.GetBoolean("", "stop_on_suspend", true);
 	debug<<"stop_on_suspend = "<<stop_on_suspend<<std::endl;

@@ -24,8 +24,4 @@ const std::string DOODLE_SOCKET_PATH("@DOODLE_SOCKET_PATH@", sizeof("@DOODLE_SOC
 
 #define DOODLE_PROTOCOL_VERSION "@DOODLE_PROTOCL_VERSION@"
 
-// Settings for libev
-#define EV_NO_SMP 1
-#define EV_NO_THREADS 1
-
 #endif /* DOODLE_CONFIG_HPP */
