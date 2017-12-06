@@ -36,12 +36,6 @@ class Job final : public Window_matching
 
 	std::shared_ptr<uvw::Loop> loop;
 
-	//std::vector<std::string> window_include;
-	//std::vector<std::string> window_exclude;
-
-	//std::vector<std::string> workspace_include;
-	//std::vector<std::string> workspace_exclude;
-
 	//{{{
 	struct Timefile
 	{
@@ -73,8 +67,23 @@ class Job final : public Window_matching
 
 
 	public:
-	Job(const fs::path& jobfile_path, std::shared_ptr<uvw::Loop> loop);
+	//{{{ Constructors
+
+	explicit Job(const fs::path& jobfile_path, std::shared_ptr<uvw::Loop> loop);
+	Job(const Job& other) = delete;
+	Job(Job& other) = delete;
+	Job(Job&& other) = delete;
+	Job(void) = delete;
 	~Job(void);
+	//}}}
+
+
+
+
+
+
+
+
 
 	void start(steady_clock::time_point now);
 	void stop(steady_clock::time_point now);

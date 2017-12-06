@@ -27,7 +27,8 @@ Doodle::Doodle(void) :
 		{
 			try
 			{
-				jobs.push_back({f.path(), loop});
+				//jobs.push_back({f.path(), loop});
+				jobs.emplace_back(f.path(), loop);
 			}
 			catch(std::runtime_error&e)
 			{

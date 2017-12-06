@@ -93,10 +93,6 @@ add_custom_target(copy_doodle_config DEPENDS ${CMAKE_SOURCE_DIR}/daemon/.config
 
 
 
-			   #add_custom_command(TARGET doodle_daemon POST_BUILD
-			   #                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-			   #                   ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle_daemon>/.config)
-
 
 add_custom_target(do_always ALL)
 add_custom_target(notify_end ALL COMMAND notify-send "Finished build for doodle-daemon" DEPENDS do_always doodle_daemon)

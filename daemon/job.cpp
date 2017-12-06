@@ -146,6 +146,8 @@ Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
 {
 	debug<<"Creating job \""<<jobname<<"\" from "<<jobconfig_path<<std::endl;
 
+	error<<"Job("<<jobname<<")::Job()::this = "<<this<<std::endl;
+
 	//{{{ Read the configuration file
 
 	INIReader reader(jobconfig_path);
@@ -250,6 +252,7 @@ Job::~Job(void)
 //{{{
 void Job::on_write_timer(void)
 {
+	error<<"Job("<<jobname<<")::on_write_timer()::this = "<<this<<std::endl;
 	steady_clock::time_point now = steady_clock::now();
 
 	if(is_active)							// Account for a currently running job.
@@ -274,6 +277,7 @@ void Job::on_write_timer(void)
 //{{{
 void Job::start(steady_clock::time_point start_time)
 {
+	error<<"Job("<<jobname<<")::start()::this = "<<this<<std::endl;
 	if(!is_active)
 	{
 		debug<<"Starting job \""<<jobname<<"\"."<<std::endl;
@@ -301,6 +305,7 @@ void Job::start(steady_clock::time_point start_time)
 //{{{
 void Job::stop(steady_clock::time_point now)
 {
+	error<<"Job("<<jobname<<")::stop()::this = "<<this<<std::endl;
 	if(is_active)
 	{
 		debug<<"Stopping job \""<<jobname<<"\"."<<std::endl;
