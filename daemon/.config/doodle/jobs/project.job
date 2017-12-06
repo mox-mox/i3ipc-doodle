@@ -27,7 +27,7 @@ exclude=private
 [timefile]
 # Where to store the timefile. The timefile will always be named <jobname>.times
 # If set to "default" or omitted the files will be stored in doodles data directory, usually ~/.local/share/doodle/
-#filename=/home/mox/doodle_timefiles/
+#path=/home/mox/doodle_timefiles/
 
 # How often the time should be written to disk.
 # When the job becomes active, a down timer is started with this value. When the timer runs out, the time the user spent

@@ -24,4 +24,14 @@ const std::string DOODLE_SOCKET_PATH("@DOODLE_SOCKET_PATH@", sizeof("@DOODLE_SOC
 
 #define DOODLE_PROTOCOL_VERSION "@DOODLE_PROTOCL_VERSION@"
 
+
+
+
+
+inline auto default_timefile_granularity = "3600";
+inline auto default_max_idle_time = "1m";
+
+
+
+
 #endif /* DOODLE_CONFIG_HPP */

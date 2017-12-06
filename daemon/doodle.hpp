@@ -4,9 +4,9 @@
 
 
 #include <i3ipc++/ipc.hpp>
-#include <deque>
 #include "job.hpp"
 #include <xcb/screensaver.h>
+#include <uvw.hpp>
 
 using window_id = uint64_t;
 
@@ -15,7 +15,13 @@ class Doodle: public sigc::trackable
 	i3ipc::connection i3_conn;
 	std::shared_ptr<uvw::Loop> loop;
 
+	Current current_window;
+
+	Job* current_job;
+
+
 	std::vector<Job> jobs;
+	std::map<window_id, Job*> win_id_cache;
 
 	//{{{ Idle time detection
 
@@ -36,6 +42,11 @@ class Doodle: public sigc::trackable
 	void on_window_change(const i3ipc::window_event_t& evt);
 	void on_workspace_change(const i3ipc::workspace_event_t& evt);
 
+	bool simulate_window_change(std::list < std::shared_ptr < i3ipc::container_t>>nodes);
+	bool simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces);
+
+	inline Job* find_job(void);
+
 	public:
 		//{{{ Constructor
 
@@ -48,6 +59,7 @@ class Doodle: public sigc::trackable
 		//}}}
 
 		int operator()(void);
+		friend std::ostream& operator<<(std::ostream&stream, Doodle const&doodle);
 };
 
 #endif /* DOODLE_HPP */

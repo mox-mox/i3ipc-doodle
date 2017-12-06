@@ -2,7 +2,6 @@
 #include "main.hpp"
 
 
-
 //{{{
 Doodle::Doodle(void) :
 	i3_conn(),
@@ -14,6 +13,7 @@ Doodle::Doodle(void) :
 	idle_timer(loop->resource<uvw::TimerHandle>()),
 	sigint(loop->resource<uvw::SignalHandle>()),
 	i3_pipe(loop->resource<uvw::PipeHandle>())
+	//client_pipe(loop->resource<uvw::PipeHandle>())
 {
 
 	//{{{ Create the individual jobs
@@ -38,6 +38,9 @@ Doodle::Doodle(void) :
 
 	//{{{ i3 event subscriptions
 
+	//simulate_workspace_change(i3_conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
+	////simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+
 	i3_conn.signal_window_event.connect(sigc::mem_fun(*this, &Doodle::on_window_change));
 	i3_conn.signal_workspace_event.connect(sigc::mem_fun(*this, &Doodle::on_workspace_change));
 
@@ -54,8 +57,15 @@ Doodle::Doodle(void) :
 	
 	//{{{ idle time watcher
 
-    idle_timer->on<uvw::TimerEvent>(std::bind( &Doodle::on_idle_timer, this, std::placeholders::_1, std::placeholders::_2 ));
-	idle_timer->start(uvw::TimerHandle::Time(20),uvw::TimerHandle::Time(0));
+	if(max_idle_time_ms > milliseconds(0))
+	{
+		idle_timer->on<uvw::TimerEvent>(std::bind( &Doodle::on_idle_timer, this, std::placeholders::_1, std::placeholders::_2 ));
+		idle_timer->start(milliseconds(20),milliseconds(0));
+	}
+	else
+	{
+		idle = false;
+	}
 	//}}}
 
 	//{{{ <Ctrl+c>/SIGINT watcher
@@ -81,7 +91,6 @@ Doodle::Doodle(void) :
 }
 //}}}
 
-
 //{{{
 Doodle::~Doodle(void)
 {
@@ -89,11 +98,107 @@ Doodle::~Doodle(void)
 }
 //}}}
 
+//
+////{{{
+//void Doodle::on_window_change(const i3ipc::window_event_t& evt)
+//{
+//	notify_normal<<sett(5000)<<"New current window: "<< evt.container->name <<std::endl;
+//}
+////}}}
+//
+////{{{
+//void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
+//{
+//	if( evt.type == i3ipc::WorkspaceEventType::FOCUS )
+//	{
+//		notify_normal<<sett(5000)<<"New current_workspace: "<<evt.current->name<<std::endl;
+//	}
+//}
+////}}}
+//
+
+
+
+//{{{
+inline Job* Doodle::find_job(void)
+{
+	if(detect_ambiguity)// For normal operation, just report the first match.
+	{
+		std::vector<Job*> matches;
+		for(Job& j : jobs)
+		{
+			if(j==current_window) matches.push_back(&j);
+		}
+		if(matches.size() > 1)
+		{
+			error<<"Ambiguity detected: Window name \""<<current_window.window_name<<"\" matched:\n";
+			for(auto& j : matches)
+			{
+				error<<'\t'<<j->get_jobname();
+			}
+			error<<std::endl;
+			// TODO: Show an errow window that asks to clarify which job the window belongs to.
+		}
+		return matches.size() ? matches[0] : nullptr;
+	}
+	else
+	{
+		auto it = std::find(jobs.begin(), jobs.end(), current_window);
+			//std::find_if(jobs.begin(), jobs.end(), [&](Job& j) { return j.match(current_workspace, current_window_name); });
+		return it != jobs.end() ? &*it : nullptr;
+	}
+}
+//}}}
 
 //{{{
 void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 {
-	notify_normal<<sett(5000)<<"New current window: "<< evt.container->name <<std::endl;
+	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	(void) now;
+	// A window change may imply user activity, so if the user is considered idle, update that status
+	//if( idle ) idle_time_watcher_cb(idle_watcher_timer, 2);
+	if( idle ) on_idle_timer(uvw::TimerEvent(), *idle_timer);
+	//{{{ Print some information about the event
+
+	//#ifdef DEBUG
+	//	logger<<"on_window_change() called "<<++win_evt_count<<"th time. Type: "<<static_cast < char > (evt.type)<<std::endl;
+	//	if( evt.container != nullptr )
+	//	{
+	//		//logger<<"	id = "<<evt.container->id<<std::endl;
+	//		logger<<"	name = "<<evt.container->name<<std::endl;
+	//		//logger<<"	type = "<<evt.container->type<<std::endl;
+	//		//logger<<"	urgent = "<<evt.container->urgent<<std::endl;
+	//		//logger<<"	focused = "<<evt.container->focused<<std::endl;
+	//	}
+	//#endif
+	//}}}
+
+	current_window.window_name = evt.container->name;
+
+	if(((evt.type == i3ipc::WindowEventType::FOCUS) || (evt.type == i3ipc::WindowEventType::TITLE)) && (evt.container != nullptr))
+	{
+		Job* old_job = current_job;
+
+		auto indexed_job = win_id_cache.find(evt.container->id);
+		if(indexed_job == win_id_cache.end() || indexed_job->second == nullptr || *indexed_job->second!=current_window)
+		{
+			//win_id_cache[evt.container->id] = find_job(current_window_name);
+			win_id_cache[evt.container->id] = find_job();
+		}
+		current_job = win_id_cache[evt.container->id];
+
+		if( old_job != current_job )
+		{
+			if(old_job) old_job->stop(now);
+			if(current_job && !idle) current_job->start(now);
+			logger<<"Active job: "<<(old_job?old_job->get_jobname():"none")<<" --> "<<(current_job?current_job->get_jobname():"none")<<std::endl;
+		}
+	}
+	else if( evt.type == i3ipc::WindowEventType::CLOSE )
+	{
+		win_id_cache.erase(evt.container->id);
+		simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+	}
 }
 //}}}
 
@@ -102,10 +207,76 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 {
 	if( evt.type == i3ipc::WorkspaceEventType::FOCUS )
 	{
-		notify_normal<<sett(5000)<<"New current_workspace: "<<evt.current->name<<std::endl;
+		debug<<"New current_workspace: "<<evt.current->name<<std::endl;
+		notify_low<<sett(5000)<<"New current_workspace: "<<evt.current->name<<std::endl;
+		current_window.workspace_name = evt.current->name;
+		simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+	}
+	else
+	{
+		debug<<"Ignoring Workspace event"<<std::endl;
 	}
 }
 //}}}
+
+//{{{
+std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
+{
+	stream<<"Doodle class:"<<std::endl;
+	stream<<"	Current job: "<<(doodle.current_job?doodle.current_job->get_jobname():"none")<<std::endl;
+	stream<<"	Current workspace: "<<doodle.current_window.workspace_name<<std::endl;
+	stream<<"	Jobs:"<<std::endl;
+	for( const Job& job : doodle.jobs )
+	{
+		stream<<"		"<<job<<std::endl;
+	}
+	stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_name"<<std::endl;
+	for( auto it : doodle.win_id_cache )
+	{
+		stream<<"		"<<it.first<<"	"<<(it.second?it.second->get_jobname():"none")<<std::endl;
+	}
+	return stream;
+}
+//}}}
+
+//{{{
+bool Doodle::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces)
+{	// Iterate through all workspaces and call on_workspace_change() for the focussed one.
+	for( std::shared_ptr < i3ipc::workspace_t > &workspace : workspaces )
+	{
+		if( workspace->focused )
+		{
+			on_workspace_change({ i3ipc::WorkspaceEventType::FOCUS,  workspace, nullptr });
+			return true;
+		}
+	}
+	error<<"No workspace is focused."<<std::endl;
+	return false;	// Should never be reached
+}
+//}}}
+
+//{{{
+bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::container_t>>nodes)
+{	// Iterate through all containers and call on_window_change() for the focussed one.
+	for( std::shared_ptr < i3ipc::container_t > &container : nodes )
+	{
+		if( container->focused )
+		{
+			on_window_change({ i3ipc::WindowEventType::FOCUS,  container });
+			return true;
+		}
+		else
+		{
+			if( simulate_window_change(container->nodes)) return true;
+		}
+	}
+	return false;	// Should never be reached
+}
+//}}}
+
+
+
+
 
 //{{{
 void Doodle::on_idle_timer(const uvw::TimerEvent&, uvw::TimerHandle& timer)
@@ -113,23 +284,24 @@ void Doodle::on_idle_timer(const uvw::TimerEvent&, uvw::TimerHandle& timer)
 	xcb_screensaver_query_info_cookie_t cookie = xcb_screensaver_query_info(xcb_conn, screen->root);
 	xcb_screensaver_query_info_reply_t* info = xcb_screensaver_query_info_reply(xcb_conn, cookie, NULL);
 
-	uint32_t idle_time_ms = info->ms_since_user_input;
+	milliseconds idle_time_ms = milliseconds(info->ms_since_user_input);
 
-	debug<<"Checking idle time: "<<idle_time_ms<<"ms. (max_idle_time_ms = "<<max_idle_time_ms<<"ms)"<<std::endl;
+	debug<<"Checking idle time: "<<idle_time_ms<<". (max_idle_time_ms = "<<max_idle_time_ms<<")"<<std::endl;
 	free(info);
 
-	int32_t repeat_value_ms = 1000;
+	milliseconds repeat_value_ms = milliseconds(1000);
 	if( !idle )
 	{
 		// Restart the watcher to trigger when idle_time_ms might reach max_idle_time_ms for the first time.
 		// See solution 2 of http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#Be_smart_about_timeouts
 		repeat_value_ms = max_idle_time_ms-idle_time_ms;
 		// If the value was allowed to become zero, the watcher would never be started again
-		repeat_value_ms = repeat_value_ms > 0 ? repeat_value_ms : 1000;
+		//debug<<"repeat_value: "<<repeat_value_ms<<", milliseconds(0): "<<milliseconds(0)<<"."<<std::endl;
+		repeat_value_ms = repeat_value_ms > milliseconds(0) ? repeat_value_ms : milliseconds(1000);
 	}
-	debug<<"repeat_value: "<<repeat_value_ms<<"ms."<<std::endl;
+	//debug<<"repeat_value: "<<repeat_value_ms<<"."<<std::endl;
 
-	timer.start(uvw::TimerHandle::Time(repeat_value_ms),uvw::TimerHandle::Time(0));
+	timer.start(repeat_value_ms,milliseconds(0));
 
 	if((idle_time_ms >= max_idle_time_ms) && !idle )
 	{
@@ -145,10 +317,6 @@ void Doodle::on_idle_timer(const uvw::TimerEvent&, uvw::TimerHandle& timer)
 	}
 }
 //}}}
-
-
-
-
 
 //{{{
 int Doodle::operator()(void)
@@ -166,8 +334,180 @@ int Doodle::operator()(void)
 //}}}
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
+//
+////{{{
+//inline Job* Doodle::find_job(void)
+//{
+//	if( !settings.detect_ambiguity )// For normal operation, just report the first match.
+//	{
+//		std::vector<Job*> matches;
+//		for(Job& j : jobs)
+//		{
+//			if(j.match(current_workspace, current_window_name)) matches.push_back(&j);
+//		}
+//		if(matches.size() > 1)
+//		{
+//			error<<"Ambiguity detected: Window name \""<<current_window_name<<"\" matched:\n";
+//			for(auto j : matches)
+//			{
+//				error<<'\t'<<j->get_jobname();
+//			}
+//			error<<std::endl;
+//			// TODO: Show an errow window that asks to clarify which job the window belongs to.
+//		}
+//		return matches.size() ? matches[0] : nullptr;
+//	}
+//	else
+//	{
+//		std::_Deque_iterator<Job, Job&, Job*> it =
+//			std::find_if(jobs.begin(), jobs.end(), [&](Job& j) { return j.match(current_workspace, current_window_name); });
+//		return it != jobs.end() ? &*it : nullptr;
+//	}
+//}
+////}}}
+//
+////{{{
+//void Doodle::on_window_change(const i3ipc::window_event_t& evt)
+//{
+//	std::cout<<*this<<std::endl;
+//	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+//	// A window change may imply user activity, so if the user is considered idle, update that status
+//	if( idle ) idle_time_watcher_cb(idle_watcher_timer, 2);
+//	//{{{ Print some information about the event
+//
+//	//#ifdef DEBUG
+//	//	logger<<"on_window_change() called "<<++win_evt_count<<"th time. Type: "<<static_cast < char > (evt.type)<<std::endl;
+//	//	if( evt.container != nullptr )
+//	//	{
+//	//		//logger<<"	id = "<<evt.container->id<<std::endl;
+//	//		logger<<"	name = "<<evt.container->name<<std::endl;
+//	//		//logger<<"	type = "<<evt.container->type<<std::endl;
+//	//		//logger<<"	urgent = "<<evt.container->urgent<<std::endl;
+//	//		//logger<<"	focused = "<<evt.container->focused<<std::endl;
+//	//	}
+//	//#endif
+//	//}}}
+//
+//	current_window_name = evt.container->name;
+//
+//	if(((evt.type == i3ipc::WindowEventType::FOCUS) || (evt.type == i3ipc::WindowEventType::TITLE)) && (evt.container != nullptr))
+//	{
+//		Job* old_job = current_job;
+//		std::map<window_id, Job*>::iterator indexed_job = win_id_cache.find(evt.container->id);
+//
+//		if(indexed_job == win_id_cache.end() || indexed_job->second == nullptr || !indexed_job->second->match(current_workspace, current_window_name))
+//		{
+//			//win_id_cache[evt.container->id] = find_job(current_window_name);
+//			win_id_cache[evt.container->id] = find_job();
+//		}
+//		current_job = win_id_cache[evt.container->id];
+//		if( old_job != current_job )
+//		{
+//			if(old_job && current_job)
+//			{
+//				if(old_job != current_job)
+//				{
+//					old_job->stop(now);
+//					current_job->start(now, current_workspace, current_window_name);
+//				}
+//			}
+//			else
+//			{
+//				if(old_job) old_job->stop(now);
+//				if(current_job && !idle) current_job->start(now, current_workspace, current_window_name);
+//			}
+//		}
+//		logger<<"New current_job: "<<current_job<<(current_job?current_job->get_jobname():"none")<<std::endl;
+//	}
+//	else if( evt.type == i3ipc::WindowEventType::CLOSE )
+//	{
+//		win_id_cache.erase(evt.container->id);
+//		simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+//	}
+//}
+////}}}
+//
+////{{{
+//void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
+//{
+//	if( evt.type == i3ipc::WorkspaceEventType::FOCUS )
+//	{
+//		logger<<"New current_workspace: "<<evt.current->name<<std::endl;
+//		current_workspace = evt.current->name;
+//		simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+//	}
+//#ifdef DEBUG
+//	else
+//	{
+//		//logger<<"Ignoring Workspace event"<<std::endl;
+//	}
+//#endif
+//}
+////}}}
+//
+////{{{
+//std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
+//{
+//	stream<<"Doodle class:"<<std::endl;
+//	stream<<"	Current job: "<<(doodle.current_job?doodle.current_job->get_jobname():"none")<<std::endl;
+//	stream<<"	Current workspace: "<<doodle.current_workspace<<std::endl;
+//	stream<<"	Jobs:"<<std::endl;
+//	for( const Job& job : doodle.jobs )
+//	{
+//		stream<<"		"<<job<<std::endl;
+//	}
+//	stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_name"<<std::endl;
+//	for( auto it : doodle.win_id_cache )
+//	{
+//		stream<<"		"<<it.first<<"	"<<(it.second?it.second->get_jobname():"none")<<std::endl;
+//	}
+//	return stream;
+//}
+////}}}
+//
+////{{{
+//bool Doodle::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces)
+//{	// Iterate through all workspaces and call on_workspace_change() for the focussed one.
+//	for( std::shared_ptr < i3ipc::workspace_t > &workspace : workspaces )
+//	{
+//		if( workspace->focused )
+//		{
+//			on_workspace_change({ i3ipc::WorkspaceEventType::FOCUS,  workspace, nullptr });
+//			return true;
+//		}
+//	}
+//	error<<"No workspace is focused."<<std::endl;
+//	return false;	// Should never be reached
+//}
+////}}}
+//
+////{{{
+//bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::container_t>>nodes)
+//{	// Iterate through all containers and call on_window_change() for the focussed one.
+//	for( std::shared_ptr < i3ipc::container_t > &container : nodes )
+//	{
+//		if( container->focused )
+//		{
+//			on_window_change({ i3ipc::WindowEventType::FOCUS,  container });
+//			return true;
+//		}
+//		else
+//		{
+//			if( simulate_window_change(container->nodes)) return true;
+//		}
+//	}
+//	return false;	// Should never be reached
+//}
+////}}}
+//
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //{{{
@@ -194,14 +534,14 @@ int Doodle::operator()(void)
 //    //timer->on<uvw::TimerEvent>([this](const uvw::TimerEvent &, uvw::TimerHandle & ci){
 //	//		std::cout<<"TIMER: "<<loop->now().count()<<std::endl;
 //    //});
-//	//timer->start(uvw::TimerHandle::Time(2000),uvw::TimerHandle::Time(1000));
+//	//timer->start(milliseconds(2000),milliseconds(1000));
 //	////}}}
 //
 //	//{{{ Idle time watcher
 //
 //	std::shared_ptr<uvw::TimerHandle> idle_timer = loop->resource<uvw::TimerHandle>();
 //    idle_timer->on<uvw::TimerEvent>(std::bind( &Doodle::on_idle_timer, this, std::placeholders::_1, std::placeholders::_2 ));
-//	idle_timer->start(uvw::TimerHandle::Time(20),uvw::TimerHandle::Time(0));
+//	idle_timer->start(milliseconds(20),milliseconds(0));
 //	//}}}
 //
 //	//{{{ Create a resource that will listen to <Ctrl+c>/SIGINT

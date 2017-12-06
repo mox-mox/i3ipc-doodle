@@ -12,14 +12,14 @@ bool show_help;
 bool show_version;
 bool copy_config;
 //bool nofork;
-//bool allow_idle;
+bool allow_idle;
 
 std::string config_dir;
 std::string data_dir;
 std::string doodle_socket_path;
 //std::string i3_socket_path;
 
-uint32_t max_idle_time_ms;
+milliseconds max_idle_time_ms;
 bool stop_on_suspend;
 bool detect_ambiguity;
 
@@ -275,10 +275,10 @@ std::vector<std::string> tokenise(std::string input)
 //}}}
 
 //{{{
-uint32_t time_string_to_seconds(std::string input)
+milliseconds time_string_to_milliseconds(std::string input)
 {
-	uint32_t seconds = 0;
-	uint32_t temp_number = 0;
+	uint64_t seconds = 0;
+	uint64_t temp_number = 0;
 
 	bool in_number = false;
 	for(char c : input)
@@ -313,7 +313,7 @@ uint32_t time_string_to_seconds(std::string input)
 	}
 	seconds += temp_number;
 
-	return seconds;
+	return milliseconds(1000*seconds);
 }
 //}}}
 
@@ -350,7 +350,7 @@ int main(int argc, char* argv[])
 		ops>>GetOpt::OptionPresent("copy-config",    copy_config);
 		//ops>>GetOpt::OptionPresent('n', "nofork",     nofork);
 		//ops>>GetOpt::OptionPresent('r', "replace",    settings.replace);
-		//ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
+		ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
 
 		ops>>GetOpt::Option('c',        "config",     config_dir,         get_config_dir);
 		ops>>GetOpt::Option('d',        "data",       data_dir,           get_data_dir);
@@ -392,7 +392,7 @@ int main(int argc, char* argv[])
 		throw std::runtime_error("Cannot parse doodle config file at " + (config_dir + "/doodle.conf") +".");
 	}
 
-	max_idle_time_ms = 1000*time_string_to_seconds(reader.Get("", "max_idle_time", ""));
+	max_idle_time_ms = allow_idle ? milliseconds(0) : time_string_to_milliseconds(reader.Get("", "max_idle_time", default_max_idle_time));
 	debug<<"max_idle_time_ms = "<<max_idle_time_ms<<std::endl;
 
 	stop_on_suspend = reader.GetBoolean("", "stop_on_suspend", true);
