@@ -19,8 +19,6 @@ class Window_matching
 	bool search(const std::string& search_term, const std::vector<std::string>& list) const;
 
 	public:
-		bool match(const std::string& current_workspace, const std::string& window_title) const;
-
 		bool operator ==(const Current& current) const;
 		bool operator !=(const Current& current) const;
 
