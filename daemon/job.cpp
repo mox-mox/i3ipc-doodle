@@ -198,6 +198,8 @@ Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
 
 	// idle time watcher
 	write_timer->on<uvw::TimerEvent>(std::bind( &Job::on_write_timer, this));
+	//error<<"	this = "<<this<<std::endl;
+	//error<<"	write_timer = "<<write_timer<<std::endl;
 
 	times.total = timefile.get_total_time();
 }
@@ -274,9 +276,12 @@ void Job::start(steady_clock::time_point start_time)
 {
 	if(!is_active)
 	{
+		debug<<"Starting job \""<<jobname<<"\"."<<std::endl;
 		is_active = true;
 		times.job_start = start_time;
 
+		//error<<"	this = "<<this<<std::endl;
+		//error<<"	write_timer = "<<write_timer<<std::endl;
 		if(!write_timer->active())
 		{
 			times.slot_start = system_clock::now();
@@ -298,6 +303,7 @@ void Job::stop(steady_clock::time_point now)
 {
 	if(is_active)
 	{
+		debug<<"Stopping job \""<<jobname<<"\"."<<std::endl;
 		milliseconds elapsed = std::chrono::duration_cast<milliseconds>(now-times.job_start);
 		times.total     += elapsed;
 		times.slot      += elapsed;

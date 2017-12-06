@@ -109,7 +109,7 @@ add_custom_target(notify_end ALL COMMAND notify-send "Finished build for doodle-
 
 
 add_custom_target(run_doodle_daemon
-	COMMAND ./doodle_daemon; read -p "Press [Enter] key to close..."
+	COMMAND ./doodle_daemon --no-fork; read -p "Press [Enter] key to close..."
     DEPENDS doodle_daemon copy_doodle_config
     WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}
 )

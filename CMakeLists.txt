@@ -10,6 +10,7 @@ project(i3ipc-doodle)
 find_package( PythonLibs 3 REQUIRED )
 find_package( PythonInterp 3 REQUIRED )
 
+set_property(GLOBAL PROPERTY TARGET_MESSAGES OFF)
 
 #set(DOODLE_CONFIG_PATH ".config/doodle")
 # A leading '&' character is translated to a null character,

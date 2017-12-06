@@ -11,7 +11,7 @@
 bool show_help;
 bool show_version;
 bool copy_config;
-//bool nofork;
+bool nofork;
 bool allow_idle;
 
 std::string config_dir;
@@ -32,9 +32,9 @@ std::string help_message(std::string progname)
 	message += "Usage: "+progname+" [options]\nOptions:\n";
 	message += "	-h|--help           : Show this help and exit.\n";
 	message += "	-v|--version        : Show version information and exit.\n";
-	message += "	-n|--nofork         : Do not fork off into the background.\n";
+	message += "	-n|--no-fork        : Do not fork off into the background.\n";
 	message += "	-r|--restart        : Wait for already running daemon to finish instead of aborting when another daemon is already running.\n";
-	//message += "	-a|--allow_idle     : Disable idle time checking.\n";
+	//message += "	-a|--allow-idle     : Disable idle time checking.\n";
 	message += "	-c|--config  <path> : The path to the config files. Default: \"$XDG_CONFIG_HOME/doodle/\".\n";
 	message += "	-d|--data  <path>   : The path to the data files. Default: \"$XDG_DATA_HOME/doodle/\".\n";
 	//message += "	-s|--socket  <path> : Where to store the socket for user communication. Default: \"" + DOODLE_SOCKET_PATH + "\".\n";
@@ -348,9 +348,9 @@ int main(int argc, char* argv[])
 		ops>>GetOpt::OptionPresent('h', "help",       show_help);
 		ops>>GetOpt::OptionPresent('v', "version",    show_version);
 		ops>>GetOpt::OptionPresent("copy-config",    copy_config);
-		//ops>>GetOpt::OptionPresent('n', "nofork",     nofork);
+		ops>>GetOpt::OptionPresent('n', "no-fork",     nofork);
 		//ops>>GetOpt::OptionPresent('r', "replace",    settings.replace);
-		ops>>GetOpt::OptionPresent('a', "allow_idle", allow_idle);
+		ops>>GetOpt::OptionPresent('a', "allow-idle", allow_idle);
 
 		ops>>GetOpt::Option('c',        "config",     config_dir,         get_config_dir);
 		ops>>GetOpt::Option('d',        "data",       data_dir,           get_data_dir);
@@ -406,10 +406,25 @@ int main(int argc, char* argv[])
 
 	//}}}
 
-	{
-		Doodle doodle;
-		retval = doodle();
-	}
+
+
+
+
+	// Create doodle object before forking so the output is still visible
+	Doodle doodle;
+
+	//// Fork into background to become a daemon
+	//if(!nofork)
+	//{
+	//	if(daemon(1, 0))
+	//	{
+	//		error<<"Could not daemonize."<<std::endl;
+	//		notify_critical<<sett(10000)<<"Doodle"<<"Could not daemonize."<<std::endl;
+	//		return EXIT_FAILURE;
+	//	}
+	//}
+
+	retval = doodle();
 
 
 

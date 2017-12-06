@@ -7,10 +7,15 @@ bool Window_matching::search(const std::string& search_term, const std::vector<s
 {
 	for( std::string name : list )
 	{
-		if( std::regex_search(search_term, std::regex(name)))
+		error<<"creating regex from \""<<name<<"\"."<<std::endl;
+		std::regex my_regex(name);
+		error<<"starting regex search."<<std::endl;
+		if( std::regex_search(search_term, my_regex))
 		{
+			error<<"regex search=true."<<std::endl;
 			return true;
 		}
+		error<<"regex search=false."<<std::endl;
 	}
 	return false;
 }

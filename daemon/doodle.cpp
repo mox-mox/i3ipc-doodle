@@ -6,6 +6,8 @@
 Doodle::Doodle(void) :
 	i3_conn(),
 	loop(uvw::Loop::getDefault()),
+	current_window(),
+	current_job(nullptr),
 	idle(true),
 	suspended(false),
 	xcb_conn(xcb_connect(NULL, NULL)),
@@ -219,25 +221,6 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 }
 //}}}
 
-//{{{
-std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
-{
-	stream<<"Doodle class:"<<std::endl;
-	stream<<"	Current job: "<<(doodle.current_job?doodle.current_job->get_jobname():"none")<<std::endl;
-	stream<<"	Current workspace: "<<doodle.current_window.workspace_name<<std::endl;
-	stream<<"	Jobs:"<<std::endl;
-	for( const Job& job : doodle.jobs )
-	{
-		stream<<"		"<<job<<std::endl;
-	}
-	stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_name"<<std::endl;
-	for( auto it : doodle.win_id_cache )
-	{
-		stream<<"		"<<it.first<<"	"<<(it.second?it.second->get_jobname():"none")<<std::endl;
-	}
-	return stream;
-}
-//}}}
 
 //{{{
 bool Doodle::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces)
@@ -274,10 +257,6 @@ bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::contain
 }
 //}}}
 
-
-
-
-
 //{{{
 void Doodle::on_idle_timer(const uvw::TimerEvent&, uvw::TimerHandle& timer)
 {
@@ -307,13 +286,14 @@ void Doodle::on_idle_timer(const uvw::TimerEvent&, uvw::TimerHandle& timer)
 	{
 		idle = true;
 		debug<<"Going idle"<<std::endl;
-		//if(current_job) current_job->stop(std::chrono::steady_clock::now());
+		if(current_job) current_job->stop(std::chrono::steady_clock::now());
 	}
 	else if((idle_time_ms < max_idle_time_ms) && idle )
 	{
 		idle = false;
 		debug<<"Going busy again"<<std::endl;
 		//if(current_job) current_job->start(std::chrono::steady_clock::now(), current_workspace, current_window_name);
+		if(current_job) current_job->start(std::chrono::steady_clock::now());
 	}
 }
 //}}}
@@ -333,6 +313,26 @@ int Doodle::operator()(void)
 }
 //}}}
 
+
+//{{{
+std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
+{
+	stream<<"Doodle class:"<<std::endl;
+	stream<<"	Current job: "<<(doodle.current_job?doodle.current_job->get_jobname():"none")<<std::endl;
+	stream<<"	Current workspace: "<<doodle.current_window.workspace_name<<std::endl;
+	stream<<"	Jobs:"<<std::endl;
+	for( const Job& job : doodle.jobs )
+	{
+		stream<<"		"<<job<<std::endl;
+	}
+	stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_name"<<std::endl;
+	for( auto it : doodle.win_id_cache )
+	{
+		stream<<"		"<<it.first<<"	"<<(it.second?it.second->get_jobname():"none")<<std::endl;
+	}
+	return stream;
+}
+//}}}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

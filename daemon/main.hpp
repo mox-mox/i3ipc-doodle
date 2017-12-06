@@ -1,5 +1,8 @@
 #pragma once
 
+//#define INI_INLINE_COMMENT_PREFIXES "#"
+#define INI_MAX_LINE 2000
+
 #include "doodle_config.hpp"
 #include "console_stream.hpp"
 #include "notify_stream.hpp"
