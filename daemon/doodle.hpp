@@ -7,6 +7,7 @@
 #include "job.hpp"
 #include <xcb/screensaver.h>
 #include <uvw.hpp>
+#include "fixed_array.hpp"
 
 using window_id = uint64_t;
 
@@ -20,7 +21,8 @@ class Doodle: public sigc::trackable
 	Job* current_job;
 
 
-	std::vector<Job> jobs;
+	//std::vector<Job> jobs;
+	fixed_array<Job> jobs;
 	std::map<window_id, Job*> win_id_cache;
 
 	//{{{ Idle time detection

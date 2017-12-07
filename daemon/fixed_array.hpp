@@ -19,22 +19,22 @@ class fixed_array
 	private:
 	const std::size_t _size;
 	pointer _data;
-	std::size_t _fill;
 
 
 	public:
 	//{{{
 	fixed_array(std::size_t size) :
 		_size(size),
-		_data(new value_type[size]),
-		_fill(0)
+		//_data(new value_type[size]),
+		_data(reinterpret_cast<pointer>(malloc(size*sizeof(value_type))))
 	{}
 	//}}}
 
 	//{{{
 	~fixed_array(void)
 	{
-		    delete [] _data;
+		    //delete [] _data;
+			free(_data);
 	}
 	//}}}
 

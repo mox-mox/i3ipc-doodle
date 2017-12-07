@@ -8,6 +8,7 @@ Doodle::Doodle(void) :
 	loop(uvw::Loop::getDefault()),
 	current_window(),
 	current_job(nullptr),
+	jobs(std::distance(fs::begin(fs::directory_iterator(config_dir)), fs::end(fs::directory_iterator(config_dir)))),
 	idle(true),
 	suspended(false),
 	xcb_conn(xcb_connect(NULL, NULL)),
@@ -21,6 +22,7 @@ Doodle::Doodle(void) :
 	//{{{ Create the individual jobs
 
 	debug<<"Config dir: "<<config_dir<<std::endl;
+	int i=0;
 	for( auto&f: fs::directory_iterator(fs::path(config_dir)/"jobs"))
 	{
 		if(f.path().extension() == ".job")
@@ -28,7 +30,8 @@ Doodle::Doodle(void) :
 			try
 			{
 				//jobs.push_back({f.path(), loop});
-				jobs.emplace_back(f.path(), loop);
+				jobs.emplace(i, f.path(), loop);
+				i++;
 			}
 			catch(std::runtime_error&e)
 			{
