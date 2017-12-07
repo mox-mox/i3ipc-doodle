@@ -1,8 +1,5 @@
 #include "job.hpp"
 #include "INIReader.h"
-//#include <array>
-//#include <vector>
-//#include <cctype>
 #include <fstream>
 
 //{{{ Timefile
@@ -130,18 +127,65 @@ void Job::Timefile::add_time(milliseconds new_total, system_clock::time_point sl
 }
 //}}}
 
+//{{{
+void Job::Timefile::set_granularity(milliseconds new_granularity)
+{
+	granularity = new_granularity;
+	if(granularity < milliseconds(1800))
+		logger<<"	Very small timefile granularity. This may create some serious amout of data on disk. Consider using a greater granularity."<<std::endl;
+}
 //}}}
 
 
+////{{{
+//Json::Value Job::Timefile::get_times(uint64_t start, uint64_t end) const
+//{
+//	Json::Value retval;
+//	std::ifstream timefile(timefile_path);
+//	if(!timefile.is_open())
+//	{
+//		error<<"Could not open time file for job \""<<jobname<<"\"."<<std::endl;
+//		exit(EXIT_FAILURE);
+//	}
+//	std::string line;
+//
+//	// Go to the firest times line
+//	while(!std::getline(timefile, line).eof())
+//	{
+//		if(line == "# Start-time	time-spent")
+//			break;
+//	}
+//
+//	// Read each line
+//	while(!std::getline(timefile, line).eof())
+//	{
+//		std::stringstream linestream(line);
+//		uint64_t slot_start;
+//		uint64_t slot_time;
+//		linestream>>slot_start;
+//		if(end && slot_start > end)
+//			break;
+//		if(slot_start >= start)
+//		{
+//			linestream>>slot_time;
+//			retval[retval.size()][0] = slot_start;
+//			retval[retval.size()-1][1] = slot_time;
+//		}
+//	}
+//
+//	return retval;
+//}
+////}}}
 
-//{{{ Constructors
+//}}}
+
 
 //{{{
 Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
 	jobname(jobconfig_path.stem()),
 	is_active(false),
 	loop(loop),
-	times{milliseconds(0), steady_clock::time_point(),  milliseconds(0), system_clock::time_point()},
+	//times{milliseconds(0), steady_clock::time_point(),  milliseconds(0), system_clock::time_point()},
 	write_timer(loop->resource<uvw::TimerHandle>())
 {
 	debug<<"Creating job \""<<jobname<<"\" from "<<jobconfig_path<<std::endl;
@@ -174,12 +218,10 @@ Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
 	//{{{ Timefile
 
 	timefile.set_path(reader.Get("timefile", "path", "default"), jobname);
-	debug<<"	timefile path = "<<timefile.path<<std::endl;
+	debug<<"	timefile path = "<<timefile.get_path()<<std::endl;
 
-	timefile.granularity = time_string_to_milliseconds(reader.Get("timefile", "granularity", default_timefile_granularity));
-	debug<<"	timefile.granularity: "<<timefile.granularity<<std::endl;
-	if(timefile.granularity < milliseconds(1800))
-		logger<<"	Very small timefile granularity. This may create some serious amout of data on disk. Consider using a greater granularity."<<std::endl;
+	timefile.set_granularity(time_string_to_milliseconds(reader.Get("timefile", "granularity", default_timefile_granularity)));
+	debug<<"	timefile.granularity: "<<timefile.get_granularity()<<std::endl;
 	//}}}
 
 	//{{{ TODO: Actions
@@ -193,48 +235,20 @@ Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
 			continue;
 		}
 		//TODO: Handle all stuff pertaining to different actions
+		error<<"Reading action-section \""<<section<<"\": Well, actions are not implemented yet..."<<std::endl;
 	}
 	//}}}
 
 	//}}}
 
-	// idle time watcher
+	// write time watcher
 	write_timer->on<uvw::TimerEvent>(std::bind( &Job::on_write_timer, this));
 	//error<<"	this = "<<this<<std::endl;
 	//error<<"	write_timer = "<<write_timer<<std::endl;
 
-	times.total = timefile.get_total_time();
+	total_run_time = timefile.get_total_time();
 }
 //}}}
-
-//
-////{{{
-//Job::Job(Job&& other) noexcept :
-//	Window_matching(std::move(other)),
-//	jobname(std::move(other.jobname)),
-//	timefile_path(std::move(other.timefile_path)),
-//	job_settings(std::move(other.job_settings)),
-//	times(std::move(other.times)),
-//	write_time_timer(other.write_time_timer.loop),
-//	actions(std::move(other.actions))
-//{
-//	debug<<"Move-Constructing job "<<jobname<<" at "<<this<<'.'<<std::endl;
-//	// Note that the timer is constructed with the original event loop in the intialiser list.
-//	// There is no real copy (or move) constructor for ev::timer, so this hack is used to re-initialise the timer
-//	write_time_timer.set < Job, &Job::write_time_cb > (this);
-//}
-////}}}
-//
-////{{{
-//Job::Job(void) :
-//	Window_matching(),
-//	jobname("NOJOB"),
-//	timefile_path(),
-//	times{seconds(0), steady_clock::time_point(), false,  seconds(0), system_clock::time_point(), true},
-//	actions()
-//{}
-////}}}
-//
 
 //{{{
 Job::~Job(void)
@@ -247,83 +261,72 @@ Job::~Job(void)
 	}
 }
 //}}}
-//}}}
 
 //{{{
 void Job::on_write_timer(void)
 {
-	error<<"Job("<<jobname<<")::on_write_timer()::this = "<<this<<std::endl;
+	//error<<"Job("<<jobname<<")::on_write_timer()::this = "<<this<<std::endl;
 	steady_clock::time_point now = steady_clock::now();
 
-	if(is_active)							// Account for a currently running job.
-	{
-		milliseconds elapsed = std::chrono::duration_cast<milliseconds>(now-times.job_start);
-		times.total     += elapsed;
-		times.slot      += elapsed;
-		times.job_start  = now;
-	}
+	// Update the timers before writing to disk...
+	slot_run_time  += runtime_since_job_start(now);
+	// We just added the runtime since job_start to the slot and total run time,
+	// so to avoid counting the time from job start to now twice, set job start to now.
+	job_start = now;
+	total_run_time += slot_run_time;
+	// ... and write the timers to disk
+	timefile.add_time(total_run_time, slot_start, slot_run_time);
 
-	timefile.add_time(times.total, times.slot_start, times.slot);
-	times.slot = milliseconds(0);
-
-	if(is_active) // If the job is currently running
-	{
-		times.slot_start = system_clock::now();
-		write_timer->start(timefile.granularity, timefile.granularity);
-	}
+	// If the job is active re-start the slot timer (if not it will be started when the job becomes active the next time)
+	if(is_active) start_slot();
 }
 //}}}
 
 //{{{
 void Job::start(steady_clock::time_point start_time)
 {
-	error<<"Job("<<jobname<<")::start()::this = "<<this<<std::endl;
+	//error<<"Job("<<jobname<<")::start()::this = "<<this<<std::endl;
 	if(!is_active)
 	{
 		debug<<"Starting job \""<<jobname<<"\"."<<std::endl;
 		is_active = true;
-		times.job_start = start_time;
+		job_start = start_time;
+		if(!write_timer->active()) start_slot();
 
-		//error<<"	this = "<<this<<std::endl;
-		//error<<"	write_timer = "<<write_timer<<std::endl;
-		if(!write_timer->active())
-		{
-			times.slot_start = system_clock::now();
-			times.slot = milliseconds(0);
-			write_timer->start(timefile.granularity, timefile.granularity);
-		}
-
-		//for(Action& action : actions)
-		//{
-		//	action(current_workspace, window_title);
-		//}
+		//for(Action& action : actions) action(current_workspace, window_title);
 	}
 	else error<<"Job "<<jobname<<": Trying to start already running process."<<std::endl;
 }
 //}}}
 
 //{{{
-void Job::stop(steady_clock::time_point now)
+void Job::stop(steady_clock::time_point stop_time)
 {
-	error<<"Job("<<jobname<<")::stop()::this = "<<this<<std::endl;
+	//error<<"Job("<<jobname<<")::stop()::this = "<<this<<std::endl;
 	if(is_active)
 	{
-		debug<<"Stopping job \""<<jobname<<"\"."<<std::endl;
-		milliseconds elapsed = std::chrono::duration_cast<milliseconds>(now-times.job_start);
-		times.total     += elapsed;
-		times.slot      += elapsed;
-		times.job_start  = steady_clock::time_point();	// reset to 'zero'
-		is_active        = false;
+		milliseconds runtime = runtime_since_job_start(stop_time);
+		slot_run_time += runtime;
+		debug<<"Stopping job \""<<jobname<<"\". Runtime since job start: "<<runtime<<", slot_run_time: "<<slot_run_time<<"."<<std::endl;
+		is_active = false; // Has to be after runtime_since_job_start()
 
-		//for(Action& action : actions)
-		//{
-		//	action.stop();
-		//}
+		//for(Action& action : actions) action.stop();
 	}
 	else error<<"Job "<<jobname<<": Trying to stop already stopped process."<<std::endl;
 }
 //}}}
 
+//{{{
+void Job::start_slot()
+{
+	// Slot start is not used for calculating passed times but only to know when the user was active.
+	// Steady clock is not fixed to a particular start time, so to get meaningfull timestamps we use system clock/wall clock time here.
+	slot_start = system_clock::now();
+	slot_run_time = milliseconds(0);
+	write_timer->start(timefile.get_granularity(), timefile.get_granularity());
+}
+//}}}
+	
 //{{{
 const std::string& Job::get_jobname(void) const
 {
@@ -334,7 +337,7 @@ const std::string& Job::get_jobname(void) const
 //{{{
 milliseconds Job::get_total_time(void) const
 {
-	return times.total;
+	return total_run_time;
 }
 //}}}
 
@@ -342,7 +345,7 @@ milliseconds Job::get_total_time(void) const
 std::ostream& operator<<(std::ostream&stream, const Job& job)
 {
 	stream<<"Job \""<<job.jobname<<"\" "<<(job.is_active?"[active]":"[inactive]");
-	stream<<(job.times.total+(job.is_active ? (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-job.times.job_start)) : std::chrono::seconds(0)))<<".";
+	stream<<(job.total_run_time+job.runtime_since_job_start(steady_clock::now()))<<".";
 	return stream;
 }
 //}}}

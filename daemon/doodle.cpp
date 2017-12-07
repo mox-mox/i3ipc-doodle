@@ -7,8 +7,8 @@ Doodle::Doodle(void) :
 	i3_conn(),
 	loop(uvw::Loop::getDefault()),
 	current_window(),
-	current_job(nullptr),
 	jobs(std::distance(fs::begin(fs::directory_iterator(config_dir)), fs::end(fs::directory_iterator(config_dir)))),
+	current_job(nullptr),
 	idle(true),
 	suspended(false),
 	xcb_conn(xcb_connect(NULL, NULL)),
@@ -104,26 +104,6 @@ Doodle::~Doodle(void)
 }
 //}}}
 
-//
-////{{{
-//void Doodle::on_window_change(const i3ipc::window_event_t& evt)
-//{
-//	notify_normal<<sett(5000)<<"New current window: "<< evt.container->name <<std::endl;
-//}
-////}}}
-//
-////{{{
-//void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
-//{
-//	if( evt.type == i3ipc::WorkspaceEventType::FOCUS )
-//	{
-//		notify_normal<<sett(5000)<<"New current_workspace: "<<evt.current->name<<std::endl;
-//	}
-//}
-////}}}
-//
-
-
 
 //{{{
 inline Job* Doodle::find_job(void)
@@ -150,7 +130,6 @@ inline Job* Doodle::find_job(void)
 	else
 	{
 		auto it = std::find(jobs.begin(), jobs.end(), current_window);
-			//std::find_if(jobs.begin(), jobs.end(), [&](Job& j) { return j.match(current_workspace, current_window_name); });
 		return it != jobs.end() ? &*it : nullptr;
 	}
 }
@@ -162,12 +141,12 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 	(void) now;
 	// A window change may imply user activity, so if the user is considered idle, update that status
-	//if( idle ) idle_time_watcher_cb(idle_watcher_timer, 2);
 	if( idle ) on_idle_timer(uvw::TimerEvent(), *idle_timer);
 	//{{{ Print some information about the event
 
 	//#ifdef DEBUG
 	//	logger<<"on_window_change() called "<<++win_evt_count<<"th time. Type: "<<static_cast < char > (evt.type)<<std::endl;
+	//	notify_low<<sett(5000)<<"New current_window: "<<evt.container->name<<std::endl;
 	//	if( evt.container != nullptr )
 	//	{
 	//		//logger<<"	id = "<<evt.container->id<<std::endl;
@@ -214,7 +193,7 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 	if( evt.type == i3ipc::WorkspaceEventType::FOCUS )
 	{
 		debug<<"New current_workspace: "<<evt.current->name<<std::endl;
-		notify_low<<sett(5000)<<"New current_workspace: "<<evt.current->name<<std::endl;
+		//notify_low<<sett(5000)<<"New current_workspace: "<<evt.current->name<<std::endl;
 		current_window.workspace_name = evt.current->name;
 		simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
 	}
@@ -224,7 +203,6 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 	}
 }
 //}}}
-
 
 //{{{
 bool Doodle::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces)
@@ -338,180 +316,6 @@ std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
 }
 //}}}
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-//
-////{{{
-//inline Job* Doodle::find_job(void)
-//{
-//	if( !settings.detect_ambiguity )// For normal operation, just report the first match.
-//	{
-//		std::vector<Job*> matches;
-//		for(Job& j : jobs)
-//		{
-//			if(j.match(current_workspace, current_window_name)) matches.push_back(&j);
-//		}
-//		if(matches.size() > 1)
-//		{
-//			error<<"Ambiguity detected: Window name \""<<current_window_name<<"\" matched:\n";
-//			for(auto j : matches)
-//			{
-//				error<<'\t'<<j->get_jobname();
-//			}
-//			error<<std::endl;
-//			// TODO: Show an errow window that asks to clarify which job the window belongs to.
-//		}
-//		return matches.size() ? matches[0] : nullptr;
-//	}
-//	else
-//	{
-//		std::_Deque_iterator<Job, Job&, Job*> it =
-//			std::find_if(jobs.begin(), jobs.end(), [&](Job& j) { return j.match(current_workspace, current_window_name); });
-//		return it != jobs.end() ? &*it : nullptr;
-//	}
-//}
-////}}}
-//
-////{{{
-//void Doodle::on_window_change(const i3ipc::window_event_t& evt)
-//{
-//	std::cout<<*this<<std::endl;
-//	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-//	// A window change may imply user activity, so if the user is considered idle, update that status
-//	if( idle ) idle_time_watcher_cb(idle_watcher_timer, 2);
-//	//{{{ Print some information about the event
-//
-//	//#ifdef DEBUG
-//	//	logger<<"on_window_change() called "<<++win_evt_count<<"th time. Type: "<<static_cast < char > (evt.type)<<std::endl;
-//	//	if( evt.container != nullptr )
-//	//	{
-//	//		//logger<<"	id = "<<evt.container->id<<std::endl;
-//	//		logger<<"	name = "<<evt.container->name<<std::endl;
-//	//		//logger<<"	type = "<<evt.container->type<<std::endl;
-//	//		//logger<<"	urgent = "<<evt.container->urgent<<std::endl;
-//	//		//logger<<"	focused = "<<evt.container->focused<<std::endl;
-//	//	}
-//	//#endif
-//	//}}}
-//
-//	current_window_name = evt.container->name;
-//
-//	if(((evt.type == i3ipc::WindowEventType::FOCUS) || (evt.type == i3ipc::WindowEventType::TITLE)) && (evt.container != nullptr))
-//	{
-//		Job* old_job = current_job;
-//		std::map<window_id, Job*>::iterator indexed_job = win_id_cache.find(evt.container->id);
-//
-//		if(indexed_job == win_id_cache.end() || indexed_job->second == nullptr || !indexed_job->second->match(current_workspace, current_window_name))
-//		{
-//			//win_id_cache[evt.container->id] = find_job(current_window_name);
-//			win_id_cache[evt.container->id] = find_job();
-//		}
-//		current_job = win_id_cache[evt.container->id];
-//		if( old_job != current_job )
-//		{
-//			if(old_job && current_job)
-//			{
-//				if(old_job != current_job)
-//				{
-//					old_job->stop(now);
-//					current_job->start(now, current_workspace, current_window_name);
-//				}
-//			}
-//			else
-//			{
-//				if(old_job) old_job->stop(now);
-//				if(current_job && !idle) current_job->start(now, current_workspace, current_window_name);
-//			}
-//		}
-//		logger<<"New current_job: "<<current_job<<(current_job?current_job->get_jobname():"none")<<std::endl;
-//	}
-//	else if( evt.type == i3ipc::WindowEventType::CLOSE )
-//	{
-//		win_id_cache.erase(evt.container->id);
-//		simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
-//	}
-//}
-////}}}
-//
-////{{{
-//void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
-//{
-//	if( evt.type == i3ipc::WorkspaceEventType::FOCUS )
-//	{
-//		logger<<"New current_workspace: "<<evt.current->name<<std::endl;
-//		current_workspace = evt.current->name;
-//		simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
-//	}
-//#ifdef DEBUG
-//	else
-//	{
-//		//logger<<"Ignoring Workspace event"<<std::endl;
-//	}
-//#endif
-//}
-////}}}
-//
-////{{{
-//std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
-//{
-//	stream<<"Doodle class:"<<std::endl;
-//	stream<<"	Current job: "<<(doodle.current_job?doodle.current_job->get_jobname():"none")<<std::endl;
-//	stream<<"	Current workspace: "<<doodle.current_workspace<<std::endl;
-//	stream<<"	Jobs:"<<std::endl;
-//	for( const Job& job : doodle.jobs )
-//	{
-//		stream<<"		"<<job<<std::endl;
-//	}
-//	stream<<"	Known windows:"<<std::endl<<"		win_id		jobname		matching_name"<<std::endl;
-//	for( auto it : doodle.win_id_cache )
-//	{
-//		stream<<"		"<<it.first<<"	"<<(it.second?it.second->get_jobname():"none")<<std::endl;
-//	}
-//	return stream;
-//}
-////}}}
-//
-////{{{
-//bool Doodle::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces)
-//{	// Iterate through all workspaces and call on_workspace_change() for the focussed one.
-//	for( std::shared_ptr < i3ipc::workspace_t > &workspace : workspaces )
-//	{
-//		if( workspace->focused )
-//		{
-//			on_workspace_change({ i3ipc::WorkspaceEventType::FOCUS,  workspace, nullptr });
-//			return true;
-//		}
-//	}
-//	error<<"No workspace is focused."<<std::endl;
-//	return false;	// Should never be reached
-//}
-////}}}
-//
-////{{{
-//bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::container_t>>nodes)
-//{	// Iterate through all containers and call on_window_change() for the focussed one.
-//	for( std::shared_ptr < i3ipc::container_t > &container : nodes )
-//	{
-//		if( container->focused )
-//		{
-//			on_window_change({ i3ipc::WindowEventType::FOCUS,  container });
-//			return true;
-//		}
-//		else
-//		{
-//			if( simulate_window_change(container->nodes)) return true;
-//		}
-//	}
-//	return false;	// Should never be reached
-//}
-////}}}
-//
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //{{{

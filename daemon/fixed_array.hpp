@@ -1,8 +1,19 @@
 #pragma once
+// A fixed-size array container
+//
+// This one allows mostly the same stuff as std::array (in fact most of the code is ripped of from GCCs std::array implementation)
+// except that the size is a runtime constant (in contrast to std::array where it is a compile time constant).
+// And it allows emplacing members.
+// Over std::vector it offers the promise to never copy/move the contained data, so does not require any copy/move constructors.
+
+#include <initializer_list>
+#include <algorithm>
 
 template<typename _Tp>
 class fixed_array
 {
+	//{{{ Member types
+
 	public:
 	typedef _Tp 	    			              value_type;
 	typedef value_type*			                  pointer;
@@ -15,6 +26,7 @@ class fixed_array
 	typedef std::ptrdiff_t                   	  difference_type;
 	typedef std::reverse_iterator<iterator>	      reverse_iterator;
 	typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+	//}}}
 
 	private:
 	const std::size_t _size;
@@ -22,23 +34,23 @@ class fixed_array
 
 
 	public:
-	//{{{
-	fixed_array(std::size_t size) :
-		_size(size),
-		//_data(new value_type[size]),
-		_data(reinterpret_cast<pointer>(malloc(size*sizeof(value_type))))
-	{}
-	//}}}
+	//{{{ Constructors, Destructor
 
-	//{{{
+	fixed_array(std::size_t size) : _size(size), _data(reinterpret_cast<pointer>(malloc(size*sizeof(value_type))))
+	{}
+
+	fixed_array(std::initializer_list<value_type> l) : fixed_array(l.size())
+	{
+		std::copy(l.begin(), l.end(), begin() );
+	}
+
 	~fixed_array(void)
 	{
-		    //delete [] _data;
 			free(_data);
 	}
 	//}}}
 
-	//{{{ The normal functions
+	//{{{ The normal functions taken from std::array
 
 	//{{{ Element access.
 
@@ -168,6 +180,7 @@ class fixed_array
 		return _size;
 	}
 
+	[[deprecated("This container does not keep track of its fill level and cannot grow or shrink. fixed_array::empty() will always return false.")]]
 	constexpr bool empty() const noexcept
 	{
 		return size() == 0;

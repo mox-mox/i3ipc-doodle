@@ -18,11 +18,11 @@ class Doodle: public sigc::trackable
 
 	Current current_window;
 
+	fixed_array<Job> jobs;
+
+	// current_job will only ever point to entries in job, which has the same life time, so no smart pointer is needed here
 	Job* current_job;
 
-
-	//std::vector<Job> jobs;
-	fixed_array<Job> jobs;
 	std::map<window_id, Job*> win_id_cache;
 
 	//{{{ Idle time detection
