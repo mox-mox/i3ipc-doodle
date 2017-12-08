@@ -5,7 +5,7 @@
 #include <pwd.h>
 #include "INIReader.h"
 
-#include <doodle.hpp>
+#include <daemon.hpp>
 
 
 bool show_help;
@@ -411,7 +411,7 @@ int main(int argc, char* argv[])
 
 
 	// Create doodle object before forking so the output is still visible
-	Doodle doodle;
+	Daemon daemon;
 
 	//// Fork into background to become a daemon
 	//if(!nofork)
@@ -424,7 +424,7 @@ int main(int argc, char* argv[])
 	//	}
 	//}
 
-	retval = doodle();
+	retval = daemon();
 
 
 

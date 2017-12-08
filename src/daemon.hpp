@@ -1,5 +1,3 @@
-#ifndef DOODLE_HPP
-#define DOODLE_HPP
 #pragma once
 
 
@@ -11,7 +9,7 @@
 
 using window_id = uint64_t;
 
-class Doodle: public sigc::trackable
+class Daemon: public sigc::trackable
 {
 	i3ipc::connection i3_conn;
 	std::shared_ptr<uvw::Loop> loop;
@@ -52,17 +50,15 @@ class Doodle: public sigc::trackable
 	public:
 		//{{{ Constructor
 
-		explicit Doodle(void);	// Todo: use xdg_config_path
-		Doodle(const Doodle&) = delete;
-		Doodle(Doodle &&) = delete;
-		Doodle& operator = (const Doodle&) = delete;
-		Doodle& operator = (Doodle &&) = delete;
-		~Doodle(void);
+		explicit Daemon(void);	// Todo: use xdg_config_path
+		Daemon(const Daemon&) = delete;
+		Daemon(Daemon &&) = delete;
+		Daemon& operator = (const Daemon&) = delete;
+		Daemon& operator = (Daemon &&) = delete;
+		~Daemon(void);
 		//}}}
 
 		int operator()(void);
-		friend std::ostream& operator<<(std::ostream&stream, Doodle const&doodle);
+		friend std::ostream& operator<<(std::ostream&stream, Daemon const&doodle);
 };
-
-#endif /* DOODLE_HPP */
 

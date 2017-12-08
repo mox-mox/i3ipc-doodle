@@ -1,9 +1,9 @@
-#include <doodle.hpp>
+#include <daemon.hpp>
 #include "main.hpp"
 
 
 //{{{
-Doodle::Doodle(void) :
+Daemon::Daemon(void) :
 	i3_conn(),
 	loop(uvw::Loop::getDefault()),
 	current_window(),
@@ -47,12 +47,12 @@ Doodle::Doodle(void) :
 	//simulate_workspace_change(i3_conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
 	////simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
 
-	i3_conn.signal_window_event.connect(sigc::mem_fun(*this, &Doodle::on_window_change));
-	i3_conn.signal_workspace_event.connect(sigc::mem_fun(*this, &Doodle::on_workspace_change));
+	i3_conn.signal_window_event.connect(sigc::mem_fun(*this, &Daemon::on_window_change));
+	i3_conn.signal_workspace_event.connect(sigc::mem_fun(*this, &Daemon::on_workspace_change));
 
 	if( !i3_conn.subscribe(i3ipc::ET_WORKSPACE|i3ipc::ET_WINDOW))
 	{
-		notify_critical<<"Doodle"<<"Could not connect to i3"<<std::endl;
+		notify_critical<<"Doodle daemon"<<"Could not connect to i3"<<std::endl;
 		error<<"Could not subscribe to the workspace- and window change events."<<std::endl;
 		throw "Could not subscribe to the workspace- and window change events.";
 	}
@@ -65,7 +65,7 @@ Doodle::Doodle(void) :
 
 	if(max_idle_time_ms > milliseconds(0))
 	{
-		idle_timer->on<uvw::TimerEvent>(std::bind( &Doodle::on_idle_timer, this, std::placeholders::_1, std::placeholders::_2 ));
+		idle_timer->on<uvw::TimerEvent>(std::bind( &Daemon::on_idle_timer, this, std::placeholders::_1, std::placeholders::_2 ));
 		idle_timer->start(milliseconds(20),milliseconds(0));
 	}
 	else
@@ -98,7 +98,7 @@ Doodle::Doodle(void) :
 //}}}
 
 //{{{
-Doodle::~Doodle(void)
+Daemon::~Daemon(void)
 {
 	xcb_disconnect(xcb_conn);
 }
@@ -106,7 +106,7 @@ Doodle::~Doodle(void)
 
 
 //{{{
-inline Job* Doodle::find_job(void)
+inline Job* Daemon::find_job(void)
 {
 	if(detect_ambiguity)// For normal operation, just report the first match.
 	{
@@ -136,7 +136,7 @@ inline Job* Doodle::find_job(void)
 //}}}
 
 //{{{
-void Doodle::on_window_change(const i3ipc::window_event_t& evt)
+void Daemon::on_window_change(const i3ipc::window_event_t& evt)
 {
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 	(void) now;
@@ -188,7 +188,7 @@ void Doodle::on_window_change(const i3ipc::window_event_t& evt)
 //}}}
 
 //{{{
-void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
+void Daemon::on_workspace_change(const i3ipc::workspace_event_t& evt)
 {
 	if( evt.type == i3ipc::WorkspaceEventType::FOCUS )
 	{
@@ -205,7 +205,7 @@ void Doodle::on_workspace_change(const i3ipc::workspace_event_t& evt)
 //}}}
 
 //{{{
-bool Doodle::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces)
+bool Daemon::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces)
 {	// Iterate through all workspaces and call on_workspace_change() for the focussed one.
 	for( std::shared_ptr < i3ipc::workspace_t > &workspace : workspaces )
 	{
@@ -221,7 +221,7 @@ bool Doodle::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::wo
 //}}}
 
 //{{{
-bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::container_t>>nodes)
+bool Daemon::simulate_window_change(std::list < std::shared_ptr < i3ipc::container_t>>nodes)
 {	// Iterate through all containers and call on_window_change() for the focussed one.
 	for( std::shared_ptr < i3ipc::container_t > &container : nodes )
 	{
@@ -240,7 +240,7 @@ bool Doodle::simulate_window_change(std::list < std::shared_ptr < i3ipc::contain
 //}}}
 
 //{{{
-void Doodle::on_idle_timer(const uvw::TimerEvent&, uvw::TimerHandle& timer)
+void Daemon::on_idle_timer(const uvw::TimerEvent&, uvw::TimerHandle& timer)
 {
 	xcb_screensaver_query_info_cookie_t cookie = xcb_screensaver_query_info(xcb_conn, screen->root);
 	xcb_screensaver_query_info_reply_t* info = xcb_screensaver_query_info_reply(xcb_conn, cookie, NULL);
@@ -281,7 +281,7 @@ void Doodle::on_idle_timer(const uvw::TimerEvent&, uvw::TimerHandle& timer)
 //}}}
 
 //{{{
-int Doodle::operator()(void)
+int Daemon::operator()(void)
 {
 	int retval = 0;
 	logger<<"---------------Starting the event loop---------------"<<std::endl;
@@ -297,9 +297,9 @@ int Doodle::operator()(void)
 
 
 //{{{
-std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
+std::ostream& operator<<(std::ostream&stream, Daemon const&doodle)
 {
-	stream<<"Doodle class:"<<std::endl;
+	stream<<"Doodle daemon class:"<<std::endl;
 	stream<<"	Current job: "<<(doodle.current_job?doodle.current_job->get_jobname():"none")<<std::endl;
 	stream<<"	Current workspace: "<<doodle.current_window.workspace_name<<std::endl;
 	stream<<"	Jobs:"<<std::endl;
@@ -348,7 +348,7 @@ std::ostream& operator<<(std::ostream&stream, Doodle const&doodle)
 //	//{{{ Idle time watcher
 //
 //	std::shared_ptr<uvw::TimerHandle> idle_timer = loop->resource<uvw::TimerHandle>();
-//    idle_timer->on<uvw::TimerEvent>(std::bind( &Doodle::on_idle_timer, this, std::placeholders::_1, std::placeholders::_2 ));
+//    idle_timer->on<uvw::TimerEvent>(std::bind( &Daemon::on_idle_timer, this, std::placeholders::_1, std::placeholders::_2 ));
 //	idle_timer->start(milliseconds(20),milliseconds(0));
 //	//}}}
 //
