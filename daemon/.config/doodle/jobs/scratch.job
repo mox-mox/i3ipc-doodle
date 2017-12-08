@@ -11,6 +11,7 @@ exclude=
 [timefile]
 path=default
 granularity=1h
+suppress=10s
 
 [actions]
 # TODO

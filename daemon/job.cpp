@@ -185,12 +185,9 @@ Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
 	jobname(jobconfig_path.stem()),
 	is_active(false),
 	loop(loop),
-	//times{milliseconds(0), steady_clock::time_point(),  milliseconds(0), system_clock::time_point()},
 	write_timer(loop->resource<uvw::TimerHandle>())
 {
 	debug<<"Creating job \""<<jobname<<"\" from "<<jobconfig_path<<std::endl;
-
-	error<<"Job("<<jobname<<")::Job()::this = "<<this<<std::endl;
 
 	//{{{ Read the configuration file
 
@@ -222,6 +219,14 @@ Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
 
 	timefile.set_granularity(time_string_to_milliseconds(reader.Get("timefile", "granularity", default_timefile_granularity)));
 	debug<<"	timefile.granularity: "<<timefile.get_granularity()<<std::endl;
+
+	suppress = time_string_to_milliseconds(reader.Get("timefile", "suppress", default_timefile_suppress));
+	debug<<"	timefile.suppress: "<<suppress<<std::endl;
+	if(suppress*2 > timefile.get_granularity())
+	{
+		error<<"	Timefile.granularity must be at least twice as long as timefile.suppress. Setting to timefile.suppress to timefile.granularity/2 = "<<timefile.get_granularity()/2<<"."<<std::endl;
+		suppress = timefile.get_granularity()/2;
+	}
 	//}}}
 
 	//{{{ TODO: Actions
@@ -243,8 +248,6 @@ Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
 
 	// write time watcher
 	write_timer->on<uvw::TimerEvent>(std::bind( &Job::on_write_timer, this));
-	//error<<"	this = "<<this<<std::endl;
-	//error<<"	write_timer = "<<write_timer<<std::endl;
 
 	total_run_time = timefile.get_total_time();
 }
@@ -265,7 +268,6 @@ Job::~Job(void)
 //{{{
 void Job::on_write_timer(void)
 {
-	//error<<"Job("<<jobname<<")::on_write_timer()::this = "<<this<<std::endl;
 	steady_clock::time_point now = steady_clock::now();
 
 	// Update the timers before writing to disk...
@@ -285,7 +287,6 @@ void Job::on_write_timer(void)
 //{{{
 void Job::start(steady_clock::time_point start_time)
 {
-	//error<<"Job("<<jobname<<")::start()::this = "<<this<<std::endl;
 	if(!is_active)
 	{
 		debug<<"Starting job \""<<jobname<<"\"."<<std::endl;
@@ -302,12 +303,25 @@ void Job::start(steady_clock::time_point start_time)
 //{{{
 void Job::stop(steady_clock::time_point stop_time)
 {
-	//error<<"Job("<<jobname<<")::stop()::this = "<<this<<std::endl;
 	if(is_active)
 	{
 		milliseconds runtime = runtime_since_job_start(stop_time);
-		slot_run_time += runtime;
-		debug<<"Stopping job \""<<jobname<<"\". Runtime since job start: "<<runtime<<", slot_run_time: "<<slot_run_time<<"."<<std::endl;
+		if(runtime > suppress)
+		{
+			debug<<"Stopping job \""<<jobname<<"\". Runtime since job start: "<<runtime<<", slot_run_time: "<<slot_run_time<<"."<<std::endl;
+			slot_run_time += runtime;
+		}
+		else
+		{
+			debug<<"Stopping job \""<<jobname<<"\". Runtime since job start: "<<runtime<<", slot_run_time: "<<slot_run_time<<" (suppressed)."<<std::endl;
+			if(write_timer->active() && slot_run_time < suppress)
+			{
+				// If the slot was just started for a short suppressed activation, un-start it. If the slot has accumulated more time, don't touch it.
+				write_timer->stop();
+				debug<<"	... aborting running now-redundant write_timer."<<std::endl;
+			}
+		}
+
 		is_active = false; // Has to be after runtime_since_job_start()
 
 		//for(Action& action : actions) action.stop();

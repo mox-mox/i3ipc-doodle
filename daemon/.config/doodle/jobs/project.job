@@ -25,6 +25,7 @@ exclude=private
 # The timefile is where all times are acoounted for. The first line contains the total seconds spent on that job,
 # the remaining lines list when the user was working on the job.
 [timefile]
+
 # Where to store the timefile. The timefile will always be named <jobname>.times
 # If set to "default" or omitted the files will be stored in doodles data directory, usually ~/.local/share/doodle/
 #path=/home/mox/doodle_timefiles/
@@ -34,6 +35,11 @@ exclude=private
 # on the job since the timer was started is appended to the timefile. Smaller values allows tracking more exactly when
 # the user was working on a job, but will create more data. A value no smaller than 1 hour is recommended.
 granularity=1h
+
+# Suppress recognition of spurious activations (eg. shortly focusing a window while browsing through workspaces). When a
+# has only been active for suppress or less time, before becoming inactive, this active time will not be recorded.
+# (It will neither cause a new time slot to be added nor will it be added to an already running time slot.
+suppress=1m
 
 [actions]
 

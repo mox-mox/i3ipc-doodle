@@ -16,6 +16,7 @@
 // [timefile]
 // path=/path/to/file
 // granularity=1h
+// suppress=2m
 //
 // [actions]
 // # TODO
@@ -134,6 +135,8 @@ class Job final : public Window_matching
 	steady_clock::time_point job_start;      // Get run_time with now-job_start
 	system_clock::time_point slot_start;     // When the current slot was started, printed to the timefile
 	milliseconds slot_run_time;              // The time spent on the job during this slot
+	
+	milliseconds suppress;
 
 	//{{{
 	class Timefile

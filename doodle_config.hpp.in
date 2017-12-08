@@ -28,8 +28,9 @@ const std::string DOODLE_SOCKET_PATH("@DOODLE_SOCKET_PATH@", sizeof("@DOODLE_SOC
 
 
 
-inline auto default_timefile_granularity = "3600";
 inline auto default_max_idle_time = "1m";
+inline auto default_timefile_granularity = "3600";
+inline auto default_timefile_suppress = "2m";
 
 
 
