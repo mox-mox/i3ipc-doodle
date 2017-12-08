@@ -78,7 +78,7 @@ configure_file (
 
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-set(LIBS_PATH ${LIBS_PATH} "${CMAKE_SOURCE_DIR}/libs/")
+set(LIBS_PATH ${LIBS_PATH} "${CMAKE_SOURCE_DIR}/libs")
 SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
@@ -90,12 +90,118 @@ set(INCDIRS_SYS "")
 set(LIBS "")
 #}}}
 
-add_subdirectory("${LIBS_PATH}/getoptpp"       "libs/getoptpp")
+#add_subdirectory("${LIBS_PATH}/getoptpp"       "libs/getoptpp")
 add_subdirectory("${LIBS_PATH}/console_stream" "libs/console_stream")
 add_subdirectory("${LIBS_PATH}/notify_stream"  "libs/notify_stream")
 add_subdirectory("${LIBS_PATH}/sockets"        "libs/sockets")
 add_subdirectory("${LIBS_PATH}/commands"       "libs/commands")
 add_subdirectory("${LIBS_PATH}/uvw"            "libs/uvw")
+add_subdirectory("${LIBS_PATH}/parse_date"     "libs/parse_date")
 
-add_subdirectory(src)
+#add_subdirectory(src)
 #add_subdirectory(client)
+
+
+
+
+
+
+#{{{ Build script for the daemon backend
+
+#{{{Variables: SRCS INCDIRS LINKDIRS LIBS CMAKE_MODULE_PATH
+
+file(GLOB SRCS_LOCAL src/*.cpp)
+set(SRCS ${SRCS} ${SRCS_LOCAL})
+#set(INCDIRS ${INCDIRS} "${PROJECT_BINARY_DIR}" "${PROJECT_BINARY_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(INCDIRS ${INCDIRS} "${PROJECT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(INCDIRS_SYS ${INCDIRS_SYS})
+set(LIBS ${LIBS} -lstdc++fs)
+#}}}
+
+
+MESSAGE( STATUS "PROJECT_BINARY_DIR: " ${PROJECT_BINARY_DIR} )
+MESSAGE( STATUS "I3IPC-DOODLE_SOURCE_DIR: " ${i3ipc-doodle_SOURCE_DIR} )
+MESSAGE( STATUS "LIBS_PATH: " ${LIBS_PATH} )
+
+
+#{{{LIBUV + UVW
+
+find_package(LIBUV REQUIRED)
+
+set(LIBS ${LIBS} ${LIBUV_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBUV_INCLUDE_DIRS} "${LIBS_PATH}/uvw/src" "${LIBS_PATH}/uvw/deps/libuv/src/include")
+#}}}
+
+#{{{I3IPCPP
+
+add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/i3ipcpp "libs/i3ipcpp")
+set(LIBS ${LIBS} ${I3IPCpp_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${I3IPCpp_INCLUDE_DIRS})
+#}}}
+
+#{{{GETOPTPP
+
+add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/getoptpp "libs/getoptpp")
+set(LIBS ${LIBS} ${GETOPTPP_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${GETOPTPP_INCLUDE_DIRS})
+#}}}
+
+#{{{INIH
+
+set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBUV_INCLUDE_DIRS} "${LIBS_PATH}/inih")
+#}}}
+
+#{{{XCB
+
+find_package(XCB REQUIRED)
+
+set(LIBS ${LIBS} ${XCB_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
+#}}}
+
+
+##add_subdirectory("${LIBS_PATH}/parse_date" "libs/parse_date")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+
+
+add_executable(doodle ${SRCS})
+target_link_libraries(doodle ${LIBS})
+target_include_directories(doodle PUBLIC ${INCDIRS})
+target_include_directories(doodle SYSTEM PUBLIC ${INCDIRS_SYS})
+target_compile_options(    doodle PUBLIC -std=c++17 -Wall -Wextra -Wpedantic -Werror -Wfatal-errors)
+target_compile_options(    doodle PUBLIC $<$<CONFIG:DEBUG>:-O0 -ggdb -save-temps>)
+target_compile_options(    doodle PUBLIC $<$<CONFIG:RELEASE>:-O3>)
+target_compile_definitions(doodle PUBLIC NOTIFY_PROGRAM_NAME="${DOODLE_PROGRAM_NAME}" ENABLE_MAIN)
+target_compile_definitions(doodle PUBLIC $<$<CONFIG:DEBUG>:NOTIFY_LEVEL=3 LOGGING_LEVEL=3>)
+target_compile_definitions(doodle PUBLIC $<$<CONFIG:RELEASE>:NOTIFY_LEVEL=1 LOGGING_LEVEL=1>)
+# Set build type when generating the Makefile like: cmake -DCMAKE_BUILD_TYPE=Debug ../i3ipc-doodle
+
+
+
+
+
+
+##add_dependencies(doodle notify_start)
+##add_custom_target( notify_start COMMAND notify-send "Starting build for doodle-daemon")
+
+
+##add_custom_target(copy_doodle_config DEPENDS ${CMAKE_SOURCE_DIR}/daemon/.config
+##                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+##                   ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle>/.config)
+##
+##
+##
+##
+##add_custom_target(do_always ALL)
+##add_custom_target(notify_end ALL COMMAND notify-send "Finished build for doodle-daemon" DEPENDS do_always doodle)
+
+#add_subdirectory(test)
+
+##add_custom_target(run_doodle
+##	COMMAND ./doodle --no-fork; read -p "Press [Enter] key to close..."
+##    DEPENDS doodle copy_doodle_config
+##    WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}
+##)
+
+#}}}
