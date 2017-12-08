@@ -31,7 +31,7 @@ milliseconds time_string_to_milliseconds(std::string input);
 
 extern std::string config_dir;
 extern std::string data_dir;
-//extern std::string doodle_socket_path;
+extern std::string doodle_socket_path;
 //extern std::string i3_socket_path;
 
 

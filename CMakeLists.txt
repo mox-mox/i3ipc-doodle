@@ -15,7 +15,7 @@ set_property(GLOBAL PROPERTY TARGET_MESSAGES OFF)
 #set(DOODLE_CONFIG_PATH ".config/doodle")
 # A leading '&' character is translated to a null character,
 # mapping the socket to the invisible abstract unix socket name space.
-set(DOODLE_SOCKET_PATH "%doodle_user_communication")
+set(DOODLE_SOCKET_PATH %doodle_user_communication)
 #set(DOODLE_SOCKET_PATH "./doodle_user_communication")
 
 

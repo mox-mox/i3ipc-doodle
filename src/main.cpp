@@ -6,6 +6,7 @@
 #include "INIReader.h"
 
 #include <daemon.hpp>
+#include <client.hpp>
 
 
 bool show_help;
@@ -13,6 +14,8 @@ bool show_version;
 bool copy_config;
 bool nofork;
 bool allow_idle;
+
+bool run_client;
 
 std::string config_dir;
 std::string data_dir;
@@ -38,6 +41,7 @@ std::string help_message(std::string progname)
 	message += "	-c|--config  <path> : The path to the config files. Default: \"$XDG_CONFIG_HOME/doodle/\".\n";
 	message += "	-d|--data  <path>   : The path to the data files. Default: \"$XDG_DATA_HOME/doodle/\".\n";
 	//message += "	-s|--socket  <path> : Where to store the socket for user communication. Default: \"" + DOODLE_SOCKET_PATH + "\".\n";
+	message += "	--client            : Run the terminal client to send commands to a running doodle daemon.\n";
 	return message;
 }
 
@@ -347,7 +351,6 @@ int main(int argc, char* argv[])
 	{
 		ops>>GetOpt::OptionPresent('h', "help",       show_help);
 		ops>>GetOpt::OptionPresent('v', "version",    show_version);
-		ops>>GetOpt::OptionPresent("copy-config",    copy_config);
 		ops>>GetOpt::OptionPresent('n', "no-fork",     nofork);
 		//ops>>GetOpt::OptionPresent('r', "replace",    settings.replace);
 		ops>>GetOpt::OptionPresent('a', "allow-idle", allow_idle);
@@ -356,6 +359,8 @@ int main(int argc, char* argv[])
 		ops>>GetOpt::Option('d',        "data",       data_dir,           get_data_dir);
 		//ops>>GetOpt::Option('s',        "socket",     doodle_socket_path, DOODLE_SOCKET_PATH);
 		//ops>>GetOpt::Option('i',        "i3socket",   i3_socket_path,     i3ipc::get_socketpath());
+		ops>>GetOpt::OptionPresent("copy-config",    copy_config);
+		ops>>GetOpt::OptionPresent("client",    run_client);
 	}
 	catch(GetOpt::GetOptEx ex)
 	{
@@ -407,34 +412,36 @@ int main(int argc, char* argv[])
 	//}}}
 
 
+	if(run_client)
+	{
+		Client client;
+		retval = client();
+	}
+	else
+	{
+		// Create doodle object before forking so the output is still visible
+		Daemon daemon;
 
+		////{{{ Fork into background to become a daemon
+		//
+		//if(!nofork)
+		//{
+		//	if(daemon(1, 0))
+		//	{
+		//		error<<"Could not daemonize."<<std::endl;
+		//		notify_critical<<sett(10000)<<"Doodle"<<"Could not daemonize."<<std::endl;
+		//		return EXIT_FAILURE;
+		//	}
+		//}
+		////}}}
 
-
-	// Create doodle object before forking so the output is still visible
-	Daemon daemon;
-
-	//// Fork into background to become a daemon
-	//if(!nofork)
-	//{
-	//	if(daemon(1, 0))
-	//	{
-	//		error<<"Could not daemonize."<<std::endl;
-	//		notify_critical<<sett(10000)<<"Doodle"<<"Could not daemonize."<<std::endl;
-	//		return EXIT_FAILURE;
-	//	}
-	//}
-
-	retval = daemon();
-
-
-
-	//
-	//	//{{{
-	//	notify_low<<"LOW"<<"low"<<std::endl;
-	//	notify_normal<<sett(5000)<<"NORMAL"<<"normal"<<99<<std::endl;
-	//	notify_critical<<sett(10000)<<"CRITICAL"<<"critical"<<std::setw(10)<<99<<'.'<<std::endl;
-	//	//}}}
-	//
+		retval = daemon();
+	}
 
 	return retval;
 }
+////{{{
+//notify_low<<"LOW"<<"low"<<std::endl;
+//notify_normal<<sett(5000)<<"NORMAL"<<"normal"<<99<<std::endl;
+//notify_critical<<sett(10000)<<"CRITICAL"<<"critical"<<std::setw(10)<<99<<'.'<<std::endl;
+////}}}

@@ -7,10 +7,10 @@
 #include <uvw.hpp>
 #include "fixed_array.hpp"
 
-using window_id = uint64_t;
 
 class Daemon: public sigc::trackable
 {
+	using window_id = uint64_t;
 	i3ipc::connection i3_conn;
 	std::shared_ptr<uvw::Loop> loop;
 
@@ -37,6 +37,7 @@ class Daemon: public sigc::trackable
 	std::shared_ptr<uvw::TimerHandle> idle_timer;
 	std::shared_ptr<uvw::SignalHandle> sigint;
 	std::shared_ptr<uvw::PipeHandle> i3_pipe;
+	std::shared_ptr<uvw::PipeHandle> client_pipe;
 
 
 	void on_window_change(const i3ipc::window_event_t& evt);

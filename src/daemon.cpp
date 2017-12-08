@@ -1,5 +1,6 @@
 #include <daemon.hpp>
 #include "main.hpp"
+#include "sockets.hpp"
 
 
 //{{{
@@ -15,8 +16,8 @@ Daemon::Daemon(void) :
 	screen(xcb_setup_roots_iterator(xcb_get_setup(xcb_conn)).data),
 	idle_timer(loop->resource<uvw::TimerHandle>()),
 	sigint(loop->resource<uvw::SignalHandle>()),
-	i3_pipe(loop->resource<uvw::PipeHandle>())
-	//client_pipe(loop->resource<uvw::PipeHandle>())
+	i3_pipe(loop->resource<uvw::PipeHandle>()),
+	client_pipe(loop->resource<uvw::PipeHandle>())
 {
 
 	//{{{ Create the individual jobs
@@ -92,6 +93,56 @@ Daemon::Daemon(void) :
     });
 	i3_pipe->open(i3_conn.get_event_socket_fd());
 	i3_pipe->read();
+	//}}}
+
+	//{{{ Client watcher
+
+    auto client_pipe = loop->resource<uvw::PipeHandle>(false);
+
+    client_pipe->on<uvw::ListenEvent>([this](const uvw::ListenEvent &, uvw::PipeHandle &srv) {
+        std::shared_ptr<uvw::PipeHandle> socket = srv.loop().resource<uvw::PipeHandle>();
+
+        socket->on<uvw::ErrorEvent>([](const uvw::ErrorEvent &, uvw::PipeHandle &) { std::cout<<"FAIL"<<std::endl; });
+        //socket->on<uvw::CloseEvent>([&srv](const uvw::CloseEvent &, uvw::PipeHandle &) { srv.close(); std::cout<<"Server close"<<std::endl; });
+        socket->on<uvw::EndEvent>([](const uvw::EndEvent &, uvw::PipeHandle &sock) { sock.close(); std::cout<<"Socket close"<<std::endl; });
+		socket->on<uvw::DataEvent>([this,&srv](const uvw::DataEvent &evt, uvw::PipeHandle &sock){
+				std::string rcv(&evt.data[0], evt.length);
+				//std::cout<<"Got something: \""<<rcv<<"\""<<std::endl;
+				std::cout<<"Got something: ";
+				for(char c : rcv)
+				{
+					std::cout<<'\''<<c<<"\' ";
+				}
+				std::cout<<std::endl;
+				sock.write(&evt.data[0], evt.length);
+				std::string quit("quit");
+				if (rcv.compare(0, quit.length(), quit) == 0)
+				{
+					sock.write(const_cast<char*>("Closing Server"), sizeof("Closing Server"));
+					std::cout<<"Closing Server"<<std::endl;
+					//srv.close();
+					sock.close();
+				}
+				std::string exit("exit");
+				if (rcv.compare(0, exit.length(), exit) == 0)
+				{
+					sock.write(const_cast<char*>("Stopping doodle daemon"), sizeof("Stopping doodle daemon"));
+					std::cout<<"Stopping doodle daemon"<<std::endl;
+					srv.close();
+					sock.close();
+					loop->stop();
+				}
+				});
+
+        srv.accept(*socket);
+		std::cout<<"Accepting connection from "<<socket->peer()<<", on "<<socket->sock()<<std::endl;
+        socket->read();
+    });
+
+	client_pipe->open(open_socket(doodle_socket_path, true));
+
+	client_pipe->listen();
+	std::cout<<"Socket is \""<<client_pipe->sock()<<"\""<<std::endl;
 	//}}}
 	//}}}
 }

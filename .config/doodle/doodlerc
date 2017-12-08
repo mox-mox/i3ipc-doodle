@@ -10,4 +10,5 @@ stop_on_suspend = false
 detect_ambiguity = false
 
 # Path for the client communication ipc socket
-doodle_socket_path = "%doodle_user_communication"
+# Do not put quotes here!
+doodle_socket_path = %doodle_user_communication
