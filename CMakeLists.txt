@@ -159,6 +159,15 @@ set(LIBS ${LIBS} ${XCB_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
 #}}}
 
+#{{{LIBEDIT
+
+find_package(LIBEDIT REQUIRED)
+
+set(LIBS ${LIBS} ${LIBEDIT_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEDIT_INCLUDE_DIRS})
+#}}}
+
+
 
 ##add_subdirectory("${LIBS_PATH}/parse_date" "libs/parse_date")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
@@ -182,8 +191,8 @@ target_compile_definitions(doodle PUBLIC $<$<CONFIG:RELEASE>:NOTIFY_LEVEL=1 LOGG
 
 
 
-##add_dependencies(doodle notify_start)
-##add_custom_target( notify_start COMMAND notify-send "Starting build for doodle-daemon")
+#add_dependencies(doodle notify_start)
+#add_custom_target( notify_start COMMAND notify-send "Starting build for doodle-daemon")
 
 
 ##add_custom_target(copy_doodle_config DEPENDS ${CMAKE_SOURCE_DIR}/daemon/.config
