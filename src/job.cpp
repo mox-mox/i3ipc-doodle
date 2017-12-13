@@ -340,7 +340,7 @@ void Job::start_slot()
 	write_timer->start(timefile.get_granularity(), timefile.get_granularity());
 }
 //}}}
-	
+
 //{{{
 const std::string& Job::get_jobname(void) const
 {

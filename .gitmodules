@@ -19,3 +19,6 @@
 [submodule "libs/inih"]
 	path = libs/inih
 	url = git@github.com:jtilly/inih.git
+[submodule "libs/repl"]
+	path = libs/repl
+	url = git@github.com:mox-mox/repl.git

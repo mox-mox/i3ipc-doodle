@@ -159,12 +159,11 @@ set(LIBS ${LIBS} ${XCB_LIBRARIES})
 set(INCDIRS_SYS ${INCDIRS_SYS} ${XCB_INCLUDE_DIRS})
 #}}}
 
-#{{{LIBEDIT
+#{{{REPL
 
-find_package(LIBEDIT REQUIRED)
-
-set(LIBS ${LIBS} ${LIBEDIT_LIBRARIES})
-set(INCDIRS_SYS ${INCDIRS_SYS} ${LIBEDIT_INCLUDE_DIRS})
+add_subdirectory(${i3ipc-doodle_SOURCE_DIR}/libs/repl "libs/repl")
+set(LIBS ${LIBS} ${REPL_LIBRARIES})
+set(INCDIRS_SYS ${INCDIRS_SYS} ${REPL_INCLUDE_DIRS})
 #}}}
 
 
