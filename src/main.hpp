@@ -16,9 +16,15 @@ using steady_clock = std::chrono::steady_clock;
 using system_clock = std::chrono::system_clock;
 
 //{{{
-inline std::ostream& operator<<(std::ostream& stream, milliseconds const& value)
+inline std::string ms_to_string(milliseconds value)
 {
-	stream<<value.count()<<"ms";
+	return std::string(std::to_string(value.count())+"ms");
+}
+
+inline std::ostream& operator<<(std::ostream& stream, milliseconds value)
+{
+	//stream<<value.count()<<"ms";
+	stream<<ms_to_string(value);
 	return stream;
 }
 //}}}

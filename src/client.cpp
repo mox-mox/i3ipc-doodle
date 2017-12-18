@@ -91,11 +91,13 @@ Client::Client(void) :
 				std::cout<<std::endl;
 				repl.get_accepted_lines().clear();
 			}
+			repl.draw();
 
 
     });
 	console->on<uvw::CloseEvent>([](const uvw::CloseEvent&, uvw::TTYHandle& console) { console.reset(), std::cout<<"TTY close"<<std::endl; });
-	console->mode(uvw::details::UVTTYModeT::IO);
+	//console->mode(uvw::details::UVTTYModeT::IO);
+	console->mode(uvw::details::UVTTYModeT::RAW);
 	console->read();
 	//}}}
 
