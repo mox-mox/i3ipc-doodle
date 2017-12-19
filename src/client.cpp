@@ -3,6 +3,7 @@
 #include "sockets.hpp"
 #include <stropts.h>
 #include <sstream>
+#include <json/json.h>
 
 
 
@@ -79,6 +80,23 @@ Client::Client(void) :
 		{
 			if(line == KILL_PILL) loop->walk([](uvw::BaseHandle &h){ h.close(); });;
 			std::cout<<"\nGot line "<<line<<std::endl;
+
+			// Split the line into words
+			std::istringstream iss(line);
+			std::vector<std::string> words(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
+
+			Json::Value command;
+			command["command"] = words[0];;
+			words.erase(words.begin());
+			Json::Value args;
+			for(std::string& word : words)
+			{
+				args[args.size()] = word;
+			}
+			command["args"]=args;
+
+			//std::cout<<command<<std::endl;
+			//daemon_pipe->write(&evt.data[0], evt.length);
 		}
 		repl.draw();
     });

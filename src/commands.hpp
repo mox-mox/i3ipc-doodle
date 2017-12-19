@@ -264,15 +264,67 @@ action_map actions = {
 				retval["response"]=it != jobs.end() ?  it->timefile.get_times(start_time, stop_time) : "No job named \"" + jobname + "\" found";
 				return retval;
 			}}},
-//	{ "job_get_win_names",{"        <jobname>",                                                 "Return a list of all window name matchers for the job.",
-//			[this](Json::Value& arg)//{{{
-//			{
-//			}}},
-//	{ "job_get_ws_names",{"         <jobname>",                                                 "Return a list of all workspace name matchers for the job.",
-//			[this](Json::Value& arg)//{{{
-//			{
-//			}}},
-//	//}}}
+	{ "job_get_win_names",{"        <jobname>",                                                 "Return a list of all window name matchers for the job.",
+			[this](Json::Value& arg)//{{{
+			{
+				//{{{
+				std::string jobname = arg.asString();
+				auto it = std::find_if(jobs.begin(), jobs.end(), [jobname](const Job& job){return job.jobname == jobname; });
+				//}}}
+
+				Json::Value retval;
+				retval["command"] = "help";
+				Json::Value response;
+				//response[response.size()][0] = it != jobs.end() ? "Granularity is " + ms_to_string(it->suppress) : "No job named \"" + jobname + "\" found";
+				if(it != jobs.end())
+				{
+					for(std::string& win_name : it->matchers.win_names.include)
+					{
+						response[response.size()] = win_name;
+					}
+					for(std::string& win_name : it->matchers.win_names.exclude)
+					{
+						response[response.size()] = "!" + win_name;
+					}
+				}
+				else
+				{
+					response[response.size()] = "No job named \"" + jobname + "\" found";
+				}
+				retval["response"]=response;
+				return retval;
+			}}},
+	{ "job_get_ws_names",{"         <jobname>",                                                 "Return a list of all workspace name matchers for the job.",
+			[this](Json::Value& arg)//{{{
+			{
+				//{{{
+				std::string jobname = arg.asString();
+				auto it = std::find_if(jobs.begin(), jobs.end(), [jobname](const Job& job){return job.jobname == jobname; });
+				//}}}
+
+				Json::Value retval;
+				retval["command"] = "help";
+				Json::Value response;
+				//response[response.size()][0] = it != jobs.end() ? "Granularity is " + ms_to_string(it->suppress) : "No job named \"" + jobname + "\" found";
+				if(it != jobs.end())
+				{
+					for(std::string& win_name : it->matchers.ws_names.include)
+					{
+						response[response.size()] = win_name;
+					}
+					for(std::string& win_name : it->matchers.ws_names.exclude)
+					{
+						response[response.size()] = "!" + win_name;
+					}
+				}
+				else
+				{
+					response[response.size()] = "No job named \"" + jobname + "\" found";
+				}
+				retval["response"]=response;
+				return retval;
+			}}},
+	//}}}
 //	//{{{ Adders
 //
 //	{ "job_add_times",{"            <jobname> {(<start_time> <duration> [#comment])}",          "Write additional time stamps to the time file, postfixed with the comment.",
@@ -282,6 +334,22 @@ action_map actions = {
 //	{ "job_add_win_names",{"        <jobname> {<name to include>|!<name to exclude>}",          "Temporarily (untile the daemon stops), add window name matchers to a job. Prefix exclusion matchers with a bang. To permanently add matchers, use the config file for the job.",
 //			[this](Json::Value& arg)//{{{
 //			{
+//				//{{{
+//				std::string jobname = arg.asString();
+//				auto it = std::find_if(jobs.begin(), jobs.end(), [jobname](const Job& job){return job.jobname == jobname; });
+//				//}}}
+//				if(it != jobs.end())
+//				{
+//				}
+//				else
+//				{
+//				}
+//				Json::Value retval;
+//				retval["command"] = "help";
+//				Json::Value response;
+//				response[response.size()][0] = "Added window names";
+//				retval["response"]=response;
+//				return retval;
 //			}}},
 //	{ "job_add_ws_names",{"         <jobname> {<name to include>|!<name to exclude>}",          "Temporarily (untile the daemon stops), add workspace name matchers to a job. Prefix exclusion matchers with a bang. To permanently add matchers, use the config file for the job.",
 //			[this](Json::Value& arg)//{{{
@@ -303,7 +371,7 @@ action_map actions = {
 //			[this](Json::Value& arg)//{{{
 //			{
 //			}}},
-	//}}}
+//	//}}}
 	//}}}
 
 };
