@@ -64,9 +64,9 @@ Daemon::Daemon(void) :
 	
 	//{{{ idle time watcher
 
+	idle_timer->on<uvw::TimerEvent>(std::bind( &Daemon::on_idle_timer, this, std::placeholders::_1, std::placeholders::_2 ));
 	if(max_idle_time_ms > milliseconds(0))
 	{
-		idle_timer->on<uvw::TimerEvent>(std::bind( &Daemon::on_idle_timer, this, std::placeholders::_1, std::placeholders::_2 ));
 		idle_timer->start(milliseconds(20),milliseconds(0));
 	}
 	else

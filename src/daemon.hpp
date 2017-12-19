@@ -6,6 +6,8 @@
 #include <xcb/screensaver.h>
 #include <uvw.hpp>
 #include "fixed_array.hpp"
+#include <json/json.h>
+#include "parse_date.hpp"
 
 
 class Daemon: public sigc::trackable
@@ -47,6 +49,8 @@ class Daemon: public sigc::trackable
 	bool simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces);
 
 	inline Job* find_job(void);
+
+	#include "commands.hpp" 		// Everything for ipc command handling
 
 	public:
 		//{{{ Constructor

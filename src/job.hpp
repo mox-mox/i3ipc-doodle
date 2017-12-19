@@ -2,6 +2,7 @@
 #include "main.hpp"
 #include "window_matching.hpp"
 #include <uvw.hpp>
+#include <json/json.h>
 
 // File jobname.job:
 //
@@ -21,10 +22,12 @@
 // [actions]
 // # TODO
 //
+class Daemon;
 
 
 class Job final : public Window_matching
 {
+	friend Daemon;
 	const std::string jobname;
 	bool is_active;
 
@@ -155,6 +158,7 @@ class Job final : public Window_matching
 		milliseconds get_total_time(void);
 		inline const milliseconds& get_granularity(void) { return granularity; }
 		inline const fs::path get_path(void) { return path; }
+		Json::Value get_times(std::time_t start=0, std::time_t end=0) const;
 	} timefile;
 	//}}}
 
@@ -190,6 +194,7 @@ class Job final : public Window_matching
 	const std::string& get_jobname(void) const;
 	milliseconds get_total_time(void) const;
 
+	operator std::string() const;
 	friend std::ostream& operator<<(std::ostream&stream, const Job& job);
 };
 

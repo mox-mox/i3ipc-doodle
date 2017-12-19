@@ -75,25 +75,12 @@ Client::Client(void) :
 			//std::cout<<"Got something from STDIN: "<<std::endl;
 			//std::cout<<'	'<<std::string(&evt.data[0], evt.length)<<std::endl;
 			//daemon_pipe->write(&evt.data[0], evt.length);
-
-			if(int n=repl.insert(&evt.data[0], evt.length); n)
-			{
-				if(n==-1)
-				{
-					loop->walk([](uvw::BaseHandle &h){ h.close(); });
-					//std::cout<<"Server close"<<std::endl;
-				}
-				std::cout<<std::endl;
-				for(std::string& line : repl.get_accepted_lines())
-				{
-					std::cout<<"Got line "<<line<<std::endl;
-				}
-				std::cout<<std::endl;
-				repl.get_accepted_lines().clear();
-			}
-			repl.draw();
-
-
+		for(std::string& line : repl.insert(&evt.data[0], evt.length))
+		{
+			if(line == KILL_PILL) loop->walk([](uvw::BaseHandle &h){ h.close(); });;
+			std::cout<<"\nGot line "<<line<<std::endl;
+		}
+		repl.draw();
     });
 	console->on<uvw::CloseEvent>([](const uvw::CloseEvent&, uvw::TTYHandle& console) { console.reset(), std::cout<<"TTY close"<<std::endl; });
 	//console->mode(uvw::details::UVTTYModeT::IO);

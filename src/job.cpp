@@ -136,46 +136,46 @@ void Job::Timefile::set_granularity(milliseconds new_granularity)
 }
 //}}}
 
+//{{{
+Json::Value Job::Timefile::get_times(std::time_t start, std::time_t end) const
+{
+	Json::Value retval;
+	std::ifstream timefile(path);
+	if(!timefile.is_open())
+	{
+		error<<"Could not open time file \""<<path<<"\"."<<std::endl;
+		exit(EXIT_FAILURE);
+	}
+	std::string line;
 
-////{{{
-//Json::Value Job::Timefile::get_times(uint64_t start, uint64_t end) const
-//{
-//	Json::Value retval;
-//	std::ifstream timefile(timefile_path);
-//	if(!timefile.is_open())
-//	{
-//		error<<"Could not open time file for job \""<<jobname<<"\"."<<std::endl;
-//		exit(EXIT_FAILURE);
-//	}
-//	std::string line;
-//
-//	// Go to the firest times line
-//	while(!std::getline(timefile, line).eof())
-//	{
-//		if(line == "# Start-time	time-spent")
-//			break;
-//	}
-//
-//	// Read each line
-//	while(!std::getline(timefile, line).eof())
-//	{
-//		std::stringstream linestream(line);
-//		uint64_t slot_start;
-//		uint64_t slot_time;
-//		linestream>>slot_start;
-//		if(end && slot_start > end)
-//			break;
-//		if(slot_start >= start)
-//		{
-//			linestream>>slot_time;
-//			retval[retval.size()][0] = slot_start;
-//			retval[retval.size()-1][1] = slot_time;
-//		}
-//	}
-//
-//	return retval;
-//}
-////}}}
+	// Go to the firest times line
+	while(!std::getline(timefile, line).eof())
+	{
+		if(line == "# Start-time	time-spent")
+			break;
+	}
+
+	// Read each line
+	while(!std::getline(timefile, line).eof())
+	{
+		std::stringstream linestream(line);
+		std::time_t slot_start;
+		std::time_t slot_time;
+		linestream>>slot_start;
+		if(end && slot_start > end)
+			break;
+		if(slot_start >= start)
+		{
+			linestream>>slot_time;
+			retval[retval.size()][0] = slot_start;
+			retval[retval.size()-1][1] = slot_time;
+		}
+	}
+
+	return retval;
+}
+//}}}
+
 
 //}}}
 
@@ -355,11 +355,21 @@ milliseconds Job::get_total_time(void) const
 }
 //}}}
 
+
+
 //{{{
+Job::operator std::string() const
+{
+	std::string retval("Job \"" + jobname + "\" " + (is_active?"[active]":"[inactive]"));
+	retval += ms_to_string(total_run_time+runtime_since_job_start(steady_clock::now())) + ".";
+	return retval;
+}
+
 std::ostream& operator<<(std::ostream&stream, const Job& job)
 {
-	stream<<"Job \""<<job.jobname<<"\" "<<(job.is_active?"[active]":"[inactive]");
-	stream<<(job.total_run_time+job.runtime_since_job_start(steady_clock::now()))<<".";
+	//stream<<"Job \""<<job.jobname<<"\" "<<(job.is_active?"[active]":"[inactive]");
+	//stream<<(job.total_run_time+job.runtime_since_job_start(steady_clock::now()))<<".";
+	stream<<job;
 	return stream;
 }
 //}}}
