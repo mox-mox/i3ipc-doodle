@@ -107,31 +107,36 @@ Daemon::Daemon(void) :
         socket->on<uvw::EndEvent>([](const uvw::EndEvent &, uvw::PipeHandle &sock) { sock.close(); std::cout<<"Socket close"<<std::endl; });
 		socket->on<uvw::DataEvent>([this,&srv](const uvw::DataEvent &evt, uvw::PipeHandle &sock){
 				std::string rcv(&evt.data[0], evt.length);
-				//std::cout<<"Got something: \""<<rcv<<"\""<<std::endl;
-				std::cout<<"Got something: ";
-				for(char c : rcv)
-				{
-					std::cout<<'\''<<c<<"\' ";
-				}
-				std::cout<<std::endl;
-				sock.write(&evt.data[0], evt.length);
-				std::string quit("quit");
-				if (rcv.compare(0, quit.length(), quit) == 0)
-				{
-					sock.write(const_cast<char*>("Closing Server"), sizeof("Closing Server"));
-					std::cout<<"Closing Server"<<std::endl;
-					//srv.close();
-					sock.close();
-				}
-				std::string exit("exit");
-				if (rcv.compare(0, exit.length(), exit) == 0)
-				{
-					sock.write(const_cast<char*>("Stopping doodle daemon"), sizeof("Stopping doodle daemon"));
-					std::cout<<"Stopping doodle daemon"<<std::endl;
-					srv.close();
-					sock.close();
-					loop->stop();
-				}
+				std::string response = run_command(rcv);
+				sock.write(response.data(), response.length());
+				//sock.write(const_cast<char*>("Stopping doodle daemon"), sizeof("Stopping doodle daemon"));
+
+
+				////std::cout<<"Got something: \""<<rcv<<"\""<<std::endl;
+				//std::cout<<"Got something: ";
+				//for(char c : rcv)
+				//{
+				//	std::cout<<'\''<<c<<"\' ";
+				//}
+				//std::cout<<std::endl;
+				//sock.write(&evt.data[0], evt.length);
+				//std::string quit("quit");
+				//if (rcv.compare(0, quit.length(), quit) == 0)
+				//{
+				//	sock.write(const_cast<char*>("Closing Server"), sizeof("Closing Server"));
+				//	std::cout<<"Closing Server"<<std::endl;
+				//	//srv.close();
+				//	sock.close();
+				//}
+				//std::string exit("exit");
+				//if (rcv.compare(0, exit.length(), exit) == 0)
+				//{
+				//	sock.write(const_cast<char*>("Stopping doodle daemon"), sizeof("Stopping doodle daemon"));
+				//	std::cout<<"Stopping doodle daemon"<<std::endl;
+				//	srv.close();
+				//	sock.close();
+				//	loop->stop();
+				//}
 				});
 
         srv.accept(*socket);

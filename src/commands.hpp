@@ -1,9 +1,10 @@
 // This file is nested inside doodle.hpp. This file may only be included _in_the_body_of_that_class_!
 
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-using command_function   = std::function<Json::Value(Json::Value&)>;
+using command_function   = std::function<std::string(const std::vector<std::string>&)>;
 //{{{
 struct command_t
 {
@@ -18,141 +19,121 @@ using action_map = std::map<std::string, command_t>;
 action_map actions = {
 	//{{{ General commands
 
-	{ "help",{"                     <none>",                                                    "Print this help",
-			[this](Json::Value&)//{{{
+	{ "help",{"                     <none>|<jobname>",                                          "Print this help",
+			[this](const std::vector<std::string>& args)//{{{
 			{
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				for(auto& action : actions)
+				using namespace std::string_literals;
+				std::string response;
+				if(args.size() > 0)
 				{
-					response[response.size()][0] = action.first + action.second.arguments + action.second.explanation;
+					// If there is a mapping, execute the mapped function...
+					if(auto action = actions.find(args[0]); action != actions.end())
+					{
+						response += action->first + " " + std::regex_replace(action->second.arguments, std::regex("^\\s+|\\s+$"), "", std::regex_constants::format_default) + "\n	" + action->second.explanation + "\n";
+					}
+					else // ... or return an error code.
+					{
+						return "Command not found: \"" + args[0] + "\"";
+					}
 				}
-				retval["response"]=response;
-				return retval;
+				else
+				{
+					for(auto& action : actions)
+					{
+						response += action.first + action.second.arguments + "\n";
+					}
+				}
+				return response;
 			}}},
 	{ "suspend",{"                  <none>",                                                    "If \'stop_on_suspend\' is set, wrtie times to disk, stop the current job and halt operation until resumed. Else ignored.",
-			[this](Json::Value&)//{{{
+			[this](const std::vector<std::string>&)//{{{
 			{
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
+				std::string response;
 				if(stop_on_suspend)
 				{
-					response[response.size()][0] = "Suspending: stopped jobs, wrote times";
+					response = "Suspending: stopped jobs, wrote times";
+					// TODO
 				}
 				else
 				{
-					response[response.size()][0] = "Suspending";
+					response = "Suspending";
 				}
-				retval["response"]=response;
-				return retval;
+				return response;
 			}}},
 	{ "resume",{"                   <none>",                                                    "If suspended, restart operation, e.g. re-start the current job. Else ignored.",
-			[this](Json::Value&)//{{{
+			[this](const std::vector<std::string>&)//{{{
 			{
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				if(suspended)
+				std::string response;
+				if(stop_on_suspend)
 				{
-					response[response.size()][0] = "Waking up: Activating current job";
-					suspended = false;
+					response = "Waking up: Activating current job";
+					// TODO
 				}
 				else
 				{
-					response[response.size()][0] = "Waking up: already awake";
+					response = "Waking up: already awake";
 				}
-				retval["response"]=response;
-				return retval;
+				return response;
 			}}},
 	{ "reload",{"                   <none>",                                                    "Reload the configuration.",
-			[this](Json::Value&)//{{{
+			[this](const std::vector<std::string>&)//{{{
 			{
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				response[response.size()][0] = "No implemented yet. Please restart doodle manually";
-				retval["response"]=response;
-				return retval;
+				std::string response;
+				response = "Not implemented yet. Just restart doodle manually";
+				// TODO
+				return response;
 			}}},
 	{ "kill",{"                     <none>",                                                    "Stop the daemon.",
-			[this](Json::Value&)//{{{
+			[this](const std::vector<std::string>&)//{{{
 			{
 				loop->stop();
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				response[response.size()][0] = "Killing daemon";
-				retval["response"]=response;
-				return retval;
+				return "Killing daemon";
 			}}},
 	//}}}
 	//{{{ Information commands
 
 	//{{{ Getting information
 
-	{ "get_config_path",{"          <none>",                                                    "Return the path to the configuration files used by the daemon.",
-			[this](Json::Value&)//{{{
+	{ "get-config-path",{"          <none>",                                                    "Return the path to the configuration files used by the daemon.",
+			[this](const std::vector<std::string>&)//{{{
 			{
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				response[response.size()][0] = config_dir;
-				retval["response"]=response;
-				return retval;
+				return config_dir;
 			}}},
-	{ "get_data_path",{"            <none>",                                                    "Return the path to the data/times files used by the daemon.",
-			[this](Json::Value&)//{{{
+	{ "get-data-path",{"            <none>",                                                    "Return the path to the data/times files used by the daemon.",
+			[this](const std::vector<std::string>&)//{{{
 			{
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				response[response.size()][0] = data_dir;
-				retval["response"]=response;
-				return retval;
+				return data_dir;
 			}}},
-	{ "get_max_idle_time",{"        <none>",                                                    "Return the time since last user action (type a key somewhere or move the mouse) before the user is considered idle and the active job is stopped.",
-			[this](Json::Value&)//{{{
+	{ "get-max-idle-time",{"        <none>",                                                    "Return the time since last user action (type a key somewhere or move the mouse) before the user is considered idle and the active job is stopped.",
+			[this](const std::vector<std::string>&)//{{{
 			{
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				response[response.size()][0] = ms_to_string(max_idle_time_ms);
-				retval["response"]=response;
-				return retval;
+				return ms_to_string(max_idle_time_ms);
 			}}},
-	{ "get_detect_ambiguity",{"     <none>",                                                    "Return wether the daemon checks for ambigous job- and window-name matchers.",
-			[this](Json::Value&)//{{{
+	{ "get-detect-ambiguity",{"     <none>",                                                    "Return wether the daemon checks for ambigous job- and window-name matchers.",
+			[this](const std::vector<std::string>&)//{{{
 			{
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				response[response.size()][0] = detect_ambiguity?"Checking for ambigous matchers":"Not checking for ambigous natchers";
-				retval["response"]=response;
-				return retval;
+				return detect_ambiguity?"Checking for ambigous matchers":"Not checking for ambigous natchers";
 			}}},
-	{ "get_jobs",{"                 <none>",                                                    "Return a list of all jobs known to doodle.",
-			[this](Json::Value&)//{{{
+	{ "get-jobs",{"                 <none>",                                                    "Return a list of all jobs known to doodle.",
+			[this](const std::vector<std::string>&)//{{{
 			{
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
+				std::string response = "Jobs: \n";
 				for(auto& job : jobs)
 				{
-					response[response.size()][0] = std::string(job);
+					response += std::string(job) + "\n";
 				}
-				retval["response"]=response;
-				return retval;
+				return response;
 			}}},
 	//}}}
 	//{{{ Setting commands
 
-	{ "set_max_idle_time",{"        <maximum time> | 0",                                        "Set the time since last user action (type a key somewhere or move the mouse) before the user is considered idle and the active job is stopped. Setting to zero disables the checking.",
-			[this](Json::Value& arg)//{{{
+	{ "set-max-idle-time",{"        <maximum time> | 0",                                        "Set the time since last user action (type a key somewhere or move the mouse) before the user is considered idle and the active job is stopped. Setting to zero disables the checking.",
+			[this](const std::vector<std::string>& args)//{{{
 			{
+				using namespace std::string_literals;
+				if(args.size() < 1) return "Set max_idle_time needs one argument, the new idle time"s;
 				milliseconds old_max_idle_time_ms = max_idle_time_ms;
-				max_idle_time_ms = time_string_to_milliseconds(arg.asString());
+				max_idle_time_ms = time_string_to_milliseconds(args[0]);
 
 				if(max_idle_time_ms > milliseconds(0))
 				{
@@ -164,83 +145,78 @@ action_map actions = {
 					idle_timer->stop();
 				}
 
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				response[response.size()][0] = "Set maximum idle time to "+ms_to_string(max_idle_time_ms);
-				retval["response"]=response;
-				return retval;
+				return "Set maximum idle time to "+ms_to_string(max_idle_time_ms);
 			}}},
-	{ "set_detect_ambiguity",{"     <true|false>",                                              "Set wether the daemon should check for ambigous job- and window-name matchers. This is a runtime check so will cost some additional processing time.",
-			[this](Json::Value& arg)//{{{
+	{ "set-detect_ambiguity",{"     <true|false>",                                              "Set wether the daemon should check for ambigous job- and window-name matchers. This is a runtime check so will cost some additional processing time.",
+			[this](const std::vector<std::string>& args)//{{{
 			{
-				detect_ambiguity = arg.asBool();
+				using namespace std::string_literals;
+				if(args.size() < 1) return "Set detect_ambiguity needs one argument"s;
+				if(args[0] == "true" || args[0] == "True" || args[0] == "TRUE" || args[0] == "1")
+					detect_ambiguity = true;
+				else if(args[0] == "false" || args[0] == "False" || args[0] == "FALSE" || args[0] == "0")
+					detect_ambiguity = false;
+				else
+					return "Cannot decide if \"" + args[0] + "\" means true or false. Leving detect_ambiguity unchanged.";
 
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				response[response.size()][0] = detect_ambiguity ? "Enabled run-time checking for ambigous window- and workspace-name watchers" : "Enabled run-time checking for ambigous window- and workspace-name watchers";
-				retval["response"]=response;
-				return retval;
+
+
+				return detect_ambiguity ? "Enabled run-time checking for ambigous window- and workspace-name watchers"s : "Enabled run-time checking for ambigous window- and workspace-name watchers"s;
 			}}},
 	//}}}
 	//}}}
 	//{{{ Job commands
 
 	//{{{ General commands
-	{ "job_reload",{"               <jobname>",                                                 "Reload configuration for the job.",
-			[this](Json::Value& arg)//{{{
+	{ "job-reload",{"               <jobname>",                                                 "Reload configuration for the job.",
+			[this](const std::vector<std::string>& args)//{{{
 			{
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				response[response.size()][0] = "No implemented yet. Please restart doodle manually";
-				retval["response"]=response;
-				return retval;
+				return "No implemented yet. Please restart doodle manually";
 			}}},
 	//}}}
 	//{{{ Getters
-	{ "job_get_granularity",{"      <jobname>",                                                 "Return the minimum time intervall between writing the next timestamp to disk.",
-			[this](Json::Value& arg)//{{{
+	{ "job-get-granularity",{"      <jobname>",                                                 "Return the minimum time intervall between writing the next timestamp to disk.",
+			[this](const std::vector<std::string>& args)//{{{
 			{
 				//{{{
-				std::string jobname = arg.asString();
+				using namespace std::string_literals;
+				if(args.size() < 1) return "job_* commands need at least one argument, the jobname"s;
+				std::string jobname = args[0];
 				auto it = std::find_if(jobs.begin(), jobs.end(), [jobname](const Job& job){return job.jobname == jobname; });
+				if(it == jobs.end()) return "No job named \"" + jobname + "\" found.";
 				//}}}
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				response[response.size()][0] = it != jobs.end() ? "Granularity is " + ms_to_string(it->timefile.get_granularity()) : "No job named \"" + jobname + "\" found";
-				retval["response"]=response;
-				return retval;
+				return "Granularity is " + ms_to_string(it->timefile.get_granularity());
 			}}},
-	{ "job_get_supress_time",{"     <jobname>",                                                 "Return the time a job must have been active to actually be considered in the timing.",
-			[this](Json::Value& arg)//{{{
+	{ "job-get-supress-time",{"     <jobname>",                                                 "Return the time a job must have been active to actually be considered in the timing.",
+			[this](const std::vector<std::string>& args)//{{{
 			{
 				//{{{
-				std::string jobname = arg.asString();
+				using namespace std::string_literals;
+				if(args.size() < 1) return "job_* commands need at least one argument, the jobname"s;
+				std::string jobname = args[0];
 				auto it = std::find_if(jobs.begin(), jobs.end(), [jobname](const Job& job){return job.jobname == jobname; });
+				if(it == jobs.end()) return "No job named \"" + jobname + "\" found.";
 				//}}}
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				response[response.size()][0] = it != jobs.end() ? "Granularity is " + ms_to_string(it->suppress) : "No job named \"" + jobname + "\" found";
-				retval["response"]=response;
-				return retval;
+				return "Suppression time is " + ms_to_string(it->suppress);
 			}}},
-	{ "job_get_times",{"            <jobname> [<intervall start time> [<intervall stop time>]]","Return a list of all timestamps in the time intervall for a job. To list from the begin set Start time to 0, the start time defaults to 0, the stop time to now if omitted.",
-			[this](Json::Value& arg)//{{{
+	{ "job-get-times",{"            <jobname> [<intervall start time> [<intervall stop time>]]","Return a list of all timestamps in the time intervall for a job. To list from the begin set Start time to 0, the start time defaults to 0, the stop time to now if omitted.",
+			[this](const std::vector<std::string>& args)//{{{
 			{
 				//{{{
-				std::string jobname = arg.asString();
+				using namespace std::string_literals;
+				if(args.size() < 1) return "job_* commands need at least one argument, the jobname"s;
+				std::string jobname = args[0];
 				auto it = std::find_if(jobs.begin(), jobs.end(), [jobname](const Job& job){return job.jobname == jobname; });
+				if(it == jobs.end()) return "No job named \"" + jobname + "\" found.";
 				//}}}
+
+
 				std::time_t start_time;
 				std::time_t stop_time;
 				//{{{
-				if(std::string start_time_string(arg.get("start_time", "0").asString()); start_time_string != "0")
+				if(args.size() >= 2)
 				{
-					start_time = parse_time(start_time_string);
+					start_time = parse_time(args[1]);
 				}
 				else
 				{
@@ -248,91 +224,82 @@ action_map actions = {
 				}
 				//}}}
 				//{{{
-				if(std::string stop_time_string(arg.get("stop_time", "now").asString()); stop_time_string != "now")
+				if(args.size() >= 3)
 				{
-					stop_time = parse_time(stop_time_string);
+					stop_time = parse_time(args[2]);
 				}
 				else
 				{
 					stop_time = 0;
 				}
 				//}}}
-				Json::Value retval;
-				retval["command"] = "help";
-				//Json::Value response;
-				//response[response.size()][0] = it != jobs.end() ? "Granularity is " + ms_to_string(it->suppress) : "No job named \"" + jobname + "\" found";
-				retval["response"]=it != jobs.end() ?  it->timefile.get_times(start_time, stop_time) : "No job named \"" + jobname + "\" found";
-				return retval;
+
+				std::cout<<"job-get-times("<<start_time<<", "<<stop_time<<");"<<std::endl;
+				return it->timefile.get_times(start_time, stop_time);
 			}}},
-	{ "job_get_win_names",{"        <jobname>",                                                 "Return a list of all window name matchers for the job.",
-			[this](Json::Value& arg)//{{{
+	{ "job-get-win-names",{"        <jobname>",                                                 "Return a list of all window name matchers for the job.",
+			[this](const std::vector<std::string>& args)//{{{
 			{
 				//{{{
-				std::string jobname = arg.asString();
+				using namespace std::string_literals;
+				if(args.size() < 1) return "job_* commands need at least one argument, the jobname"s;
+				std::string jobname = args[0];
 				auto it = std::find_if(jobs.begin(), jobs.end(), [jobname](const Job& job){return job.jobname == jobname; });
+				if(it == jobs.end()) return "No job named \"" + jobname + "\" found.";
 				//}}}
 
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				//response[response.size()][0] = it != jobs.end() ? "Granularity is " + ms_to_string(it->suppress) : "No job named \"" + jobname + "\" found";
-				if(it != jobs.end())
+				std::string response;
+				for(std::string& win_name : it->matchers.win_names.include)
 				{
-					for(std::string& win_name : it->matchers.win_names.include)
-					{
-						response[response.size()] = win_name;
-					}
-					for(std::string& win_name : it->matchers.win_names.exclude)
-					{
-						response[response.size()] = "!" + win_name;
-					}
+					response += win_name + ", ";
 				}
-				else
+				for(std::string& win_name : it->matchers.win_names.exclude)
 				{
-					response[response.size()] = "No job named \"" + jobname + "\" found";
+					response += "!" + win_name + ", ";
 				}
-				retval["response"]=response;
-				return retval;
+				if(response.length() > 2)
+				{
+					response.pop_back();
+					response.pop_back();
+				}
+				return response;
 			}}},
-	{ "job_get_ws_names",{"         <jobname>",                                                 "Return a list of all workspace name matchers for the job.",
-			[this](Json::Value& arg)//{{{
+	{ "job-get-ws-names",{"         <jobname>",                                                 "Return a list of all workspace name matchers for the job.",
+			[this](const std::vector<std::string>& args)//{{{
 			{
 				//{{{
-				std::string jobname = arg.asString();
+				using namespace std::string_literals;
+				if(args.size() < 1) return "job_* commands need at least one argument, the jobname"s;
+				std::string jobname = args[0];
 				auto it = std::find_if(jobs.begin(), jobs.end(), [jobname](const Job& job){return job.jobname == jobname; });
+				if(it == jobs.end()) return "No job named \"" + jobname + "\" found.";
 				//}}}
 
-				Json::Value retval;
-				retval["command"] = "help";
-				Json::Value response;
-				//response[response.size()][0] = it != jobs.end() ? "Granularity is " + ms_to_string(it->suppress) : "No job named \"" + jobname + "\" found";
-				if(it != jobs.end())
+				std::string response;
+				for(std::string& ws_name : it->matchers.ws_names.include)
 				{
-					for(std::string& win_name : it->matchers.ws_names.include)
-					{
-						response[response.size()] = win_name;
-					}
-					for(std::string& win_name : it->matchers.ws_names.exclude)
-					{
-						response[response.size()] = "!" + win_name;
-					}
+					response += ws_name + ", ";
 				}
-				else
+				for(std::string& ws_name : it->matchers.ws_names.exclude)
 				{
-					response[response.size()] = "No job named \"" + jobname + "\" found";
+					response += "!" + ws_name + ", ";
 				}
-				retval["response"]=response;
-				return retval;
+				if(response.length() > 2)
+				{
+					response.pop_back();
+					response.pop_back();
+				}
+				return response;
 			}}},
 	//}}}
 //	//{{{ Adders
 //
-//	{ "job_add_times",{"            <jobname> {(<start_time> <duration> [#comment])}",          "Write additional time stamps to the time file, postfixed with the comment.",
-//			[this](Json::Value& arg)//{{{
+//	{ "job-add-times",{"            <jobname> {(<start_time> <duration> [#comment])}",          "Write additional time stamps to the time file, postfixed with the comment.",
+//			[this](const std::vector<std::string>& args)//{{{
 //			{
 //			}}},
-//	{ "job_add_win_names",{"        <jobname> {<name to include>|!<name to exclude>}",          "Temporarily (untile the daemon stops), add window name matchers to a job. Prefix exclusion matchers with a bang. To permanently add matchers, use the config file for the job.",
-//			[this](Json::Value& arg)//{{{
+//	{ "job-add-win-names",{"        <jobname> {<name to include>|!<name to exclude>}",          "Temporarily (untile the daemon stops), add window name matchers to a job. Prefix exclusion matchers with a bang. To permanently add matchers, use the config file for the job.",
+//			[this](const std::vector<std::string>& args)//{{{
 //			{
 //				//{{{
 //				std::string jobname = arg.asString();
@@ -351,27 +318,29 @@ action_map actions = {
 //				retval["response"]=response;
 //				return retval;
 //			}}},
-//	{ "job_add_ws_names",{"         <jobname> {<name to include>|!<name to exclude>}",          "Temporarily (untile the daemon stops), add workspace name matchers to a job. Prefix exclusion matchers with a bang. To permanently add matchers, use the config file for the job.",
-//			[this](Json::Value& arg)//{{{
+//	{ "job-add-ws-names",{"         <jobname> {<name to include>|!<name to exclude>}",          "Temporarily (untile the daemon stops), add workspace name matchers to a job. Prefix exclusion matchers with a bang. To permanently add matchers, use the config file for the job.",
+//			[this](const std::vector<std::string>& args)//{{{
 //			{
 //			}}},
 //	//}}}
 //	//{{{ Removers
 //
-//	{ "job_remove_times",{"         <jobname> {(<start_time> <duration>)}",                     "Remove the given time stamps from the time file.",
-//			[this](Json::Value& arg)//{{{
+//	{ "job-remove-times",{"         <jobname> {(<start_time> <duration>)}",                     "Remove the given time stamps from the time file.",
+//			[this](const std::vector<std::string>& args)//{{{
 //			{
 //			}
 //	} },
-//	{ "job_remove_win_names",{"     <jobname> {<name not to include>|!<name not to exclude>}",  "Temporarily (untile the daemon stops), remove window name matchers from a job. Prefix exclusion matchers with a bang. To permanently remove matchers, use the config file.",
-//			[this](Json::Value& arg)//{{{
+//	{ "job-remove-win-names",{"     <jobname> {<name not to include>|!<name not to exclude>}",  "Temporarily (untile the daemon stops), remove window name matchers from a job. Prefix exclusion matchers with a bang. To permanently remove matchers, use the config file.",
+//			[this](const std::vector<std::string>& args)//{{{
 //			{
 //			}}},
-//	{ "job_remove_ws_names",{"      <jobname> {<name not to include>|!<name not to exclude>}",  "Temporarily (untile the daemon stops), remove workspace name matchers from a job. Prefix exclusion matchers with a bang. To permanently remove matchers, use the config file.",
-//			[this](Json::Value& arg)//{{{
+//	{ "job-remove-ws-names",{"      <jobname> {<name not to include>|!<name not to exclude>}",  "Temporarily (untile the daemon stops), remove workspace name matchers from a job. Prefix exclusion matchers with a bang. To permanently remove matchers, use the config file.",
+//			[this](const std::vector<std::string>& args)//{{{
 //			{
 //			}}},
 //	//}}}
+	//}}}
+
 	//}}}
 
 };
@@ -380,6 +349,26 @@ action_map actions = {
 
 
 
+
+std::string run_command(std::string commandline)
+{
+	// Split the line into words
+	std::istringstream iss(commandline);
+	std::vector<std::string> args(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
+
+	std::string command(args[0]);
+	args.erase(args.begin());
+
+	// If there is a mapping, execute the mapped function...
+	if(auto fun = actions.find(command); fun != actions.end())
+	{
+		return std::invoke(fun->second.function, args);
+	}
+	else // ... or return an error code.
+	{
+		return "Command not found: \"" + command + "\"";
+	}
+}
 
 
 

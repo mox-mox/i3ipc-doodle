@@ -158,7 +158,7 @@ class Job final : public Window_matching
 		milliseconds get_total_time(void);
 		inline const milliseconds& get_granularity(void) { return granularity; }
 		inline const fs::path get_path(void) { return path; }
-		Json::Value get_times(std::time_t start=0, std::time_t end=0) const;
+		std::string get_times(std::time_t start=0, std::time_t end=0) const;
 	} timefile;
 	//}}}
 

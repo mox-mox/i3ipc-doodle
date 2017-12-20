@@ -137,18 +137,20 @@ void Job::Timefile::set_granularity(milliseconds new_granularity)
 //}}}
 
 //{{{
-Json::Value Job::Timefile::get_times(std::time_t start, std::time_t end) const
+std::string Job::Timefile::get_times(std::time_t start, std::time_t end) const
 {
-	Json::Value retval;
 	std::ifstream timefile(path);
 	if(!timefile.is_open())
 	{
 		error<<"Could not open time file \""<<path<<"\"."<<std::endl;
-		exit(EXIT_FAILURE);
+		return "Could not open time file \"" + path.string() + "\".";
 	}
-	std::string line;
 
-	// Go to the firest times line
+
+	std::string retval;
+
+	// Go to the first times line
+	std::string line;
 	while(!std::getline(timefile, line).eof())
 	{
 		if(line == "# Start-time	time-spent")
@@ -167,15 +169,13 @@ Json::Value Job::Timefile::get_times(std::time_t start, std::time_t end) const
 		if(slot_start >= start)
 		{
 			linestream>>slot_time;
-			retval[retval.size()][0] = slot_start;
-			retval[retval.size()-1][1] = slot_time;
+			retval += std::to_string(slot_start) + "    " + std::to_string(slot_time) + "\n";
 		}
 	}
 
 	return retval;
 }
 //}}}
-
 
 //}}}
 

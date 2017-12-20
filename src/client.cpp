@@ -15,7 +15,9 @@ Client::Client(void) :
 	loop(uvw::Loop::getDefault()),
 	sigint(loop->resource<uvw::SignalHandle>()),
 	daemon_pipe(loop->resource<uvw::PipeHandle>()),
-	console(loop->resource<uvw::TTYHandle>(uvw::StdIN, true))
+	console(loop->resource<uvw::TTYHandle>(uvw::StdIN, true)),
+	repl("doodle client > ")
+
 {
 
 	//{{{ Setup Repl
@@ -40,11 +42,6 @@ Client::Client(void) :
 	//{{{ Daemon pipe
 
 	daemon_pipe->init();
-    daemon_pipe->on<uvw::WriteEvent>([](const uvw::WriteEvent &, uvw::PipeHandle &) {
-			//handle.close();
-			std::cout<<"Wrote to the daemon_pipe"<<std::endl;
-    });
-
     daemon_pipe->on<uvw::ConnectEvent>([](const uvw::ConnectEvent &, uvw::PipeHandle &handle) {
         auto dataTryWrite = std::unique_ptr<char[]>(new char[1]{ 'a' });
         handle.tryWrite(std::move(dataTryWrite), 1);
@@ -60,9 +57,9 @@ Client::Client(void) :
 			std::cout<<"Socket close"<<std::endl;
 	});
 	
-    daemon_pipe->on<uvw::DataEvent>([](const uvw::DataEvent& evt, auto&){
-			std::cout<<"Got something from the daemon_pipe: "<<std::endl;
-			std::cout<<'	'<<std::string(&evt.data[0], evt.length)<<std::endl;
+    daemon_pipe->on<uvw::DataEvent>([this](const uvw::DataEvent& evt, auto&){
+			std::cout<<'\n'<<std::string(&evt.data[0], evt.length)<<std::endl;
+			repl.draw();
     });
 
 	daemon_pipe->open(open_socket(doodle_socket_path));
@@ -73,32 +70,14 @@ Client::Client(void) :
 	//{{{ Console watcher
 
     console->on<uvw::DataEvent>([this](auto& evt, uvw::TTYHandle&){
-			//std::cout<<"Got something from STDIN: "<<std::endl;
-			//std::cout<<'	'<<std::string(&evt.data[0], evt.length)<<std::endl;
-			//daemon_pipe->write(&evt.data[0], evt.length);
+		bool draw = true;
 		for(std::string& line : repl.insert(&evt.data[0], evt.length))
 		{
+			draw=false;
 			if(line == KILL_PILL) loop->walk([](uvw::BaseHandle &h){ h.close(); });;
-			std::cout<<"\nGot line "<<line<<std::endl;
-
-			// Split the line into words
-			std::istringstream iss(line);
-			std::vector<std::string> words(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
-
-			Json::Value command;
-			command["command"] = words[0];;
-			words.erase(words.begin());
-			Json::Value args;
-			for(std::string& word : words)
-			{
-				args[args.size()] = word;
-			}
-			command["args"]=args;
-
-			//std::cout<<command<<std::endl;
-			//daemon_pipe->write(&evt.data[0], evt.length);
+			daemon_pipe->write(line.data(), line.length());
 		}
-		repl.draw();
+		if(draw) repl.draw();
     });
 	console->on<uvw::CloseEvent>([](const uvw::CloseEvent&, uvw::TTYHandle& console) { console.reset(), std::cout<<"TTY close"<<std::endl; });
 	//console->mode(uvw::details::UVTTYModeT::IO);

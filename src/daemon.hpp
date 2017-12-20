@@ -6,8 +6,8 @@
 #include <xcb/screensaver.h>
 #include <uvw.hpp>
 #include "fixed_array.hpp"
-#include <json/json.h>
 #include "parse_date.hpp"
+#include <regex>
 
 
 class Daemon: public sigc::trackable
