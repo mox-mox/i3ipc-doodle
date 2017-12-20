@@ -169,7 +169,14 @@ std::string Job::Timefile::get_times(std::time_t start, std::time_t end) const
 		if(slot_start >= start)
 		{
 			linestream>>slot_time;
-			retval += std::to_string(slot_start) + "    " + std::to_string(slot_time) + "\n";
+
+			std::time_t t = std::time(NULL);
+			std::stringstream out;
+			out << std::put_time(std::localtime(&t), "%d.%m.%y %T") << '\n';
+			//std::string now_string = out.str();
+
+			retval += out.str() + "    " + std::to_string(slot_time) + "\n";
+			//retval += std::to_string(slot_start) + "    " + std::to_string(slot_time) + "\n";
 		}
 	}
 
