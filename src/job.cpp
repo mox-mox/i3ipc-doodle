@@ -115,7 +115,7 @@ void Job::Timefile::add_time(milliseconds new_total, system_clock::time_point sl
 		timefile.ignore(std::numeric_limits<std::streamsize>::max(), ' ');	// is stored.
 		timefile<<std::setfill('0')<<std::setw(timefile_time_width)<<new_total.count();
 		timefile.seekg(0, std::ios_base::end);	// Go to the end of the jobfile
-		timefile<<std::chrono::time_point_cast<std::chrono::milliseconds>(slot_start).time_since_epoch().count()<<"\t"<<slot.count()<<std::endl;
+		timefile<<std::chrono::system_clock::to_time_t(slot_start)<<"\t"<<slot.count()<<std::endl;
 		timefile.close();
 	}
 	else
