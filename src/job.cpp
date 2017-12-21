@@ -115,7 +115,7 @@ void Job::Timefile::add_time(milliseconds new_total, system_clock::time_point sl
 		timefile.ignore(std::numeric_limits<std::streamsize>::max(), ' ');	// is stored.
 		timefile<<std::setfill('0')<<std::setw(timefile_time_width)<<new_total.count();
 		timefile.seekg(0, std::ios_base::end);	// Go to the end of the jobfile
-		timefile<<slot_start.time_since_epoch().count()<<"\t"<<slot.count()<<std::endl;
+		timefile<<std::chrono::time_point_cast<std::chrono::milliseconds>(slot_start).time_since_epoch().count()<<"\t"<<slot.count()<<std::endl;
 		timefile.close();
 	}
 	else
@@ -147,7 +147,7 @@ std::string Job::Timefile::get_times(std::time_t start, std::time_t end) const
 	}
 
 
-	std::string retval;
+	std::string retval = "Slot start time      Time spent\n";
 
 	// Go to the first times line
 	std::string line;
@@ -169,14 +169,10 @@ std::string Job::Timefile::get_times(std::time_t start, std::time_t end) const
 		if(slot_start >= start)
 		{
 			linestream>>slot_time;
-
-			std::time_t t = std::time(NULL);
 			std::stringstream out;
-			out << std::put_time(std::localtime(&t), "%d.%m.%y %T") << '\n';
-			//std::string now_string = out.str();
+			out << std::put_time(std::localtime(&slot_start), "%d.%m.%y %T");
 
 			retval += out.str() + "    " + std::to_string(slot_time) + "\n";
-			//retval += std::to_string(slot_start) + "    " + std::to_string(slot_time) + "\n";
 		}
 	}
 

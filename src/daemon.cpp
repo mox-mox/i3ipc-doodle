@@ -8,7 +8,8 @@ Daemon::Daemon(void) :
 	i3_conn(),
 	loop(uvw::Loop::getDefault()),
 	current_window(),
-	jobs(std::distance(fs::begin(fs::directory_iterator(config_dir)), fs::end(fs::directory_iterator(config_dir)))),
+	jobs(std::count_if(fs::directory_iterator(config_dir+"/jobs"), fs::directory_iterator{},
+				[](const fs::directory_entry& f){ return f.path().extension() == ".job"; })), // Only reserve space for real jobs (only count jobfiles)
 	current_job(nullptr),
 	idle(true),
 	suspended(false),
