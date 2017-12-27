@@ -28,6 +28,7 @@ class Daemon;
 class Job final : public Window_matching
 {
 	friend Daemon;
+	const fs::path jobconfig_path;
 	const std::string jobname;
 	bool is_active;
 

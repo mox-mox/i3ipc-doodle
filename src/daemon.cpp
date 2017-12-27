@@ -148,7 +148,7 @@ Daemon::Daemon(void) :
 	client_pipe->open(open_socket(doodle_socket_path, true));
 
 	client_pipe->listen();
-	std::cout<<"Socket is \""<<client_pipe->sock()<<"\""<<std::endl;
+	logger<<"Socket is \""<<client_pipe->sock()<<"\""<<std::endl;
 	//}}}
 	//}}}
 }

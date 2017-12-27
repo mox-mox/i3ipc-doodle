@@ -210,5 +210,24 @@ class fixed_array
 		new (_data+idx) value_type(std::forward<_Args>(__args)...);
 		return _data+idx;
 	}
+
+	// Replace an object without re-allocation
+	template<typename... _Args>
+	iterator replace(iterator __position, _Args&&... __args)
+	{
+		__position->~value_type();
+		new (__position) value_type(std::forward<_Args>(__args)...);
+		return __position;
+	}
+
+	// Replace an object without re-allocation
+	template<typename... _Args>
+	iterator replace(size_type idx, _Args&&... __args)
+	{
+		if( idx >= _size ) throw std::out_of_range("fixed_array::at: idx (which is "+std::to_string(idx)+") >= _size (which is "+std::to_string(_size)+")");
+		_data[idx].~value_type();
+		new (_data+idx) value_type(std::forward<_Args>(__args)...);
+		return _data+idx;
+	}
 	//}}}
 };

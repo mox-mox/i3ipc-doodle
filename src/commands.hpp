@@ -171,7 +171,30 @@ action_map actions = {
 	{ "job-reload",{"               <jobname>",                                                 "Reload configuration for the job.",
 			[this](const std::vector<std::string>& args)//{{{
 			{
-				return "No implemented yet. Please restart doodle manually";
+				//{{{
+				using namespace std::string_literals;
+				if(args.size() < 1) return "job_* commands need at least one argument, the jobname"s;
+				std::string jobname = args[0];
+				auto it = std::find_if(jobs.begin(), jobs.end(), [jobname](const Job& job){return job.jobname == jobname; });
+				if(it == jobs.end()) return "No job named \"" + jobname + "\" found.";
+				//}}}
+
+				const fs::path jobconfig_path = it->jobconfig_path;
+				std::shared_ptr<uvw::Loop> loop = it->loop;
+				try
+				{
+				jobs.replace(it, jobconfig_path, loop);
+				}
+				catch (const std::exception& e)
+				{
+					return "Could not reload job at "s + jobconfig_path.string() + ": " + e.what();
+				}
+				catch(...)
+				{
+					return "Could not reload job at "s + jobconfig_path.string() + ".";
+				}
+
+				return "Reloaded job "s + std::string(*it);
 			}}},
 	//}}}
 	//{{{ Getters

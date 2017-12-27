@@ -185,12 +185,13 @@ std::string Job::Timefile::get_times(std::time_t start, std::time_t end) const
 
 //{{{
 Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
+	jobconfig_path(jobconfig_path),
 	jobname(jobconfig_path.stem()),
 	is_active(false),
 	loop(loop),
 	write_timer(loop->resource<uvw::TimerHandle>())
 {
-	debug<<"Creating job \""<<jobname<<"\" from "<<jobconfig_path<<std::endl;
+	debug<<"Creating job \""<<jobname<<"\" from "<<jobconfig_path<<" at "<<this<<std::endl;
 
 	//{{{ Read the configuration file
 
@@ -372,7 +373,7 @@ std::ostream& operator<<(std::ostream&stream, const Job& job)
 {
 	//stream<<"Job \""<<job.jobname<<"\" "<<(job.is_active?"[active]":"[inactive]");
 	//stream<<(job.total_run_time+job.runtime_since_job_start(steady_clock::now()))<<".";
-	stream<<job;
+	stream<<static_cast<std::string>(job);
 	return stream;
 }
 //}}}
