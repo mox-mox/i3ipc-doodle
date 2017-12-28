@@ -16,7 +16,7 @@ Client::Client(void) :
 	sigint(loop->resource<uvw::SignalHandle>()),
 	daemon_pipe(loop->resource<uvw::PipeHandle>()),
 	console(loop->resource<uvw::TTYHandle>(uvw::StdIN, true)),
-	repl("doodle client > ")
+	repl("", "doodle client > ")
 
 {
 
@@ -50,7 +50,7 @@ Client::Client(void) :
     });
 	daemon_pipe->on<uvw::CloseEvent>([this](const uvw::CloseEvent &, uvw::PipeHandle &) {
 			loop->walk([](uvw::BaseHandle &h){ h.close(); });
-			std::cout<<"Server close"<<std::endl;
+			//std::cout<<"Server close"<<std::endl;
 	});
 	daemon_pipe->on<uvw::EndEvent>([](const uvw::EndEvent &, uvw::PipeHandle &sock) {
 			sock.close();
@@ -79,11 +79,12 @@ Client::Client(void) :
 		}
 		if(draw) repl.draw();
     });
-	console->on<uvw::CloseEvent>([](const uvw::CloseEvent&, uvw::TTYHandle& console) { console.reset(), std::cout<<"TTY close"<<std::endl; });
+	console->on<uvw::CloseEvent>([](const uvw::CloseEvent&, uvw::TTYHandle& console) { console.reset(); /*std::cout<<"TTY close"<<std::endl;*/ });
 	//console->mode(uvw::details::UVTTYModeT::IO);
 	console->mode(uvw::details::UVTTYModeT::RAW);
 	console->read();
 	//}}}
+
 
 
 	//}}}
