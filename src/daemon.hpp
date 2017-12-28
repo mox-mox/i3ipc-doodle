@@ -16,7 +16,7 @@ class Daemon: public sigc::trackable
 	i3ipc::connection i3_conn;
 	std::shared_ptr<uvw::Loop> loop;
 
-	Current current_window;
+	Names current_window;
 
 	fixed_array<Job> jobs;
 

@@ -48,7 +48,7 @@ bool Window_matching::search(const std::string& search_term, const std::vector<s
 //}}}
 
 //{{{
-bool Window_matching::operator==(const Current& current) const
+bool Window_matching::operator==(const Names& current) const
 {
 	//debug<<"Job::match(this="<<this<<")"<<std::endl;
 
@@ -60,7 +60,7 @@ bool Window_matching::operator==(const Current& current) const
 
 	return true;
 }
-bool Window_matching::operator!=(const Current& current) const
+bool Window_matching::operator!=(const Names& current) const
 {
 	return !operator==(current);
 }

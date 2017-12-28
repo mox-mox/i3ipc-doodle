@@ -29,7 +29,7 @@ action_map actions = {
 					// If there is a mapping, execute the mapped function...
 					if(auto action = actions.find(args[0]); action != actions.end())
 					{
-						response += action->first + " " + std::regex_replace(action->second.arguments, std::regex("^\\s+|\\s+$"), "", std::regex_constants::format_default) + "\n	" + action->second.explanation + "\n";
+						response += "	" + action->first + " " + std::regex_replace(action->second.arguments, std::regex("^\\s+|\\s+$"), "", std::regex_constants::format_default) + "\n	" + action->second.explanation + "\n";
 					}
 					else // ... or return an error code.
 					{
@@ -40,7 +40,7 @@ action_map actions = {
 				{
 					for(auto& action : actions)
 					{
-						response += action.first + action.second.arguments + "\n";
+						response += "	" + action.first + action.second.arguments + "\n";
 					}
 				}
 				return response;
@@ -120,7 +120,7 @@ action_map actions = {
 				std::string response = "Jobs: \n";
 				for(auto& job : jobs)
 				{
-					response += std::string(job) + "\n";
+					response += "	" + std::string(job) + "\n";
 				}
 				return response;
 			}}},
@@ -147,7 +147,7 @@ action_map actions = {
 
 				return "Set maximum idle time to "+ms_to_string(max_idle_time_ms);
 			}}},
-	{ "set-detect_ambiguity",{"     <true|false>",                                              "Set wether the daemon should check for ambigous job- and window-name matchers. This is a runtime check so will cost some additional processing time.",
+	{ "set-detect-ambiguity",{"     <true|false>",                                              "Set wether the daemon should check for ambigous job- and window-name matchers. This is a runtime check so will cost some additional processing time.",
 			[this](const std::vector<std::string>& args)//{{{
 			{
 				using namespace std::string_literals;
@@ -210,10 +210,10 @@ action_map actions = {
 				//}}}
 				return "Granularity is " + ms_to_string(it->timefile.get_granularity());
 			}}},
-	{ "job-get-supress-time",{"     <jobname>",                                                 "Return the time a job must have been active to actually be considered in the timing.",
+	{ "job-get-suppress-time",{"     <jobname>",                                                 "Return the time a job must have been active to actually be considered in the timing.",
 			[this](const std::vector<std::string>& args)//{{{
 			{
-				//{{{
+			//{{{
 				using namespace std::string_literals;
 				if(args.size() < 1) return "job_* commands need at least one argument, the jobname"s;
 				std::string jobname = args[0];
@@ -232,7 +232,6 @@ action_map actions = {
 				auto it = std::find_if(jobs.begin(), jobs.end(), [jobname](const Job& job){return job.jobname == jobname; });
 				if(it == jobs.end()) return "No job named \"" + jobname + "\" found.";
 				//}}}
-
 
 				std::time_t start_time;
 				std::time_t stop_time;
@@ -257,7 +256,7 @@ action_map actions = {
 				}
 				//}}}
 
-				std::cout<<"job-get-times("<<start_time<<", "<<stop_time<<");"<<std::endl;
+				//std::cout<<"job-get-times("<<start_time<<", "<<stop_time<<");"<<std::endl;
 				return it->timefile.get_times(start_time, stop_time);
 			}}},
 	{ "job-get-win-names",{"        <jobname>",                                                 "Return a list of all window name matchers for the job.",

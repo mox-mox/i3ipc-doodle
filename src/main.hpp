@@ -50,11 +50,4 @@ extern bool detect_ambiguity;
 std::vector<std::string> tokenise(std::string input);
 
 
-//{{{
-struct Current
-{
-	std::string workspace_name;
-	std::string window_name;
-};
-//}}}
 

@@ -91,6 +91,13 @@ Client::Client(void) :
 //}}}
 
 //{{{
+Client::~Client(void)
+{
+	console->reset();
+}
+//}}}
+
+//{{{
 int Client::operator()(void)
 {
 	int retval = 0;
@@ -102,7 +109,6 @@ int Client::operator()(void)
 	// Destroy the watchers after the loop stops
 	loop->walk([](uvw::BaseHandle &h){ h.close(); });
 
-	console->reset();
 	logger<<"Returning from event loop"<<std::endl;
 	return retval;
 }

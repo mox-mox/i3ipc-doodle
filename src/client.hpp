@@ -39,7 +39,7 @@ class Client
 		Client(Client &&) = delete;
 		Client& operator = (const Client&) = delete;
 		Client& operator = (Client &&) = delete;
-		//~Client(void);
+		~Client(void);
 		//}}}
 
 		int operator()(void);

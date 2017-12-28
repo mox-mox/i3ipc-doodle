@@ -175,9 +175,6 @@ class Job final : public Window_matching
 
 	//}}}
 
-
-
-
 	public:
 	//{{{ Constructors
 
