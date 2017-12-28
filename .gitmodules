@@ -1,6 +1,3 @@
-[submodule "libs/console_stream"]
-	path = libs/console_stream
-	url = git@github.com:mox-mox/console_stream.git
 [submodule "libs/notify_stream"]
 	path = libs/notify_stream
 	url = git@github.com:mox-mox/notify_stream.git
