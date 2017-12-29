@@ -188,6 +188,8 @@ class Job final : public Window_matching
 
 	void start(steady_clock::time_point now);
 	void stop(steady_clock::time_point now);
+	void suspend(void);
+	void resume(void);
 
 	const std::string& get_jobname(void) const;
 	milliseconds get_total_time(void) const;

@@ -260,9 +260,11 @@ Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
 //{{{
 Job::~Job(void)
 {
-	if(write_timer->active())
+	debug<<"Destroying Job \""<<jobname<<"\"."<<std::endl;
+	//if(write_timer->active())
+	if(slot_run_time != milliseconds(0) || is_active)
 	{
-		debug<<"Writing last timing for job "<<jobname<<std::endl;
+		debug<<"Writing last timing for job \""<<jobname<<"\"."<<std::endl;
 		on_write_timer();
 		write_timer->stop();
 	}
@@ -274,6 +276,8 @@ void Job::on_write_timer(void)
 {
 	steady_clock::time_point now = steady_clock::now();
 
+	debug<<"Job \""<<jobname<<"\": Writing timing to disk."<<std::endl;
+
 	// Update the timers before writing to disk...
 	slot_run_time  += runtime_since_job_start(now);
 	// We just added the runtime since job_start to the slot and total run time,
@@ -282,6 +286,7 @@ void Job::on_write_timer(void)
 	total_run_time += slot_run_time;
 	// ... and write the timers to disk
 	timefile.add_time(total_run_time, slot_start, slot_run_time);
+	slot_run_time = milliseconds(0);
 
 	// If the job is active re-start the slot timer (if not it will be started when the job becomes active the next time)
 	if(is_active) start_slot();
@@ -312,8 +317,8 @@ void Job::stop(steady_clock::time_point stop_time)
 		milliseconds runtime = runtime_since_job_start(stop_time);
 		if(runtime > suppress)
 		{
-			debug<<"Stopping job \""<<jobname<<"\". Runtime since job start: "<<runtime<<", slot_run_time: "<<slot_run_time<<"."<<std::endl;
 			slot_run_time += runtime;
+			debug<<"Stopping job \""<<jobname<<"\". Runtime since job start: "<<runtime<<", slot_run_time: "<<slot_run_time<<"."<<std::endl;
 		}
 		else
 		{
@@ -331,6 +336,32 @@ void Job::stop(steady_clock::time_point stop_time)
 		//for(Action& action : actions) action.stop();
 	}
 	else error<<"Job "<<jobname<<": Trying to stop already stopped process."<<std::endl;
+}
+//}}}
+
+//{{{
+void Job::suspend(void)
+{
+	logger<<"Suspending job \""<<jobname<<"\" because the computer will be suspended."<<std::endl;
+	if(is_active)
+	{
+		stop(steady_clock::now());
+		if(write_timer->active())
+		{
+			//debug<<"Writing timing for job \""<<jobname<<"\" because the computer will be suspended."<<std::endl;
+			on_write_timer();
+			write_timer->stop();
+		}
+	}
+	//else error<<"Job "<<jobname<<": Trying to suspend already stopped process."<<std::endl;
+}
+//}}}
+
+//{{{
+void Job::resume(void)
+{
+	logger<<"Resuming job \""<<jobname<<"\"."<<std::endl;
+	start(steady_clock::now());
 }
 //}}}
 
@@ -358,8 +389,6 @@ milliseconds Job::get_total_time(void) const
 	return total_run_time;
 }
 //}}}
-
-
 
 //{{{
 Job::operator std::string() const

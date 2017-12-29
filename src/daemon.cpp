@@ -46,8 +46,8 @@ Daemon::Daemon(void) :
 
 	//{{{ i3 event subscriptions
 
-	//simulate_workspace_change(i3_conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
-	////simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
+	simulate_workspace_change(i3_conn.get_workspaces());	// Inject a fake workspace change event to start tracking the first workspace.
+	//simulate_window_change(i3_conn.get_tree()->nodes);	// Inject a fake window change event to start tracking the first window.
 
 	i3_conn.signal_window_event.connect(sigc::mem_fun(*this, &Daemon::on_window_change));
 	i3_conn.signal_workspace_event.connect(sigc::mem_fun(*this, &Daemon::on_workspace_change));
@@ -128,6 +128,7 @@ Daemon::Daemon(void) :
 //{{{
 Daemon::~Daemon(void)
 {
+	debug<<"Destroying Daemon"<<std::endl;
 	xcb_disconnect(xcb_conn);
 }
 //}}}
@@ -167,7 +168,6 @@ inline Job* Daemon::find_job(void)
 void Daemon::on_window_change(const i3ipc::window_event_t& evt)
 {
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-	(void) now;
 	// A window change may imply user activity, so if the user is considered idle, update that status
 	if( idle ) on_idle_timer(uvw::TimerEvent(), *idle_timer);
 	//{{{ Print some information about the event
@@ -235,7 +235,7 @@ void Daemon::on_workspace_change(const i3ipc::workspace_event_t& evt)
 //{{{
 bool Daemon::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces)
 {	// Iterate through all workspaces and call on_workspace_change() for the focussed one.
-	for( std::shared_ptr < i3ipc::workspace_t > &workspace : workspaces )
+	for( std::shared_ptr<i3ipc::workspace_t>& workspace : workspaces )
 	{
 		if( workspace->focused )
 		{
@@ -249,7 +249,7 @@ bool Daemon::simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::wo
 //}}}
 
 //{{{
-bool Daemon::simulate_window_change(std::list < std::shared_ptr < i3ipc::container_t>>nodes)
+bool Daemon::simulate_window_change(std::list<std::shared_ptr<i3ipc::container_t>> nodes)
 {	// Iterate through all containers and call on_window_change() for the focussed one.
 	for( std::shared_ptr < i3ipc::container_t > &container : nodes )
 	{

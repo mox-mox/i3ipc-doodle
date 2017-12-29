@@ -45,8 +45,8 @@ class Daemon: public sigc::trackable
 	void on_window_change(const i3ipc::window_event_t& evt);
 	void on_workspace_change(const i3ipc::workspace_event_t& evt);
 
-	bool simulate_window_change(std::list < std::shared_ptr < i3ipc::container_t>>nodes);
-	bool simulate_workspace_change(std::vector < std::shared_ptr < i3ipc::workspace_t>>workspaces);
+	bool simulate_window_change(std::list<std::shared_ptr<i3ipc::container_t>> nodes);
+	bool simulate_workspace_change(std::vector<std::shared_ptr<i3ipc::workspace_t>> workspaces);
 
 	inline Job* find_job(void);
 

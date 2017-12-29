@@ -46,7 +46,11 @@ class fixed_array
 
 	~fixed_array(void)
 	{
-			free(_data);
+		for(value_type& v : *this)
+		{
+			v.~value_type();
+		}
+		free(_data);
 	}
 	//}}}
 

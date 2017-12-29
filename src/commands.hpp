@@ -48,32 +48,31 @@ action_map actions = {
 	{ "suspend",{"                  <none>",                                                    "If \'stop_on_suspend\' is set, wrtie times to disk, stop the current job and halt operation until resumed. Else ignored.",
 			[this](const std::vector<std::string>&)//{{{
 			{
-				std::string response;
+				using namespace std::string_literals;
 				if(stop_on_suspend)
 				{
-					response = "Suspending: stopped jobs, wrote times";
-					// TODO
+					for(Job& job : jobs) job.suspend();
+					return "Suspending: stopped jobs, wrote times"s;
 				}
 				else
 				{
-					response = "Suspending";
+					return "Suspending: Nothing to be done"s;
 				}
-				return response;
 			}}},
 	{ "resume",{"                   <none>",                                                    "If suspended, restart operation, e.g. re-start the current job. Else ignored.",
 			[this](const std::vector<std::string>&)//{{{
 			{
-				std::string response;
+				using namespace std::string_literals;
 				if(stop_on_suspend)
 				{
-					response = "Waking up: Activating current job";
-					// TODO
+					simulate_window_change(i3_conn.get_tree()->nodes);
+					if(current_job && !idle) current_job->resume();
+					return "Waking up: Activating current job"s;
 				}
 				else
 				{
-					response = "Waking up: already awake";
+					return "Waking up: already awake"s;
 				}
-				return response;
 			}}},
 	{ "reload",{"                   <none>",                                                    "Reload the configuration.",
 			[this](const std::vector<std::string>&)//{{{
