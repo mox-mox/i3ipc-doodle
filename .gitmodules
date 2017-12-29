@@ -19,3 +19,6 @@
 [submodule "libs/repl"]
 	path = libs/repl
 	url = git@github.com:mox-mox/repl.git
+[submodule "libs/console_stream"]
+	path = libs/console_stream
+	url = git@github.com:mox-mox/console_stream.git

@@ -79,7 +79,7 @@ Daemon::Daemon(void) :
 	//{{{ <Ctrl+c>/SIGINT watcher
 
     sigint->on<uvw::SignalEvent>([this](const auto &, auto &){
-			std::cout<<"Got SIGINT"<<std::endl;
+			debug<<"Got SIGINT"<<std::endl;
 			loop->stop();
     });
 	sigint->start(SIGINT);
@@ -98,21 +98,21 @@ Daemon::Daemon(void) :
 
 	//{{{ Client watcher
 
-    auto client_pipe = loop->resource<uvw::PipeHandle>(false);
+    std::shared_ptr<uvw::PipeHandle> client_pipe = loop->resource<uvw::PipeHandle>(false);
 
     client_pipe->on<uvw::ListenEvent>([this](const uvw::ListenEvent &, uvw::PipeHandle &srv) {
         std::shared_ptr<uvw::PipeHandle> socket = srv.loop().resource<uvw::PipeHandle>();
 
-        socket->on<uvw::ErrorEvent>([](const uvw::ErrorEvent &, uvw::PipeHandle &) { std::cout<<"FAIL"<<std::endl; });
-        //socket->on<uvw::CloseEvent>([&srv](const uvw::CloseEvent &, uvw::PipeHandle &) { srv.close(); std::cout<<"Server close"<<std::endl; });
-        socket->on<uvw::EndEvent>([](const uvw::EndEvent &, uvw::PipeHandle &sock) { sock.close(); std::cout<<"Socket close"<<std::endl; });
+        socket->on<uvw::ErrorEvent>([](const uvw::ErrorEvent& err, uvw::PipeHandle &) { error<<"Problem with the client pipe: "<<err.what()<<std::endl; });
+        //socket->on<uvw::CloseEvent>([&srv](const uvw::CloseEvent &, uvw::PipeHandle &) { srv.close(); debug<<"Server close"<<std::endl; });
+        socket->on<uvw::EndEvent>([](const uvw::EndEvent &, uvw::PipeHandle &sock) { sock.close(); debug<<"Socket close"<<std::endl; });
 		socket->on<uvw::DataEvent>([this,&srv](const uvw::DataEvent &evt, uvw::PipeHandle &sock){
 				std::string response = run_command({&evt.data[0], evt.length});
 				sock.write(response.data(), response.length());
 				});
 
         srv.accept(*socket);
-		std::cout<<"Accepting connection from "<<socket->peer()<<", on "<<socket->sock()<<std::endl;
+		debug<<"Accepting connection from "<<socket->peer()<<", on "<<socket->sock()<<std::endl;
         socket->read();
     });
 
@@ -346,86 +346,3 @@ std::ostream& operator<<(std::ostream&stream, Daemon const&doodle)
 
 
 
-//{{{
-
-
-//
-//	//{{{ Create watchers
-//
-//	////{{{ Create a resource that will listen to STDIN
-//
-//	//std::shared_ptr<uvw::TTYHandle> console = loop->resource<uvw::TTYHandle>(uvw::StdIN, true);
-//    //console->on<uvw::DataEvent>([](auto& evt, auto& hndl){
-//	//		(void) hndl;
-//	//		std::cout<<"Got something from STDIN: "<<std::endl;
-//	//		std::cout<<'	'<<std::string(&evt.data[0], evt.length)<<std::endl;
-//    //});
-//	//console->on<uvw::CloseEvent>([](const uvw::CloseEvent &, uvw::TTYHandle &) { std::cout<<"TTY close"<<std::endl; });
-//	//console->read();
-//	////}}}
-//
-//	////{{{ Generic timer
-//
-//	//std::shared_ptr<uvw::TimerHandle> timer = loop->resource<uvw::TimerHandle>();
-//    //timer->on<uvw::TimerEvent>([this](const uvw::TimerEvent &, uvw::TimerHandle & ci){
-//	//		std::cout<<"TIMER: "<<loop->now().count()<<std::endl;
-//    //});
-//	//timer->start(milliseconds(2000),milliseconds(1000));
-//	////}}}
-//
-//	//{{{ Idle time watcher
-//
-//	std::shared_ptr<uvw::TimerHandle> idle_timer = loop->resource<uvw::TimerHandle>();
-//    idle_timer->on<uvw::TimerEvent>(std::bind( &Daemon::on_idle_timer, this, std::placeholders::_1, std::placeholders::_2 ));
-//	idle_timer->start(milliseconds(20),milliseconds(0));
-//	//}}}
-//
-//	//{{{ Create a resource that will listen to <Ctrl+c>/SIGINT
-//
-//	std::shared_ptr<uvw::SignalHandle> sigint = loop->resource<uvw::SignalHandle>();
-//    sigint->on<uvw::SignalEvent>([this](const auto &, auto &){
-//			std::cout<<"Got SIGINT"<<std::endl;
-//			loop->stop();
-//    });
-//	sigint->start(SIGINT);
-//	//}}}
-//
-//	//{{{ Create a ressource that will listen to the i3 socket
-//
-//
-//	//while( true )
-//	//{
-//	//	i3_conn.handle_event();
-//	//}
-//
-//	std::shared_ptr<uvw::PipeHandle> i3_pipe = loop->resource<uvw::PipeHandle>();
-//	i3_pipe->init();
-//    i3_pipe->on<uvw::DataEvent>([this](const uvw::DataEvent& evt, auto&){
-//			// Pass the received data to i3ipcpp
-//			i3_conn.handle_event(reinterpret_cast<uint8_t*>(evt.data.get()), evt.length);
-//    });
-//
-//
-//
-//    //i3_pipe->on<uvw::ConnectEvent>([](const uvw::ConnectEvent &, uvw::PipeHandle &) {
-//	//		std::cout<<"Established connection to i3"<<std::endl;
-//    //});
-//	//i3_pipe->on<uvw::CloseEvent>([&loop](const uvw::CloseEvent &, uvw::PipeHandle &) {
-//	//		loop->walk([](uvw::BaseHandle &h){ h.close(); });
-//	//		std::cout<<"Server close"<<std::endl;
-//	//});
-//	//i3_pipe->on<uvw::EndEvent>([](const uvw::EndEvent &, uvw::PipeHandle &sock) {
-//	//		sock.close();
-//	//		std::cout<<"Socket close"<<std::endl;
-//	//});
-//	
-//
-//	//i3_pipe->connect(socket_path);
-//	i3_pipe->open(i3_conn.get_event_socket_fd());
-//	i3_pipe->read();
-//	//}}}
-//
-//	//}}}
-//
-
-//}}}

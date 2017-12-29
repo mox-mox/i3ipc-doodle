@@ -114,6 +114,11 @@ action_map actions = {
 			{
 				return detect_ambiguity?"Checking for ambigous matchers":"Not checking for ambigous natchers";
 			}}},
+	{ "get-loglevel",{"             <none>",                                                    "Return the loglevel, that is the importance threshold for a message to be printed.",
+			[this](const std::vector<std::string>&)//{{{
+			{
+				return "Loglevel is " + std::to_string(logger.logging_level) + ".";
+			}}},
 	{ "get-jobs",{"                 <none>",                                                    "Return a list of all jobs known to doodle.",
 			[this](const std::vector<std::string>&)//{{{
 			{
@@ -162,6 +167,20 @@ action_map actions = {
 
 
 				return detect_ambiguity ? "Enabled run-time checking for ambigous window- and workspace-name watchers"s : "Enabled run-time checking for ambigous window- and workspace-name watchers"s;
+			}}},
+	{ "set-loglevel",{"             <level>",                                                   "Set the loglevel. A level of 0 disables all output, levels 1-3 enable increasingly more logging information to be printed.",
+			[this](const std::vector<std::string>& args)//{{{
+			{
+				using namespace std::string_literals;
+				if(args.size() < 1) return "Set loglevel needs one argument"s;
+				int level = 3;
+				if     (args[0] == "0") level = 0;
+				else if(args[0] == "1") level = 1;
+				else if(args[0] == "2") level = 2;
+				else if(args[0] == "3") level = 3;
+				else return "Cannot decide what loglevel \""s + args[0] + "\" means. Leaving loglevel unchanged."s;
+				logger<<setloglevel(level);
+				return "Set loglevel to "s + std::to_string(level) + "."s;
 			}}},
 	//}}}
 	//}}}
@@ -256,7 +275,6 @@ action_map actions = {
 				}
 				//}}}
 
-				//std::cout<<"job-get-times("<<start_time<<", "<<stop_time<<");"<<std::endl;
 				return it->timefile.get_times(start_time, stop_time);
 			}}},
 	{ "job-get-win-names",{"        <jobname>",                                                 "Return a list of all window name matchers for the job.",

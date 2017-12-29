@@ -19,14 +19,10 @@ Client::Client(void) :
 	repl("", "doodle client > ")
 
 {
-
 	//{{{ Setup Repl
 	
 	repl.default_mappings();
 	//}}}
-
-
-
 
 	//{{{ Initialise all event watchers
 	
