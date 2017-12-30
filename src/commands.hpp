@@ -128,6 +128,16 @@ action_map actions = {
 				}
 				return response;
 			}}},
+	{ "get-config-dir",{"           <none>",                                                    "Return a list of all jobs known to doodle.",
+			[this](const std::vector<std::string>&)//{{{
+			{
+				return config_dir;
+			}}},
+	{ "get-data-dir",{"             <none>",                                                    "Return a list of all jobs known to doodle.",
+			[this](const std::vector<std::string>&)//{{{
+			{
+				return data_dir;
+			}}},
 	//}}}
 	//{{{ Setting commands
 
@@ -137,7 +147,7 @@ action_map actions = {
 				using namespace std::string_literals;
 				if(args.size() < 1) return "Set max_idle_time needs one argument, the new idle time"s;
 				milliseconds old_max_idle_time_ms = max_idle_time_ms;
-				max_idle_time_ms = time_string_to_milliseconds(args[0]);
+				max_idle_time_ms = string_to_ms(args[0]);
 
 				if(max_idle_time_ms > milliseconds(0))
 				{

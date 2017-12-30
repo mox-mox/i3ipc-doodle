@@ -1,16 +1,16 @@
 #pragma once
-#include <uvw.hpp>
+
+#include "main.hpp"
 #include "repl.hpp"
+
+#include <uvw.hpp>
 #include <string>
-
-
-
-
-
-
 
 class Client
 {
+	std::string user_socket_path;
+
+
 	//{{{ Event handling
 
 	std::shared_ptr<uvw::Loop> loop;
@@ -23,18 +23,13 @@ class Client
 	Repl repl;
 	//}}}
 
-
-
-
 	std::string parse_command(std::string entry);
 	std::string parse_response(std::string response);
-
-
 
 	public:
 		//{{{ Constructor
 
-		explicit Client(void);	// Todo: use xdg_config_path
+		explicit Client(INIReader& config_reader);	// Todo: use xdg_config_path
 		Client(const Client&) = delete;
 		Client(Client &&) = delete;
 		Client& operator = (const Client&) = delete;

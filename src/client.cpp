@@ -11,7 +11,8 @@
 
 
 //{{{
-Client::Client(void) :
+Client::Client(INIReader& config_reader) :
+	user_socket_path( user_socket_path != "" ? user_socket_path : config_reader.Get("", "user_socket_path", "")),
 	loop(uvw::Loop::getDefault()),
 	sigint(loop->resource<uvw::SignalHandle>()),
 	daemon_pipe(loop->resource<uvw::PipeHandle>()),
@@ -19,6 +20,7 @@ Client::Client(void) :
 	repl("", "doodle client > ")
 
 {
+	(void) config_reader;
 	//{{{ Setup Repl
 	
 	repl.default_mappings();
@@ -58,7 +60,7 @@ Client::Client(void) :
 			repl.draw();
     });
 
-	daemon_pipe->open(open_socket(doodle_socket_path));
+	daemon_pipe->open(open_socket(user_socket_path));
 
 	daemon_pipe->read();
 	//}}}

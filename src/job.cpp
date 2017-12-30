@@ -182,6 +182,84 @@ std::string Job::Timefile::get_times(std::time_t start, std::time_t end) const
 
 //}}}
 
+//std::vector<std::string> tokenise(std::string input);
+//{{{ std::vector<std::string> tokenise(std::string input)
+
+//{{{
+bool is_whitespace(char ch)
+{
+	const std::array<char, 2> whitespaces = {' ', ','};
+	for(char c : whitespaces)
+	{
+		if(ch == c) return true;
+	}
+	return false;
+}
+//}}}
+
+//{{{
+char is_token_delimiter(char ch)
+{
+	const std::array<char, 2> token_delimiters = {'\'', '"' };
+	for(char c : token_delimiters)
+	{
+		if(ch == c) return c;
+	}
+	return '\0';
+}
+//}}}
+
+//{{{
+std::vector<std::string> tokenise(std::string input)
+{
+	const char escape = '\\';
+	std::vector<std::string> tokens;
+	std::string current_token;
+	char current_delimiter = '\0';
+
+	bool in_token = false;
+	bool escaped  = false;
+
+	for(char c : input)
+	{
+		if(!in_token)
+		{
+			if(c=='#') break;
+			if(is_whitespace(c)) continue;
+
+			in_token=true;
+			if((current_delimiter = is_token_delimiter(c))) continue;
+		}
+
+		if(escaped || (current_delimiter && c!=current_delimiter) || (!current_delimiter && !is_whitespace(c))) // We got a valid char
+		{
+			if(c == escape)
+			{
+				escaped = true;
+				continue;
+			}
+			else
+			{
+				current_token.push_back(c);
+				escaped = false;
+			}
+		}
+		else
+		{
+			tokens.push_back(current_token);
+			current_token = "";
+			in_token=false;
+		}
+	}
+	if(current_token != "")
+	{
+		tokens.push_back(current_token);
+	}
+
+	return tokens;
+}
+//}}}
+//}}}
 
 //{{{
 Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
@@ -221,10 +299,10 @@ Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
 	timefile.set_path(reader.Get("timefile", "path", "default"), jobname);
 	debug<<"	timefile path = "<<timefile.get_path()<<std::endl;
 
-	timefile.set_granularity(time_string_to_milliseconds(reader.Get("timefile", "granularity", default_timefile_granularity)));
+	timefile.set_granularity(string_to_ms(reader.Get("timefile", "granularity", default_timefile_granularity)));
 	debug<<"	timefile.granularity: "<<timefile.get_granularity()<<std::endl;
 
-	suppress = time_string_to_milliseconds(reader.Get("timefile", "suppress", default_timefile_suppress));
+	suppress = string_to_ms(reader.Get("timefile", "suppress", default_timefile_suppress));
 	debug<<"	timefile.suppress: "<<suppress<<std::endl;
 	if(suppress*2 > timefile.get_granularity())
 	{

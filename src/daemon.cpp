@@ -3,8 +3,19 @@
 #include "sockets.hpp"
 
 
+
+
 //{{{
-Daemon::Daemon(void) :
+Daemon::Daemon(INIReader& config_reader, std::string i3_socket_path, std::string user_socket_path) :
+
+	i3_socket_path( i3_socket_path != "server" ? i3_socket_path : config_reader.Get("server", "i3_socket_path", i3ipc::get_socketpath())),
+	user_socket_path( user_socket_path != "" ? user_socket_path : config_reader.Get("", "user_socket_path", "")),
+
+	max_idle_time_ms(string_to_ms(config_reader.Get("server", "max_idle_time", default_max_idle_time))),
+	stop_on_suspend(config_reader.GetBoolean("server", "stop_on_suspend", true)),
+	detect_ambiguity(config_reader.GetBoolean("", "detect_ambiguity", false)),
+
+
 	i3_conn(),
 	loop(uvw::Loop::getDefault()),
 	current_window(),
@@ -20,6 +31,7 @@ Daemon::Daemon(void) :
 	i3_pipe(loop->resource<uvw::PipeHandle>()),
 	client_pipe(loop->resource<uvw::PipeHandle>())
 {
+	(void) config_reader;
 
 	//{{{ Create the individual jobs
 
@@ -116,7 +128,7 @@ Daemon::Daemon(void) :
         socket->read();
     });
 
-	client_pipe->open(open_socket(doodle_socket_path, true));
+	client_pipe->open(open_socket(user_socket_path, true));
 
 	client_pipe->listen();
 	logger<<"Socket is \""<<client_pipe->sock()<<"\""<<std::endl;

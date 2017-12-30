@@ -1,14 +1,31 @@
 # Configuration for Doodle
 
+# Path for the client communication ipc socket
+user_socket_path = %doodle_user_communication
+
+
+[server]
+
 # Seconds the user may be idle before the timeer for the current job is halted. A value of zero means to omit idle time detection.
 max_idle_time = 10
 
 # Halt the current job when to computer goes to suspend. Usually, there is very little sense in diabling this.
-stop_on_suspend = false
+stop_on_suspend = true
 
 # Detect ambigous job definitions at runtime, e.g. if more than one job matches the current workspace/window title combination
 detect_ambiguity = false
 
-# Path for the client communication ipc socket
-# Do not put quotes here (yet)!
-doodle_socket_path = %doodle_user_communication
+# Path for the i3 ipc socket
+# i3_socket_path = ...
+
+# Data dir where the time files will be kept. Defaults to $XDG_DATA_HOME/doodle
+#data_dir = ...
+
+
+[client]
+
+# File where the command line history will be stored. Defaults $XDG_DATA_HOME/doodle/history
+#histfile = ...
+
+# Maximum lines in histfile
+histsize = 200
