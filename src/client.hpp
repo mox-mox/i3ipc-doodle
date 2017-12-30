@@ -8,9 +8,6 @@
 
 class Client
 {
-	std::string user_socket_path;
-
-
 	//{{{ Event handling
 
 	std::shared_ptr<uvw::Loop> loop;
@@ -29,7 +26,7 @@ class Client
 	public:
 		//{{{ Constructor
 
-		explicit Client(INIReader& config_reader);	// Todo: use xdg_config_path
+		explicit Client(INIReader& config_reader);
 		Client(const Client&) = delete;
 		Client(Client &&) = delete;
 		Client& operator = (const Client&) = delete;

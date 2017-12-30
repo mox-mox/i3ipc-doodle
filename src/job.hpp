@@ -28,7 +28,7 @@ class Daemon;
 class Job final : public Window_matching
 {
 	friend Daemon;
-	const fs::path jobconfig_path;
+	const fs::path jobconfig_file;
 	const std::string jobname;
 	bool is_active;
 
@@ -151,7 +151,7 @@ class Job final : public Window_matching
 		bool check_and_create_file(void);
 
 		public:
-		void set_path(std::string dir, std::string jobname);
+		void set_path(fs::path dir, std::string jobname);
 		void set_granularity(milliseconds new_granularity);
 
 		void add_time(milliseconds new_total, system_clock::time_point slot_start, milliseconds slot);

@@ -3,6 +3,8 @@
 # Path for the client communication ipc socket
 user_socket_path = %doodle_user_communication
 
+# Data dir where the time files will be kept. Defaults to $XDG_DATA_HOME/doodle
+#data_dir = ...
 
 [server]
 
@@ -18,8 +20,6 @@ detect_ambiguity = false
 # Path for the i3 ipc socket
 # i3_socket_path = ...
 
-# Data dir where the time files will be kept. Defaults to $XDG_DATA_HOME/doodle
-#data_dir = ...
 
 
 [client]

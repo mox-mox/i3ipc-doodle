@@ -11,18 +11,17 @@
 #define GIT_BRANCH "@GIT_BRANCH@"
 #define GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
 
-#define DOODLE_SOCKET_PATH "%doodle_user_communication"
-
-//const std::string DOODLE_SOCKET_PATH("@DOODLE_SOCKET_PATH@", sizeof("@DOODLE_SOCKET_PATH@")-1); //-1 to strip the terminating null
 
 
 // #cmakedefine USE_NOTIFICATIONS
 #cmakedefine USE_SYSLOG
-//#define NOTIFICATION_LEVEL "@NOTIFICATION_LEVEL@"
 
 
 #define DOODLE_PROTOCOL_VERSION "@DOODLE_PROTOCL_VERSION@"
 
+//const std::string USER_SOCKET_PATH("@USER_SOCKET_PATH@", sizeof("@USER_SOCKET_PATH@")-1); //-1 to strip the terminating null
+#define USER_SOCKET_PATH "@USER_SOCKET_PATH"
+#define EXAMPLE_CONFIG_PATH "@EXAMPLE_CONFIG_PATH"
 
 
 

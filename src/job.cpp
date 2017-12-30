@@ -5,16 +5,17 @@
 //{{{ Timefile
 
 //{{{
-void Job::Timefile::set_path(std::string dir, std::string jobname)
+void Job::Timefile::set_path(fs::path dir, std::string job_timefile)
 {
+	job_timefile += ".times";
 	if(dir == "default")
-		path = data_dir + "/" + jobname + ".times";
+		path = data_dir / job_timefile;
 	else
 		path = dir;
 
-	if(path.filename() != jobname+".times")
+	if(path.filename() != job_timefile)
 	{
-		path += jobname+".times";
+		path /= job_timefile;
 	}
 }
 //}}}
@@ -262,18 +263,18 @@ std::vector<std::string> tokenise(std::string input)
 //}}}
 
 //{{{
-Job::Job(const fs::path& jobconfig_path, std::shared_ptr<uvw::Loop> loop) :
-	jobconfig_path(jobconfig_path),
-	jobname(jobconfig_path.stem()),
+Job::Job(const fs::path& jobconfig_file, std::shared_ptr<uvw::Loop> loop) :
+	jobconfig_file(jobconfig_file),
+	jobname(jobconfig_file.stem()),
 	is_active(false),
 	loop(loop),
 	write_timer(loop->resource<uvw::TimerHandle>())
 {
-	debug<<"Creating job \""<<jobname<<"\" from "<<jobconfig_path<<" at "<<this<<std::endl;
+	debug<<"Creating job \""<<jobname<<"\" from "<<jobconfig_file<<" at "<<this<<std::endl;
 
 	//{{{ Read the configuration file
 
-	INIReader reader(jobconfig_path);
+	INIReader reader(jobconfig_file);
 	if (reader.ParseError() < 0)
 	{
 		error<<"Cannot parse job file for job \""<<jobname<<"\"."<<std::endl;

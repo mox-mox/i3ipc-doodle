@@ -15,8 +15,8 @@ set_property(GLOBAL PROPERTY TARGET_MESSAGES OFF)
 #set(DOODLE_CONFIG_PATH ".config/doodle")
 # A leading '&' character is translated to a null character,
 # mapping the socket to the invisible abstract unix socket name space.
-set(DOODLE_SOCKET_PATH %doodle_user_communication)
-#set(DOODLE_SOCKET_PATH "./doodle_user_communication")
+set(USER_SOCKET_PATH %doodle_user_communication)
+#set(USER_SOCKET_PATH "./doodle_user_communication")
 
 
 set(DOODLE_PROTOCL_VERSION "Doodle01")
@@ -173,6 +173,7 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 
 
+# Set build type when generating the Makefile like: cmake -DCMAKE_BUILD_TYPE=Debug ../i3ipc-doodle
 add_executable(doodle ${SRCS})
 target_link_libraries(doodle ${LIBS})
 target_include_directories(doodle PUBLIC ${INCDIRS})
@@ -183,33 +184,9 @@ target_compile_options(    doodle PUBLIC $<$<CONFIG:RELEASE>:-O3>)
 target_compile_definitions(doodle PUBLIC NOTIFY_PROGRAM_NAME="${DOODLE_PROGRAM_NAME}" ENABLE_MAIN)
 target_compile_definitions(doodle PUBLIC $<$<CONFIG:DEBUG>:NOTIFY_LEVEL=3 LOGGING_LEVEL=3>)
 target_compile_definitions(doodle PUBLIC $<$<CONFIG:RELEASE>:NOTIFY_LEVEL=1 LOGGING_LEVEL=1>)
-# Set build type when generating the Makefile like: cmake -DCMAKE_BUILD_TYPE=Debug ../i3ipc-doodle
 
-
-
-
-
-
-#add_dependencies(doodle notify_start)
-#add_custom_target( notify_start COMMAND notify-send "Starting build for doodle-daemon")
-
-
-##add_custom_target(copy_doodle_config DEPENDS ${CMAKE_SOURCE_DIR}/daemon/.config
-##                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-##                   ${CMAKE_SOURCE_DIR}/daemon/.config $<TARGET_FILE_DIR:doodle>/.config)
-##
-##
-##
-##
-##add_custom_target(do_always ALL)
-##add_custom_target(notify_end ALL COMMAND notify-send "Finished build for doodle-daemon" DEPENDS do_always doodle)
 
 #add_subdirectory(test)
 
-##add_custom_target(run_doodle
-##	COMMAND ./doodle --no-fork; read -p "Press [Enter] key to close..."
-##    DEPENDS doodle copy_doodle_config
-##    WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}
-##)
 
 #}}}

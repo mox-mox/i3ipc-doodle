@@ -207,19 +207,19 @@ action_map actions = {
 				if(it == jobs.end()) return "No job named \"" + jobname + "\" found.";
 				//}}}
 
-				const fs::path jobconfig_path = it->jobconfig_path;
+				const fs::path jobconfig_file = it->jobconfig_file;
 				std::shared_ptr<uvw::Loop> loop = it->loop;
 				try
 				{
-				jobs.replace(it, jobconfig_path, loop);
+				jobs.replace(it, jobconfig_file, loop);
 				}
 				catch (const std::exception& e)
 				{
-					return "Could not reload job at "s + jobconfig_path.string() + ": " + e.what();
+					return "Could not reload job at "s + jobconfig_file.string() + ": " + e.what();
 				}
 				catch(...)
 				{
-					return "Could not reload job at "s + jobconfig_path.string() + ".";
+					return "Could not reload job at "s + jobconfig_file.string() + ".";
 				}
 
 				return "Reloaded job "s + std::string(*it);

@@ -6,10 +6,9 @@
 
 
 //{{{
-Daemon::Daemon(INIReader& config_reader, std::string i3_socket_path, std::string user_socket_path) :
+Daemon::Daemon(INIReader& config_reader, std::string i3_socket_path) :
 
-	i3_socket_path( i3_socket_path != "server" ? i3_socket_path : config_reader.Get("server", "i3_socket_path", i3ipc::get_socketpath())),
-	user_socket_path( user_socket_path != "" ? user_socket_path : config_reader.Get("", "user_socket_path", "")),
+	i3_socket_path( i3_socket_path != "default" ? i3_socket_path : config_reader.Get("server", "i3_socket_path", i3ipc::get_socketpath())),
 
 	max_idle_time_ms(string_to_ms(config_reader.Get("server", "max_idle_time", default_max_idle_time))),
 	stop_on_suspend(config_reader.GetBoolean("server", "stop_on_suspend", true)),
@@ -19,7 +18,7 @@ Daemon::Daemon(INIReader& config_reader, std::string i3_socket_path, std::string
 	i3_conn(),
 	loop(uvw::Loop::getDefault()),
 	current_window(),
-	jobs(std::count_if(fs::directory_iterator(config_dir+"/jobs"), fs::directory_iterator{},
+	jobs(std::count_if(fs::directory_iterator(config_dir/"jobs"), fs::directory_iterator{},
 				[](const fs::directory_entry& f){ return f.path().extension() == ".job"; })), // Only reserve space for real jobs (only count jobfiles)
 	current_job(nullptr),
 	idle(true),

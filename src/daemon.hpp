@@ -14,17 +14,10 @@
 class Daemon: public sigc::trackable
 {
 	std::string i3_socket_path;
-	std::string user_socket_path;
-
 
 	milliseconds max_idle_time_ms;
 	bool stop_on_suspend;
 	bool detect_ambiguity;
-
-
-
-
-
 
 	using window_id = uint64_t;
 	i3ipc::connection i3_conn;
@@ -69,7 +62,7 @@ class Daemon: public sigc::trackable
 	public:
 		//{{{ Constructor
 
-		explicit Daemon(INIReader& config_reader, std::string i3_socket_path = "", std::string user_socket_path = "");
+		explicit Daemon(INIReader& config_reader, std::string i3_socket_path = "");
 		Daemon(const Daemon&) = delete;
 		Daemon(Daemon &&) = delete;
 		Daemon& operator = (const Daemon&) = delete;

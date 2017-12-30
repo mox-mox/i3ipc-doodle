@@ -11,8 +11,9 @@
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
-inline std::string config_dir;
-inline std::string data_dir;
+inline fs::path config_dir;
+inline fs::path data_dir;
+inline std::string user_socket_path;
 
 //Time handling
 using milliseconds = std::chrono::duration<int64_t, std::milli>;
@@ -34,21 +35,6 @@ inline std::ostream& operator<<(std::ostream& stream, milliseconds value)
 //}}}
 
 milliseconds string_to_ms(std::string input);
-
-
-
-
-//extern std::string data_dir;
-//extern std::string doodle_socket_path;
-//extern std::string i3_socket_path;
-
-//
-//
-//extern milliseconds max_idle_time_ms;
-//extern bool stop_on_suspend;
-//extern bool detect_ambiguity;
-
-
 
 
 
